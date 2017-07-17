@@ -6,7 +6,7 @@ main.sampler.folder = 'samples/'
 main.timer = new Timer(loop)
 main.view = new View3({
 	eroot: document.body,
-	enableWireframe: false
+	enableWireframe: true
 })
 
 

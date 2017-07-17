@@ -3,6 +3,8 @@ Loader.extend('obj', {
 
 	saveMetadata: false,
 	computeBoundingBox: false,
+	randomColor: true,
+	verbose: false,
 
 	prepare: function(text) {
 		var unit = this
@@ -33,7 +35,7 @@ Loader.extend('obj', {
 			}
 
 			if(!meta.vertices[index]) {
-				console.warn('Loader.obj: undefined vertex '+ index)
+				if(unit.verbose) console.warn('Loader.obj: undefined vertex '+ index)
 			}
 
 			if(index < vertexOffset) {
@@ -45,8 +47,12 @@ Loader.extend('obj', {
 
 		function addMesh() {
 			geometry = new THREE.Geometry
-			material = new THREE.MeshBasicMaterial({ color: f.rand(0xFFFFFF) })
+			material = new THREE.MeshBasicMaterial
 			mesh = new THREE.Mesh(geometry, material)
+
+			if(unit.randomColor) {
+				material.color.set(Math.round(Math.random() * 0xFFFFFF))
+			}
 
 			vertexOffset = meta.vertices.length
 
@@ -59,7 +65,7 @@ Loader.extend('obj', {
 			v1.cross(v2)
 
 			if(!v1.x && !v1.y && !v1.z) {
-				console.warn('[Loader.obj] collapsed face "'+ unit.url +'":', line, [a, b, c])
+				if(unit.verbose) console.warn('[Loader.obj] collapsed face "'+ unit.url +'":', line, [a, b, c])
 				return
 			}
 			v1.normalize()
@@ -182,7 +188,7 @@ Loader.extend('obj', {
 						addFace(0, 1, 2, igroup, ugroup, ngroup, vgroup, hasUV, hasNR, lineNo)
 
 					} else {
-						console.warn('[Loader.obj] unknown face with', vertices, 'vertices')
+						if(unit.verbose) console.warn('[Loader.obj] unknown face with', vertices, 'vertices')
 						continue
 					}
 
@@ -190,7 +196,7 @@ Loader.extend('obj', {
 				break
 
 				default:
-					console.log('Loader.obj: unhandled "'+ line +'"')
+					if(unit.verbose) console.log('Loader.obj: unhandled "'+ line +'"')
 				break
 			}
 		}
