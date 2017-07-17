@@ -999,8 +999,8 @@ View3D = f.unit(Block, {
 	},
 
 	updateControl: function() {
-		this.orbit.minDistance = this.minDistance
-		this.orbit.maxDistance = this.maxDistance
+		this.orbit.minDistance   = this.minDistance
+		this.orbit.maxDistance   = this.maxDistance
 		this.orbit.minPolarAngle = this.minPolarAngle
 		this.orbit.maxPolarAngle = this.maxPolarAngle
 
@@ -1062,7 +1062,7 @@ View3D = f.unit(Block, {
 			var dist
 
 			if(this.tree && Observable.unwrap(this.tree.obvBoundingValid)) {
-				dist = Math.sqrt(Observable.unwrap(this.tree.obvBoundingSize).length()) * 4.5
+				dist = Observable.unwrap(this.tree.obvBoundingSize).length() * 2
 
 				target.copy(Observable.unwrap(this.tree.obvMassCenter))
 

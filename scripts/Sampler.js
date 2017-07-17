@@ -48,9 +48,6 @@ Sampler.prototype = {
 	fetch: function(samples) {
 		samples.forEach(this.addSample, this)
 
-		this.samples[1] = this.samples.wr
-		this.samples[2] = this.samples.ds
-
 		return this.get.ready(this.configureSamples, this)
 	},
 

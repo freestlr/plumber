@@ -28,6 +28,7 @@ Loader.extend('obj', {
 
 
 		function addFaceVertex(index) {
+			if(index < 0) index = meta.vertices.length + index +1
 			if(!meta.vertices[index]) console.warn('Loader.obj: undefined vertex '+ index)
 
 			if(index < vertexOffset) {
@@ -39,7 +40,7 @@ Loader.extend('obj', {
 
 		function addMesh() {
 			geometry = new THREE.Geometry
-			material = new THREE.MeshBasicMaterial
+			material = new THREE.MeshBasicMaterial({ color: f.rand(0xFFFFFF) })
 			mesh = new THREE.Mesh(geometry, material)
 
 			vertexOffset = meta.vertices.length
