@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<head>
+	<title>SVG Атлас</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<script src="scripts/lib/f.js"></script>
+	<script src="scripts/lib/dom.js"></script>
+	<script src="scripts/base/Defer.js"></script>
+	<script src="scripts/base/Loader.js"></script>
+
+	<script>
+		var main = {}
+		main.get = new Loader
+		main.get.xml('images/atlas.svg').defer.then(run)
+
+		function getAtlasIcon(id) {
+			var icon = main.atlas.getElementById(id)
+			if(!icon) return
+
+			var svg = main.atlas.documentElement.cloneNode(false)
+			svg.appendChild(icon.cloneNode(true))
+			return svg
+		}
+
+		function run(data) {
+			main.atlas = data
+			main.div = dom.one('.atlas')
+
+			var list = main.atlas.getElementsByTagName('g')
+			for(var i = 0; i < list.length; i++) {
+				var icon = dom.div('icon', main.div)
+				,   label = dom.div('label')
+				,   name = list[i].id
+				,   image = getAtlasIcon(name)
+
+				dom.append(icon, image)
+				dom.append(icon, label)
+				dom.text(label, name)
+			}
+		}
+
+		window.addEventListener('mousedown', swap)
+		window.addEventListener('mouseup', swap)
+
+		function swap(e) {
+			dom.togclass(document.body, 'swap', e.type === 'mousedown')
+			e.preventDefault()
+		}
+	</script>
+
+	<style>
+		.icon {
+			float: left;
+			width: 128px;
+			height: 128px;
+			text-align: center;
+			font: 12px monospace;
+		}
+		svg {
+			width: 112px;
+			height: 112px;
+			margin: auto;
+
+			fill: black;
+			stroke: none;
+			stroke-width: 10px;
+		}
+		.icon:hover svg {
+			fill: lime;
+		}
+		.swap svg {
+			fill: none;
+			stroke: black;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="atlas"></div>
+</body>

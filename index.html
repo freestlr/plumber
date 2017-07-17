@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<head>
+	<title>Альта-планнер компании Альта-Профиль. Создать проект дома и узнайть количество материалов для его отделки.</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="keywords" content="альта, альта-планнер, альта-профиль, сайдинг, калькулятор, модулятор, проект дома, нарисовать проект дома" />
+	<meta name="description" content="Если вы хотите разработать уникальный дизайн дома, сразу рассчитать необходимое количество отделочных материалов и их стоимость, попробуйте Альта-Планнер от компании Альта-Профиль" />
+	<link rel="icon" href="images/favicon.gif" />
+	<script>
+		!function() {
+		"use strict";
+
+		var scripts = {}
+		var styles  = {}
+
+		scripts.html5 = [
+			'scripts/lib/f.js',
+			'scripts/lib/pf.js',
+			'scripts/lib/dom.js',
+			'scripts/lib/has.js',
+			'scripts/lib/kbd.js',
+			'scripts/lib/perf.js',
+
+			'scripts/lib/FileSaver.js',
+			'scripts/lib/pako.min.js',
+			'scripts/lib/tween.js',
+			'scripts/lib/three.min.js',
+			'scripts/lib/iscroll.js',
+			'scripts/lib/dat.gui.min.js',
+
+			'scripts/base/EventEmitter.js',
+			'scripts/base/Observable.js',
+			'scripts/base/Defer.js',
+			'scripts/base/Gate.js',
+			'scripts/base/Loader.js',
+			'scripts/base/Loader.obj.js',
+			'scripts/base/Drag.js',
+			'scripts/base/Momentum.js',
+			'scripts/base/Dialog.js',
+			'scripts/base/Block.js',
+			'scripts/base/Locale.js',
+			'scripts/base/Atlas.js',
+			'scripts/base/History.js',
+
+			'scripts/THREE.extend.js',
+			'scripts/THREE.SSAOShader.js',
+			'scripts/THREE.FXAAShader.js',
+			'scripts/THREE.CopyShader.js',
+			'scripts/THREE.HorizontalBlurShader.js',
+			'scripts/THREE.VerticalBlurShader.js',
+			'scripts/THREE.OverlayShader.js',
+			'scripts/THREE.OrbitControls.js',
+			'scripts/THREE.FirstPersonControls.js',
+
+			'scripts/Geo.js',
+			'scripts/Database.js',
+			'scripts/Imagery.js',
+			'scripts/Sampler.js',
+			'scripts/TileView.js',
+			'scripts/Tool2D.js',
+			'scripts/Tool3D.js',
+			'scripts/Draw2D.js',
+			'scripts/Draw3D.js',
+			'scripts/View2D.js',
+			'scripts/View3D.js',
+			'scripts/ViewCalc.js',
+			'scripts/Helper2D.js',
+			'scripts/Filter.js',
+			'scripts/UI.js',
+
+			'scripts/ANode.js',
+			'scripts/ANode.House.js',
+			'scripts/ANode.Cut.js',
+			'scripts/ANode.Drain.js',
+			'scripts/ANode.Point.js',
+			'scripts/ANode.Floor.js',
+			'scripts/ANode.Contour.js',
+			'scripts/ANode.Box.js',
+			'scripts/ANode.Roof.js',
+			'scripts/ANode.Wall.js',
+			'scripts/ANode.Slope.js',
+			'scripts/ANode.Hole.js',
+
+			'scripts/main.js',
+			'scripts/kpi.js'
+		]
+		styles.html5 = [
+			'styles/main.css',
+			'styles/filter.css',
+			'styles/TileView.css',
+			'styles/ViewCalc.css',
+			'styles/Dialog.css',
+			'styles/ui.css'
+		]
+
+		scripts.flash = [
+
+		]
+		styles.flash = [
+
+		]
+
+		var first = document.getElementsByTagName('script')[0]
+		function add_script(src, callback) {
+			var elem    = document.createElement('script')
+			elem.type   = 'text/javascript'
+			elem.src    = src
+			elem.onload = callback
+			first.parentNode.insertBefore(elem, first)
+		}
+		function add_style(href) {
+			var elem  = document.createElement('link')
+			elem.rel  = 'stylesheet'
+			elem.href = href
+			elem.type = 'text/css'
+			first.parentNode.insertBefore(elem, first)
+		}
+
+		window.loadAssets = function(variant) {
+			var _scripts = scripts[variant]
+			,   _styles  = styles [variant]
+
+			!function run_scripts() {
+				_scripts.length && add_script(_scripts.shift(), run_scripts)
+			}()
+			while(_styles.length) add_style(_styles.shift())
+		}
+
+		try { var FLASH = new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version') } catch(e) {}
+		try { var FLASH = navigator.plugins['Shockwave Flash'].description && navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin } catch(e) {}
+		try { var CANVAS = !!document.createElement('canvas').getContext('2d') } catch(e) {}
+
+		if(FLASH && CANVAS) loadAssets('html5')
+		else if(CANVAS)     loadAssets('html5')
+		else if(FLASH)      loadAssets('flash')
+		else {
+
+		}
+
+		}()
+	</script>
+</head>
+
+<body>
+	<div class="loading absmid slow-05">
+		<style>
+			.absmid {
+				position: absolute;
+				left: 0;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				margin: auto;
+			}
+			.loading {
+				width: 100%;
+				height: 100%;
+				background-color: white;
+				z-index: 100500;
+			}
+			.loading.hide {
+				opacity: 0;
+			}
+			.loading-center {
+				width: 200px;
+				height: 200px;
+				line-height: 32px;
+				text-align: center;
+				font-size: 16px;
+				color: #777;
+			}
+			.loading-text {
+				padding-left: 8px;
+			}
+		</style>
+		<div class="loading-center absmid">
+			<img src="images/loading.gif">
+			<div class="loading-text">
+				<script>
+					var text = { en: 'Loading...', ru: 'Загрузка...' }
+					,   lang = location.search.replace(/.*lang=(\w+).*/, '$1')
+
+					document.write(text[lang] || text.ru)
+				</script>
+			</div>
+		</div>
+	</div>
+</body>

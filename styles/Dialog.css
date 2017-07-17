@@ -1,0 +1,19 @@
+.dialog {
+	z-index: 11;
+}
+.dialog-black {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+.dialog-outer {
+	background-color: white;
+}
+.dialog-inner {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
+.dialog-close {
+	display: none;
+}
