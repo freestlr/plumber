@@ -34,6 +34,7 @@ function makeMenu() {
 		distance: 18,
 		visibleMethod: dom.visible,
 		align: 'bottom',
+		square: false,
 
 		icons: names,
 		items: samples
@@ -62,11 +63,17 @@ function setSample(sid) {
 	main.sampleMenu.set(0, true)
 	UI.setSampleImage(main.sampleMenu.element, sid)
 
-	var object = sample.bake()
+	var object = sample.clone()
 
 
 	var box = new THREE.Box3
-	object.traverse(function(object) {
+	// object.traverse(function(object) {
+	// })
+
+	console.log('sample', sid)
+	traverse(object, function(object, data, level) {
+		describeObject(object, level)
+
 		if(object.geometry) {
 
 			if(!object.geometry.boundingBox) {
@@ -82,6 +89,49 @@ function setSample(sid) {
 	main.sample = object
 
 	return true
+}
+
+function traverse(object, callback, scope, data, level) {
+	if(!object) return
+
+	if(level == null) level = 0
+
+	callback.call(scope || this, object, data, level)
+
+	if(object.children) for(var i = 0; i < object.children.length; i++) {
+	// if(object.children) for(var i = object.children.length -1; i >= 0; i--) {
+		this.traverse(object.children[i], callback, scope, data, level +1)
+	}
+}
+
+function describeObject(object, level) {
+	console.log(Array(level +1).join('\t'),
+	'name: {'+ object.name + '}',
+	(object.material ? 'mat: {'+ object.material.name +'}' : '[no mat]'),
+
+	// 'pos: {',
+	// 	'x:', f.mround(object.position.x, 3),
+	// 	'y:', f.mround(object.position.y, 3),
+	// 	'z:', f.mround(object.position.z, 3),
+	// '}',
+
+	// 'rot: {',
+	// 	'x:', f.hround(f.xdeg * object.rotation.x),
+	// 	'y:', f.hround(f.xdeg * object.rotation.y),
+	// 	'z:', f.hround(f.xdeg * object.rotation.z),
+	// '}',
+
+	'pos: ['+ [
+		f.mround(object.position.x, 3),
+		f.mround(object.position.y, 3),
+		f.mround(object.position.z, 3),
+	].join(', ') +']',
+
+	'rot: ['+ [
+		f.hround(f.xdeg * object.rotation.x),
+		f.hround(f.xdeg * object.rotation.y),
+		f.hround(f.xdeg * object.rotation.z),
+	].join(', ') +']')
 }
 
 function onkey(e) {

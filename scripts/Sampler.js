@@ -8,10 +8,28 @@ Sampler.prototype = {
 	folder: '',
 
 	addSample: function(def) {
+		if(def.hide) return
+
 		var sample = new Sample(def, this)
 
 		if(sample.obj) {
 			this.get.obj(this.folder + sample.obj, { saveTo: sample, saveAs: 'object' })
+
+		} else if(sample.fbx) {
+			var loader = new THREE.FBXLoader
+			,   defer = new Defer
+
+			loader.load(this.folder + sample.fbx, function(data) {
+				console.log(sample.fbx, data)
+				sample.object = data
+				defer.resolve(data)
+
+			}, undefined, function(err) {
+				console.error(sample.fbx, err)
+				defer.reject(err)
+			})
+
+			this.get.wait(defer)
 		}
 
 		if(sample.awg) {
@@ -62,7 +80,8 @@ Sampler.prototype = {
 function Sample(def, parent) {
 	for(var name in def) this[name] = def[name]
 
-	if(this.obj) this.name = this.obj.replace(/\.obj$/, '').replace(/.*\//, '')
+	var file = this.obj || this.fbx
+	if(file) this.name = file.replace(/\.[^\.]+$/, '').replace(/.*\//, '')
 
 	this.parent = parent
 	this.parent.events.emit('sample_new', this)
@@ -89,7 +108,9 @@ Sample.prototype = {
 
 		for(var i = 0; i < this.object.children.length; i++) {
 			var mesh = this.object.children[i]
-			,   size = mesh.geometry.vertices.length
+			if(!mesh.geometry || !mesh.geometry.vertices) continue
+
+			var size = mesh.geometry.vertices.length
 			,   conf = f.apick(this.meshes, 'name', mesh.name) || {}
 
 			var part = {
@@ -203,6 +224,8 @@ Sample.prototype = {
 			console.warn('autoconfiguring sample', this.id)
 			this.configure()
 		}
+
+		return this.object.clone(true)
 
 		var object = new THREE.Object3D
 

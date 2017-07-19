@@ -126,11 +126,11 @@
 .submenu {
 }
 .submenu-item {
-	float: left;
+	// float: left;
 
-	width: 70px;
-	height: 70px;
-	margin: 4px 0 0 4px;
+	width: 250px;
+	height: 42px;
+	//margin: 4px 0 0 4px;
 }
 .submenu-item:hover {
 	background-color: #eee;

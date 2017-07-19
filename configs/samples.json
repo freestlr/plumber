@@ -1,13 +1,16 @@
 [
-	{"id": "1", "obj": "1.obj"},
-	{"id": "CM2T", "obj": "CM2T.obj"},
-	{"id": "CM2T01", "obj": "CM2T01.obj"},
-	{"id": "CM2T_MTF", "obj": "CM2T_MTF.obj"},
-	{"id": "CM2T_MTF01", "obj": "CM2T_MTF01.obj"},
-	{"id": "CM2T_TWIN", "obj": "CM2T_TWIN.obj"},
-	{"id": "CM2T_TWIN01", "obj": "CM2T_TWIN01.obj"},
-	{"id": "EFG3K", "obj": "EFG3K.obj"},
-	{"id": "EFG3K01", "obj": "EFG3K01.obj"},
-	{"id": "EFG3K_MTF", "obj": "EFG3K_MTF.obj"},
-	{"id": "EFG3K_MTF01", "obj": "EFG3K_MTF01.obj"}
+	{"hide": 0, "id": "1", "obj": "1.obj"},
+	{"hide": 0, "id": "CM2T", "obj": "CM2T.obj"},
+	{"hide": 1, "id": "CM2T01", "obj": "CM2T01.obj"},
+	{"hide": 1, "id": "CM2T_MTF", "obj": "CM2T_MTF.obj"},
+	{"hide": 1, "id": "CM2T_MTF01", "obj": "CM2T_MTF01.obj"},
+	{"hide": 1, "id": "CM2T_TWIN", "obj": "CM2T_TWIN.obj"},
+	{"hide": 1, "id": "CM2T_TWIN01", "obj": "CM2T_TWIN01.obj"},
+	{"hide": 1, "id": "EFG3K", "obj": "EFG3K.obj"},
+	{"hide": 1, "id": "EFG3K01", "obj": "EFG3K01.obj"},
+	{"hide": 1, "id": "EFG3K_MTF", "obj": "EFG3K_MTF.obj"},
+	{"hide": 1, "id": "EFG3K_MTF01", "obj": "EFG3K_MTF01.obj"},
+	{"hide": 1, "id": "w200b", "fbx": "w200b.FBX"},
+	{"hide": 0, "id": "w200b_optimaze", "fbx": "w200b_optimaze_1.FBX"},
+	{"hide": 0, "id": "w200b_optimaze_text", "fbx": "w200b_optimaze_text_1.FBX"}
 ]
