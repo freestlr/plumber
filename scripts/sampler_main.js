@@ -1,19 +1,62 @@
 var main = {}
 main.get = new Loader
+
+main.imagery = new Imagery
+
 main.sampler = new Sampler
+main.sampler.setImagery(main.imagery)
 main.sampler.folder = 'samples/'
 
 main.timer = new Timer(loop)
 main.view = new View3({
 	eroot: document.body,
-	enableWireframe: true
+	enableWireframe: false
 })
 
 
-main.imagery = new Imagery
-
 main.get.xml('images/atlas.svg').defer
 	.then(Atlas.setSource)
+
+main.get.image('images/textures/cubemap.png').defer
+	.then(function(image) {
+		console.log(image.width, image.height)
+
+		var s = image.height / 2
+
+		var images = []
+
+		for(var y = 0; y < 2; y++)
+		for(var x = 0; x < 3; x++) {
+			var c = main.imagery.makeCanvas(s, s)
+			c.drawImage(image, x * s, y * s, s, s, 0, 0, s, s)
+			images.push(c.canvas)
+		}
+
+		var skybox = [
+			images[2], images[0],
+			images[4], images[3],
+			images[5], images[1]
+		]
+
+		main.imagery.skybox.image = skybox
+		main.imagery.skybox.needsUpdate = true
+		main.view.needsRedraw = true
+	})
+
+main.get.image('images/textures/cloth_45.jpg').defer
+	.then(function(image) {
+
+		main.imagery.setMaterial('gold', {
+			id: 1111,
+			color: 0xf7d78a,
+			bump: {
+				image: image,
+				loaded: true,
+				repeatX: 120,
+				repeatY: 80
+			}
+		})
+	})
 
 main.get.json('configs/samples.json').defer
 	.then(main.sampler.fetch, main.sampler)
@@ -41,6 +84,30 @@ function makeMenu() {
 	})
 
 	main.sampleMenu.menu.events.on('change', onSubChange, main)
+
+
+
+
+	var mat = main.imagery.materials.gold
+	if(!mat) return
+	var col = mat.specular
+
+	main.gui = new dat.GUI({
+		// autoPlace: false,
+		hideable: false
+	})
+
+	main.gui.closed = true
+
+	var props = {
+		number: 3,
+		color: '#'+ col.getHexString()
+	}
+	main.gui.add(props, 'number').name('Number')
+	main.gui.addColor(props, 'color').name('Color').onChange(function(color) {
+		col.set(color)
+		main.view.needsRedraw = true
+	})
 }
 
 function onSubChange(sid) {
@@ -105,7 +172,8 @@ function traverse(object, callback, scope, data, level) {
 }
 
 function describeObject(object, level) {
-	console.log(Array(level +1).join('\t'),
+	// if(object.material) console.log(object.material)
+	console.log(Array(level +1).join('\t'), object.type,
 	'name: {'+ object.name + '}',
 	(object.material ? 'mat: {'+ object.material.name +'}' : '[no mat]'),
 
@@ -135,6 +203,11 @@ function describeObject(object, level) {
 }
 
 function onkey(e) {
+	if(kbd.down && kbd.changed) switch(kbd.key) {
+		case 'v':
+			main.gui.closed ? main.gui.open() : main.gui.close()
+		return
+	}
 	main.view.onKey(e)
 }
 

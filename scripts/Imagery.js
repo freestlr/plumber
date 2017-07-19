@@ -12,14 +12,15 @@ function Imagery() {
 	this.obvProductsLoaded = new Observable(false)
 
 	this.pixel  = this.makePixel('white')
+	this.bump   = this.makePixel('black')
 	this.normal = this.makePixel('rgb(127, 127, 255)')
 
 	this.buffer = document.createElement('canvas')
 	this.btx    = this.buffer.getContext('2d')
 
-	this.skybox = new THREE.CubeTexture([
-		this.pixel, this.pixel, this.pixel,
-		this.pixel, this.pixel, this.pixel])
+	var i = this.pixel.image
+	this.skybox = new THREE.CubeTexture([i, i, i, i, i, i]) // px nx, py ny, pz nz
+	this.skybox.needsUpdate = true
 
 
 
@@ -32,6 +33,11 @@ function Imagery() {
 	}
 
 	this.baseMaps = {
+		black : { color: 0x222222 },
+		gold  : { color: 0xf5f469, texture: baseImages.checker },
+		blue  : { color: 0x0a2689 },
+		white : { color: 0xFFFFFF },
+
 		wall    : { texture: baseImages.stripe   },
 		floor   : { texture: baseImages.noise    },
 		roof    : { texture: baseImages.checker  },
@@ -62,9 +68,16 @@ function Imagery() {
 		this.setMaterial(name, null)
 	}
 
+	this.materials.gold.specular.set(0x969659)
+
 	this.materials.flume = this.materials.pipe = this.materials.drain
 	this.materials.flat  = this.materials.floor
 	this.materials.slope = this.materials.roof
+
+	this.materials.Material__26 = this.materials.black
+	this.materials.wire_000000000 = this.materials.gold
+	// this.materials.flat  = this.materials.floor
+	// this.materials.slope = this.materials.roof
 }
 
 Imagery.prototype = {
@@ -91,6 +104,27 @@ Imagery.prototype = {
 			makeMap: true,
 			side: THREE.DoubleSide
 		},
+
+		blue: {
+			makeEnv: true,
+			reflectivity: 0.25,
+			shininess: 22
+		},
+
+		gold: {
+			makeEnv: true,
+			makeBump: true,
+			reflectivity: 0.8,
+			shininess: 95
+		},
+
+		black: {
+			makeEnv: true,
+			reflectivity: 0.3,
+			shininess: 70
+		},
+
+
 		glass: {
 			makeEnv: true,
 			transparent: true,
@@ -250,6 +284,10 @@ Imagery.prototype = {
 			mOpts.normalMap = this.makeTexture(tOpts)
 			mOpts.normalMap.image = this.normal.image
 		}
+		if(mOpts.makeBump) {
+			mOpts.bumpMap = this.makeTexture(tOpts)
+			mOpts.bumpMap.image = this.bump.image
+		}
 		if(mOpts.makeEnv) {
 			mOpts.envMap = this.skybox
 		}
@@ -260,6 +298,7 @@ Imagery.prototype = {
 		delete mOpts.makeMap
 		delete mOpts.makeAlpha
 		delete mOpts.makeNormal
+		delete mOpts.makeBump
 		delete mOpts.makeEnv
 		delete mOpts.factory
 

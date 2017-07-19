@@ -7,6 +7,10 @@ function Sampler() {
 Sampler.prototype = {
 	folder: '',
 
+	setImagery: function(imagery) {
+		this.imagery = imagery
+	},
+
 	addSample: function(def) {
 		if(def.hide) return
 
@@ -20,7 +24,7 @@ Sampler.prototype = {
 			,   defer = new Defer
 
 			loader.load(this.folder + sample.fbx, function(data) {
-				console.log(sample.fbx, data)
+				// console.log(sample.fbx, data)
 				sample.object = data
 				defer.resolve(data)
 
@@ -30,6 +34,29 @@ Sampler.prototype = {
 			})
 
 			this.get.wait(defer)
+
+		} else if(sample.dae) {
+			var loader = new THREE.ColladaLoader
+			,   defer = new Defer
+
+			loader.load(this.folder + sample.dae, function(data) {
+				// console.log(sample.dae, data)
+				sample.object = data.scene
+				defer.resolve(data)
+
+			}, undefined, function(err) {
+				console.error(sample.dae, err)
+				defer.reject(err)
+			})
+
+			this.get.wait(defer)
+
+		} else if(sample.json) {
+			this.get.json(this.folder + sample.json).defer.then(function(data) {
+				var loader = new THREE.ObjectLoader
+				console.log(sample.json, data, loader.parse(data))
+				sample.object = loader.parse(data)
+			}, this)
 		}
 
 		if(sample.awg) {
@@ -80,7 +107,7 @@ Sampler.prototype = {
 function Sample(def, parent) {
 	for(var name in def) this[name] = def[name]
 
-	var file = this.obj || this.fbx
+	var file = this.obj || this.fbx || this.dae || this.json
 	if(file) this.name = file.replace(/\.[^\.]+$/, '').replace(/.*\//, '')
 
 	this.parent = parent
@@ -94,77 +121,79 @@ Sample.prototype = {
 
 		if(!this.config) this.config = {}
 		if(!this.object) this.object = new THREE.Object3D
-
-		var sx = this.config.width  || this.width  || 1
-		,   sy = this.config.height || this.height || 1
-		,   sz = this.config.depth  || this.depth  || 1
-
-		if(!this.width ) this.width  = sx
-		if(!this.height) this.height = sy
-		if(!this.depth ) this.depth  = sz
+		if(!this.width ) this.width  = this.config.width  || 1
+		if(!this.height) this.height = this.config.height || 1
+		if(!this.depth ) this.depth  = this.config.depth  || 1
 		if(!this.meshes) this.meshes = this.config.meshes || []
 
 		this.parts = []
 
-		for(var i = 0; i < this.object.children.length; i++) {
-			var mesh = this.object.children[i]
-			if(!mesh.geometry || !mesh.geometry.vertices) continue
+		this.object.traverse(f.binds(this.configurePart, this))
 
-			var size = mesh.geometry.vertices.length
-			,   conf = f.apick(this.meshes, 'name', mesh.name) || {}
+		this.parent.events.emit('sample_ready', this)
+	},
 
-			var part = {
-				ax: conf.anchorX || [],
-				ay: conf.anchorY || [],
-				az: conf.anchorZ || [],
-
-				anchors: [],
-				offsets: [],
-
-				size: size,
-				mesh: mesh
-			}
-
-			var AX = part.ax.length
-			,   AY = part.ay.length
-			,   AZ = part.az.length
-
-			var useAX = AX === size
-			,   useAY = AY === size
-			,   useAZ = AZ === size
-
-			for(var j = 0; j < size; j++) {
-				var v = mesh.geometry.vertices[j]
-
-				,   ax = useAX ? conf.anchorX[j] : v.x / sx
-				,   ay = useAY ? conf.anchorY[j] : v.y / sy
-				,   az = useAZ ? conf.anchorZ[j] : v.z / sz
-
-				,   ox = v.x - ax * sx
-				,   oy = v.y - ay * sy
-				,   oz = v.z - az * sz
-
-				part.anchors.push(new THREE.Vector3(ax, ay, az))
-				part.offsets.push(new THREE.Vector3(ox, oy, oz))
-			}
-
-			if(window.main && main.imagery) {
-				if(mesh.name in main.imagery.materials) {
-					mesh.material = main.imagery.materials[mesh.name]
-				}
-			}
-
-			mesh.geometry.persistent = true
-			this.parts.push(part)
-
-			if((AX && !useAX)
-			|| (AY && !useAY)
-			|| (AZ && !useAZ)) {
-				this.dirty = true
+	configurePart: function(mesh) {
+		var imagery = this.parent.imagery
+		if(imagery) {
+			var material = mesh.material && mesh.material.name
+			if(material in imagery.materials) {
+				mesh.material = imagery.materials[material]
 			}
 		}
 
-		this.parent.events.emit('sample_ready', this)
+		if(!mesh.geometry || !mesh.geometry.vertices) return
+
+		var sx = this.width
+		,   sy = this.height
+		,   sz = this.depth
+
+		var size = mesh.geometry.vertices.length
+		,   conf = f.apick(this.meshes, 'name', mesh.name) || {}
+
+		var part = {
+			ax: conf.anchorX || [],
+			ay: conf.anchorY || [],
+			az: conf.anchorZ || [],
+
+			anchors: [],
+			offsets: [],
+
+			size: size,
+			mesh: mesh
+		}
+
+		var AX = part.ax.length
+		,   AY = part.ay.length
+		,   AZ = part.az.length
+
+		var useAX = AX === size
+		,   useAY = AY === size
+		,   useAZ = AZ === size
+
+		for(var j = 0; j < size; j++) {
+			var v = mesh.geometry.vertices[j]
+
+			,   ax = useAX ? conf.anchorX[j] : v.x / sx
+			,   ay = useAY ? conf.anchorY[j] : v.y / sy
+			,   az = useAZ ? conf.anchorZ[j] : v.z / sz
+
+			,   ox = v.x - ax * sx
+			,   oy = v.y - ay * sy
+			,   oz = v.z - az * sz
+
+			part.anchors.push(new THREE.Vector3(ax, ay, az))
+			part.offsets.push(new THREE.Vector3(ox, oy, oz))
+		}
+
+		mesh.geometry.persistent = true
+		this.parts.push(part)
+
+		if((AX && !useAX)
+		|| (AY && !useAY)
+		|| (AZ && !useAZ)) {
+			this.dirty = true
+		}
 	},
 
 	mold: function(object, options) {

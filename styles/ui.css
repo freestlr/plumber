@@ -1,3 +1,7 @@
+body {
+	background-color: #aaa;
+}
+
 .ui {
 	position: absolute;
 	left: 0;
@@ -17,15 +21,16 @@
 }
 
 
-.dg.main {
+body .dg.ac {
+}
+body .dg.main {
 	position: absolute;
-	left: 0;
 	right: 0;
-	bottom: 0;
 	margin: auto;
 	z-index: 2;
+	overflow: visible;
 }
-.dg .close-button {
+body .dg .close-button {
 	display: none;
 }
 

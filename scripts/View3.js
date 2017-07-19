@@ -3,7 +3,8 @@ function View3(options) {
 
 	this.element   = dom.div('view-3', this.eroot)
 	this.scene     = new THREE.Scene
-	this.light     = new THREE.AmbientLight(0xFFFFFF, 1.0)
+	this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
+	this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 0.9)
 	this.camera    = new THREE.PerspectiveCamera
 	this.renderer  = new THREE.WebGLRenderer({ antialias: true })
 	this.orbit     = new THREE.OrbitControls(this.camera, this.element)
@@ -20,12 +21,18 @@ function View3(options) {
 
 	this.lastcam = new THREE.Matrix4
 
-	this.renderer.setClearColor(0xFFFFFF)
+	this.renderer.setClearColor(0xaaaaaa)
 	this.renderer.autoClear = false
+	this.renderer.clear()
+
 	this.camera.position.set(1, 1, 1)
 	this.orbit.update()
 
-	this.root.add(this.light)
+	this.dirLight.position.set(-100, 100, 100)
+	this.dirLight.target.position.set(0, 0, 0)
+
+	this.root.add(this.ambLight)
+	this.root.add(this.dirLight)
 	this.scene.add(this.root)
 	this.scene.add(this.grid)
 
@@ -88,6 +95,10 @@ View3.prototype = {
 
 		this.gridXY.rotation.x = Math.PI/2
 		this.gridYZ.rotation.z = Math.PI/2
+	},
+
+	updateLights: function() {
+		this.dirLight.position.copy(this.camera.position)
 	},
 
 	updateGrid: function() {
@@ -219,6 +230,7 @@ View3.prototype = {
 			this.needsRetrace = false
 			this.needsRedraw = true
 
+			this.updateLights()
 			this.updateGrid()
 		}
 

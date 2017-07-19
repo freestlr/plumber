@@ -362,6 +362,12 @@
 		texture.name = name;
 		texture.FBX_ID = FBX_ID;
 
+		var sca = textureNode.properties.Scaling
+		if(sca) {
+			texture.repeat.x = sca.value[0]
+			texture.repeat.y = sca.value[1]
+		}
+
 		var wrapModeU = textureNode.properties.WrapModeU;
 		var wrapModeV = textureNode.properties.WrapModeV;
 
@@ -376,6 +382,7 @@
 
 		loader.setPath( currentPath );
 
+		console.log('texture', textureNode.properties, texture)
 		return texture;
 
 	}
@@ -435,7 +442,7 @@
 
 		switch ( type.toLowerCase() ) {
 
-			//case 'unknown':
+			case 'unknown':
 			case 'phong':
 				material = new THREE.MeshPhongMaterial();
 				break;
@@ -472,40 +479,35 @@
 
 		var parameters = {};
 
-		if ( properties.Diffuse ) {
-
-			parameters.color = parseColor( properties.Diffuse );
-
+		var dif = properties.Diffuse || properties.DiffuseColor
+		if (dif) {
+			parameters.color = parseColor(dif);
 		}
-		if ( properties.Specular ) {
 
-			parameters.specular = parseColor( properties.Specular );
-
+		var spc = properties.Specular || properties.SpecularColor
+		if (spc) {
+			parameters.specular = parseColor(spc);
 		}
+
 		if ( properties.Shininess ) {
-
 			parameters.shininess = properties.Shininess.value;
-
 		}
-		if ( properties.Emissive ) {
 
-			parameters.emissive = parseColor( properties.Emissive );
-
+		var ems = properties.Emissive || properties.EmissiveColor
+		if (ems) {
+			parameters.emissive = parseColor(ems);
 		}
+
 		if ( properties.EmissiveFactor ) {
-
 			parameters.emissiveIntensity = properties.EmissiveFactor.value;
-
 		}
+
 		if ( properties.Opacity ) {
-
 			parameters.opacity = properties.Opacity.value;
-
 		}
+
 		if ( parameters.opacity < 1.0 ) {
-
 			parameters.transparent = true;
-
 		}
 
 		for ( var childrenRelationshipsIndex = 0, childrenRelationshipsLength = childrenRelationships.length; childrenRelationshipsIndex < childrenRelationshipsLength; ++ childrenRelationshipsIndex ) {
@@ -518,16 +520,16 @@
 
 				case "DiffuseColor":
 				case " \"DiffuseColor":
-				// case "3dsMax|maps|texmap_diffuse":
-				// case " \"3dsMax|maps|texmap_diffuse":
+				case "3dsMax|maps|texmap_diffuse":
+				case " \"3dsMax|maps|texmap_diffuse":
 					parameters.map = textureMap.get( relationship.ID );
 					// console.log(relationship.ID, parameters.map)
 					break;
 
 				case "Bump":
 				case " \"Bump":
-				// case "3dsMax|maps|texmap_bump":
-				// case " \"3dsMax|maps|texmap_bump":
+				case "3dsMax|maps|texmap_bump":
+				case " \"3dsMax|maps|texmap_bump":
 					parameters.bumpMap = textureMap.get( relationship.ID );
 					break;
 
@@ -3869,19 +3871,26 @@
 			switch ( innerPropType1 ) {
 
 				case "int":
+				case "Bool":
+				case "Integer":
 					innerPropValue = parseInt( innerPropValue );
 					break;
 
 				case "double":
+				case "Float":
+				case "Number":
 					innerPropValue = parseFloat( innerPropValue );
 					break;
 
+				case "Color":
 				case "ColorRGB":
+				case "Vector":
 				case "Vector3D":
 					innerPropValue = parseFloatArray( innerPropValue );
 					break;
 
 			}
+			// console.log(innerPropType1, innerPropValue)
 
 			// CAUTION: these props must append to parent's parent
 			this.getPrevNode().properties[ innerPropName ] = {
