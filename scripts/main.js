@@ -69,7 +69,8 @@ function makeMenu() {
 		items: samples
 	})
 
-	main.sampleMenu.menu.blocks.map(f.prop('element')).forEach(f.func('setAttribute', 'draggable', true))
+	main.sampleMenu.menu.events.on('add-block', onSubAdd)
+	main.sampleMenu.menu.blocks.forEach(onSubAdd)
 
 
 
@@ -94,6 +95,10 @@ function makeMenu() {
 		col.set(color)
 		main.view.needsRedraw = true
 	})
+}
+
+function onSubAdd(block) {
+	block.element.setAttribute('draggable', true)
 }
 
 function onSubChange(sid) {
@@ -200,8 +205,14 @@ function onresize() {
 	main.view.onResize()
 }
 
-function ondrop(e) {
-	console.log('drop', e)
+function onDragOver(e) {
+	e.dataTransfer.dropEffect = 'copy'
+	e.preventDefault()
+}
+
+function onDrop(e) {
+	var file = e.dataTransfer.files[0]
+	if(file) main.file.importJSON(file)
 }
 
 function onSampleImport(item) {
@@ -223,7 +234,8 @@ function run() {
 	dom.on('keydown', window, onkey)
 	dom.on('keyup',   window, onkey)
 
-	// dom.on('drop', main.view.element, ondrop)
+	dom.on('dragover', main.view.element, onDragOver)
+	dom.on('drop', main.view.element, onDrop)
 
 	main.sampleMenu.menu.events.on('change', onSubChange)
 	main.file.events.on('import', onSampleImport)

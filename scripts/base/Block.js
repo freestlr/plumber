@@ -253,6 +253,7 @@ Block.List = f.unit(Block, {
 	addBlock: function(block) {
 		this.blocks.push(block)
 		if(block.events) block.events.link(this.events, this.itemprefix, block)
+		this.events.emit('add-block', block)
 	},
 
 	removeBlock: function(block) {

@@ -7,7 +7,7 @@ function FileImport() {
 
 	dom.on('load', this.readerJSON, this)
 	dom.on('change', this.input, this)
-	dom.on('drop', window, this)
+	// dom.on('drop', window, this)
 }
 
 FileImport.prototype = {
@@ -40,11 +40,14 @@ FileImport.prototype = {
 		var file = this.input.files[0]
 		if(!file) return
 
-
-		this.file = file
 		// currently support json
-		this.readerJSON.readAsText(file)
+		this.importJSON(file)
 		this.input.value = null
+	},
+
+	importJSON: function(file) {
+		this.file = file
+		this.readerJSON.readAsText(file)
 	},
 
 	onDrop: function(e) {
