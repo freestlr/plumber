@@ -1,6 +1,8 @@
 var main = {}
 main.get = new Loader
 
+main.file = new FileImport
+
 main.imagery = new Imagery
 
 main.sampler = new Sampler
@@ -13,35 +15,13 @@ main.view = new View3({
 	enableWireframe: false
 })
 
+dom.append(document.body, main.file.input)
 
 main.get.xml('images/atlas.svg').defer
 	.then(Atlas.setSource)
 
 main.get.image('images/textures/cubemap.png').defer
-	.then(function(image) {
-		console.log(image.width, image.height)
-
-		var s = image.height / 2
-
-		var images = []
-
-		for(var y = 0; y < 2; y++)
-		for(var x = 0; x < 3; x++) {
-			var c = main.imagery.makeCanvas(s, s)
-			c.drawImage(image, x * s, y * s, s, s, 0, 0, s, s)
-			images.push(c.canvas)
-		}
-
-		var skybox = [
-			images[2], images[0],
-			images[4], images[3],
-			images[5], images[1]
-		]
-
-		main.imagery.skybox.image = skybox
-		main.imagery.skybox.needsUpdate = true
-		main.view.needsRedraw = true
-	})
+	.then(main.imagery.unwrapCubemap3x2, main.imagery)
 
 main.get.image('images/textures/cloth_45.jpg').defer
 	.then(function(image) {
@@ -49,6 +29,12 @@ main.get.image('images/textures/cloth_45.jpg').defer
 		main.imagery.setMaterial('gold', {
 			id: 1111,
 			color: 0xf7d78a,
+			texture: {
+				image: main.imagery.pixel.image,
+				loaded: true,
+				repeatX: 120,
+				repeatY: 80
+			},
 			bump: {
 				image: image,
 				loaded: true,
@@ -79,11 +65,11 @@ function makeMenu() {
 		align: 'bottom',
 		square: false,
 
-		icons: names,
+		texts: names,
 		items: samples
 	})
 
-	main.sampleMenu.menu.events.on('change', onSubChange, main)
+	main.sampleMenu.menu.blocks.map(f.prop('element')).forEach(f.func('setAttribute', 'draggable', true))
 
 
 
@@ -130,26 +116,12 @@ function setSample(sid) {
 	main.sampleMenu.set(0, true)
 	UI.setSampleImage(main.sampleMenu.element, sid)
 
+
 	var object = sample.clone()
 
+	console.log('sample', sample.src)
+	traverse(object, describeObject)
 
-	var box = new THREE.Box3
-	// object.traverse(function(object) {
-	// })
-
-	console.log('sample', sid)
-	traverse(object, function(object, data, level) {
-		describeObject(object, level)
-
-		if(object.geometry) {
-
-			if(!object.geometry.boundingBox) {
-				object.geometry.computeBoundingBox()
-			}
-
-			box.union(object.geometry.boundingBox)
-		}
-	})
 
 	main.view.setTree(object)
 	main.view.focusOnTree(300)
@@ -171,7 +143,8 @@ function traverse(object, callback, scope, data, level) {
 	}
 }
 
-function describeObject(object, level) {
+
+function describeObject(object, data, level) {
 	// if(object.material) console.log(object.material)
 	console.log(Array(level +1).join('\t'), object.type,
 	'name: {'+ object.name + '}',
@@ -212,7 +185,13 @@ function onkey(e) {
 }
 
 function onhashchange(e) {
-	if(!setSample(location.hash.slice(1))) {
+	var id = location.hash.slice(1)
+	if(id) {
+		if(!setSample(id)) {
+			location.hash = ''
+		}
+
+	} else {
 		main.sampleMenu.set(1, true)
 	}
 }
@@ -221,12 +200,33 @@ function onresize() {
 	main.view.onResize()
 }
 
+function ondrop(e) {
+	console.log('drop', e)
+}
+
+function onSampleImport(item) {
+	main.sampler.addSample(item)
+
+	var menu = main.sampleMenu.menu
+	var block = menu.addItem({
+		data: item.id,
+		text: item.name
+	})
+
+	menu.set(menu.blocks.indexOf(block), true)
+}
+
 
 function run() {
 	dom.on('hashchange', window, onhashchange)
 	dom.on('resize',  window, onresize)
 	dom.on('keydown', window, onkey)
 	dom.on('keyup',   window, onkey)
+
+	// dom.on('drop', main.view.element, ondrop)
+
+	main.sampleMenu.menu.events.on('change', onSubChange)
+	main.file.events.on('import', onSampleImport)
 
 
 	onresize()

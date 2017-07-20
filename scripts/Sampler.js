@@ -12,60 +12,10 @@ Sampler.prototype = {
 	},
 
 	addSample: function(def) {
-		if(def.hide) return
-
 		var sample = new Sample(def, this)
+		if(sample.hide) return
 
-		if(sample.obj) {
-			this.get.obj(this.folder + sample.obj, { saveTo: sample, saveAs: 'object' })
-
-		} else if(sample.fbx) {
-			var loader = new THREE.FBXLoader
-			,   defer = new Defer
-
-			loader.load(this.folder + sample.fbx, function(data) {
-				// console.log(sample.fbx, data)
-				sample.object = data
-				defer.resolve(data)
-
-			}, undefined, function(err) {
-				console.error(sample.fbx, err)
-				defer.reject(err)
-			})
-
-			this.get.wait(defer)
-
-		} else if(sample.dae) {
-			var loader = new THREE.ColladaLoader
-			,   defer = new Defer
-
-			loader.load(this.folder + sample.dae, function(data) {
-				// console.log(sample.dae, data)
-				sample.object = data.scene
-				defer.resolve(data)
-
-			}, undefined, function(err) {
-				console.error(sample.dae, err)
-				defer.reject(err)
-			})
-
-			this.get.wait(defer)
-
-		} else if(sample.json) {
-			this.get.json(this.folder + sample.json).defer.then(function(data) {
-				var loader = new THREE.ObjectLoader
-				console.log(sample.json, data, loader.parse(data))
-				sample.object = loader.parse(data)
-			}, this)
-		}
-
-		if(sample.awg) {
-			if(window.config) {
-				sample.config = config.awg[sample.awg]
-			} else {
-				this.get.json(this.folder + sample.awg, { saveTo: sample, saveAs: 'config' })
-			}
-		}
+		if(sample.src) sample.load()
 
 		this.samples[sample.id] = sample
 	},
@@ -97,7 +47,9 @@ Sampler.prototype = {
 	},
 
 	configureSamples: function() {
-		for(var sid in this.samples) this.samples[sid].configure()
+		for(var sid in this.samples) {
+			this.samples[sid].configure()
+		}
 		this.ready = true
 	}
 }
@@ -107,8 +59,10 @@ Sampler.prototype = {
 function Sample(def, parent) {
 	for(var name in def) this[name] = def[name]
 
-	var file = this.obj || this.fbx || this.dae || this.json
-	if(file) this.name = file.replace(/\.[^\.]+$/, '').replace(/.*\//, '')
+	if(this.src) {
+		this.name   = this.src.replace(/\.[^\.]+$/, '').replace(/.*\//, '')
+		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
+	}
 
 	this.parent = parent
 	this.parent.events.emit('sample_new', this)
@@ -116,7 +70,70 @@ function Sample(def, parent) {
 
 Sample.prototype = {
 
+	load: function() {
+		var sample = this
+		,   source = this.parent.folder + this.src
+		,   get    = this.parent.get
+
+		switch(this.format) {
+			case 'obj':
+				get.obj(source, { saveTo: this, saveAs: 'object' })
+			break
+
+			case 'fbx':
+				var loader = new THREE.FBXLoader
+				,   defer = new Defer
+
+				loader.load(source, function(data) {
+					console.log(sample.src, data)
+					sample.object = data
+					defer.resolve(data)
+
+				}, undefined, function(err) {
+					console.error(sample.src, err)
+					defer.reject(err)
+				})
+
+				get.wait(defer)
+			break
+
+			case 'dae':
+				var loader = new THREE.ColladaLoader
+				,   defer = new Defer
+
+				loader.load(source, function(data) {
+					// console.log(sample.src, data)
+					sample.object = data.scene
+					defer.resolve(data)
+
+				}, undefined, function(err) {
+					console.error(sample.src, err)
+					defer.reject(err)
+				})
+
+				get.wait(defer)
+			break
+
+			case 'json':
+				get.json(source).defer.then(function(data) {
+					var loader = new THREE.ObjectLoader
+					this.object = loader.parse(data)
+					// console.log(this.json, data, this.object)
+				}, this)
+			break
+		}
+
+		if(this.awg) {
+			if(window.config) {
+				this.config = config.awg[this.awg]
+			} else {
+				this.get.json(this.folder + this.awg, { saveTo: this, saveAs: 'config' })
+			}
+		}
+	},
+
 	configure: function() {
+		if(this.configured) return
 		this.configured = true
 
 		if(!this.config) this.config = {}
@@ -134,12 +151,8 @@ Sample.prototype = {
 	},
 
 	configurePart: function(mesh) {
-		var imagery = this.parent.imagery
-		if(imagery) {
-			var material = mesh.material && mesh.material.name
-			if(material in imagery.materials) {
-				mesh.material = imagery.materials[material]
-			}
+		if(this.parent.imagery) {
+			this.parent.imagery.configureSampleMaterial(mesh)
 		}
 
 		if(!mesh.geometry || !mesh.geometry.vertices) return

@@ -33,10 +33,10 @@ function Imagery() {
 	}
 
 	this.baseMaps = {
-		black : { color: 0x222222 },
-		gold  : { color: 0xf5f469, texture: baseImages.checker },
-		blue  : { color: 0x0a2689 },
-		white : { color: 0xFFFFFF },
+		// black : { color: 0x222222 },
+		// gold  : { color: 0xf5f469, texture: baseImages.checker },
+		// blue  : { color: 0x0a2689 },
+		// white : { color: 0xFFFFFF },
 
 		wall    : { texture: baseImages.stripe   },
 		floor   : { texture: baseImages.noise    },
@@ -68,7 +68,8 @@ function Imagery() {
 		this.setMaterial(name, null)
 	}
 
-	this.materials.gold.specular.set(0x969659)
+	// this.materials.gold.specular.set(0x969659)
+	// this.materials.gold.bumpScale = 0.07
 
 	this.materials.flume = this.materials.pipe = this.materials.drain
 	this.materials.flat  = this.materials.floor
@@ -254,7 +255,7 @@ Imagery.prototype = {
 		t.wrapS = THREE.RepeatWrapping
 		t.wrapT = THREE.RepeatWrapping
 		t.minFilter = THREE.LinearMipMapLinearFilter
-		t.magFilter = THREE.NearestFilter
+		t.magFilter = THREE.LinearFilter
 		t.anisotropy = 4
 		t.needsUpdate = true
 		t.image = this.pixel.image
@@ -317,6 +318,31 @@ Imagery.prototype = {
 		})
 
 		return m
+	},
+
+	configureSampleMaterial: function(mesh) {
+		if(!mesh || !mesh.material) return
+		var m = mesh.material
+
+		var maps = [
+			m.map,
+			m.bumpMap,
+			m.normalMap
+		].filter(Boolean)
+
+		for(var i = 0; i < maps.length; i++) {
+			var map = maps[i]
+
+			map.wrapS = THREE.RepeatWrapping
+			map.wrapT = THREE.RepeatWrapping
+		}
+
+		m.envMap = this.skybox
+		m.needsUpdate = true
+
+		// if(m.name in this.materials) {
+		// 	mesh.material = this.materials[m.name]
+		// }
 	},
 
 	readMaterialLoaded: function() {
@@ -423,6 +449,7 @@ Imagery.prototype = {
 		var norepeatx = ['outer', 'fouter'].indexOf(product.unit) !== -1
 
 		this.setMapImage(material.map,       product.texture || this.pixel,  norepeatx)
+		this.setMapImage(material.bumpMap,   product.bump    || this.bump,   norepeatx)
 		this.setMapImage(material.normalMap, product.normal  || this.normal, norepeatx)
 		this.setMapImage(material.alphaMap,  product.alpha   || this.pixel,  norepeatx)
 
@@ -787,6 +814,27 @@ Imagery.prototype = {
 			.toArray()
 			.map(Math.round)
 		+')'
+	},
+
+	unwrapCubemap3x2: function(image) {
+		var s = image.height / 2
+
+		var images = []
+		for(var y = 0; y < 2; y++)
+		for(var x = 0; x < 3; x++) {
+			var c = main.imagery.makeCanvas(s, s)
+			c.drawImage(image, x * s, y * s, s, s, 0, 0, s, s)
+			images.push(c.canvas)
+		}
+
+		var skybox = [
+			images[2], images[0],
+			images[4], images[3],
+			images[5], images[1]
+		]
+
+		this.skybox.image = skybox
+		this.skybox.needsUpdate = true
 	},
 
 	makeCanvas: function(w, h) {

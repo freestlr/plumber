@@ -382,7 +382,7 @@
 
 		loader.setPath( currentPath );
 
-		console.log('texture', textureNode.properties, texture)
+		// console.log('texture', textureNode.properties, texture)
 		return texture;
 
 	}

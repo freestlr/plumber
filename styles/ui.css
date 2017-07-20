@@ -174,3 +174,10 @@ body .dg .close-button {
 	text-align: center;
 	line-height: 48px;
 }
+
+
+.file-import {
+	position: absolute;
+	left: 20px;
+	top: 20px;
+}

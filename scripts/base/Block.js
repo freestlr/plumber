@@ -299,6 +299,7 @@ Block.Menu = f.unit(Block.List, {
 		&& index !== -1) {
 			return this.set(-1, emitEvent)
 		}
+		console.log('set', index, emitEvent, multiple)
 
 		var next = this.blocks[index]
 		if(!next && multiple) return false

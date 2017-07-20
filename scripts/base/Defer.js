@@ -4,17 +4,16 @@ function Defer() {
 }
 
 Defer.all = function(list) {
-	var defer = new Defer(check, check)
-
-	if(!list || !list.length) {
-		defer.resolve([])
-		return defer
-	}
-
-	var length = list.length
+	var defer  = new Defer(check, check)
+	,   length = list && list.length || 0
 	,   result = new Array(list.length)
 	,   loaded = 0
 	,   failed = 0
+
+	if(!length) {
+		defer.resolve(result)
+		return defer
+	}
 
 	for(var i = 0; i < length; i++) {
 		list[i].push(defer)

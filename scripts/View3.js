@@ -4,7 +4,7 @@ function View3(options) {
 	this.element   = dom.div('view-3', this.eroot)
 	this.scene     = new THREE.Scene
 	this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
-	this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 0.9)
+	this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 1.0)
 	this.camera    = new THREE.PerspectiveCamera
 	this.renderer  = new THREE.WebGLRenderer({ antialias: true })
 	this.orbit     = new THREE.OrbitControls(this.camera, this.element)
@@ -186,8 +186,8 @@ View3.prototype = {
 	updateProjection: function() {
 		this.camera.fov    = 70
 		this.camera.aspect = this.width / this.height
-		this.camera.far    = this.boxLength * 3
-		this.camera.near   = this.boxLength * 0.001
+		this.camera.far    = this.boxLength * 100
+		this.camera.near   = this.boxLength * 0.01
 		this.camera.updateProjectionMatrix()
 	},
 
