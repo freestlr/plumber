@@ -152,3 +152,25 @@ body .dg .close-button {
 .submenu-item.active svg {
 	fill: #0a63ae;
 }
+
+
+.sample {
+	width: 192px;
+	height: 42px;
+	bottom: auto;
+	border-bottom: 1px solid black;
+}
+.sample:hover {
+	background-color: #eee;
+}
+.sample svg {
+	width: 100%;
+	height: 100%;
+	fill: #d821ef;
+}
+.sample-item {
+	font-size: 12px;
+	font-family: monospace;
+	text-align: center;
+	line-height: 48px;
+}
