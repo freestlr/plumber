@@ -1,6 +1,8 @@
 function View3(options) {
 	for(var name in options) this[name] = options[name]
 
+	this.tiles     = new TileView
+
 	this.element   = dom.div('view-3', this.eroot)
 	this.scene     = new THREE.Scene
 	this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
@@ -31,14 +33,30 @@ function View3(options) {
 	this.dirLight.position.set(-100, 100, 100)
 	this.dirLight.target.position.set(0, 0, 0)
 
+	this.makeGridSystem()
+
+	// this.tiles.setLayout(['v', ['h', 0, 0, 0.7], 0, 0.8])
+	this.tiles.setLayout(['h', 0, 0, 0.9])
+
+	this.splitV = this.tiles.splits[0]
+	this.frameL = this.tiles.frames[0]
+	this.frameR = this.tiles.frames[1]
+	// this.tiles.showClients()
+	// this.tiles.setClients([{
+	// 	element: this.view.element,
+	// 	resize: f.binds(this.view.onResize, this.view)
+	// }])
+
+	this.tiles.events.on('update', this.onTilesUpdate, this)
+
+
 	this.root.add(this.ambLight)
 	this.root.add(this.dirLight)
 	this.scene.add(this.root)
 	this.scene.add(this.grid)
 
-	this.makeGridSystem()
-
 	dom.append(this.element, this.renderer.domElement)
+	dom.append(this.element, this.tiles.element)
 }
 
 View3.prototype = {
@@ -185,7 +203,8 @@ View3.prototype = {
 
 	updateProjection: function() {
 		this.camera.fov    = 70
-		this.camera.aspect = this.width / this.height
+		// this.camera.aspect = this.width / this.height
+		this.camera.aspect = this.frameL.w / this.frameL.h
 		this.camera.far    = this.boxLength * 100
 		this.camera.near   = this.boxLength * 0.01
 		this.camera.updateProjectionMatrix()
@@ -205,11 +224,19 @@ View3.prototype = {
 		}
 	},
 
+	onTilesUpdate: function() {
+		this.updateProjection()
+
+		this.needsRedraw = true
+	},
+
 	onResize: function() {
 		this.width  = this.element.offsetWidth
 		this.height = this.element.offsetHeight
 
 		this.elementOffset = dom.offset(this.element)
+
+		this.tiles.autoresize()
 
 		this.renderer.setSize(this.width, this.height)
 		this.updateProjection()
@@ -236,7 +263,12 @@ View3.prototype = {
 
 		if(this.needsRedraw) {
 			this.needsRedraw = false
+
+			this.renderer.setClearColor(0xaaaaaa)
 			this.renderer.clear()
+
+			var f = this.frameL
+			this.renderer.setViewport(f.x, f.y, f.w, f.h)
 
 			this.grid.visible = false
 			this.root.visible = true
@@ -253,6 +285,11 @@ View3.prototype = {
 				this.renderer.render(this.scene, this.camera)
 				this.scene.overrideMaterial = null
 			}
+
+			var f = this.frameR
+			this.renderer.setViewport(f.x, f.y, f.w, f.h)
+			// this.renderer.setScissor(f.x, f.y, f.w, f.h)
+			// this.renderer.setScissorTest(true)
 		}
 	}
 }

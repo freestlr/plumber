@@ -1,9 +1,9 @@
 function TileView() {
 	this.events = new EventEmitter
 
-	this.element  = dom.div('tileview')
-	this.econtent = dom.div('content', this.element)
-	this.ehelpers = dom.div('helpers', this.element)
+	this.element  = dom.div('tile-view')
+	this.econtent = dom.div('tile-content', this.element)
+	this.ehelpers = dom.div('tile-helpers', this.element)
 
 	this.setClients()
 	this.setLayout()
@@ -15,6 +15,8 @@ TileView.HORIZONTAL_SPLIT = 2
 TileView.prototype = {
 	width: 0,
 	height: 0,
+
+	helperSize: 3,
 
 	makeFrame: function(def, parent) {
 		var frame = {
@@ -65,12 +67,12 @@ TileView.prototype = {
 		this.econtent.innerHTML = ''
 
 		if(clients) for(var i = 0; i < clients.length; i++) {
-			var c = clients[i]
-			if(!c) continue
+			var client = clients[i]
+			if(!client) continue
 
-			if(c.element) {
-				dom.addclass(c.element, 'tile-client')
-				dom.append(this.econtent, c.element)
+			if(client.element) {
+				dom.addclass(client.element, 'tile-client')
+				dom.append(this.econtent, client.element)
 			}
 		}
 	},
@@ -186,14 +188,14 @@ TileView.prototype = {
 
 		if(frame.split === TileView.VERTICAL_SPLIT) {
 			var dy = frame.position * frame.h
-			this.setElement(drag.element, frame.x, frame.y + dy, frame.w, 1)
+			this.setElement(drag.element, frame.x, frame.y + dy, frame.w, this.helperSize)
 			dom.addclass(drag.element, 'tile-helper-vertical')
 			dom.remclass(drag.element, 'tile-helper-horizontal')
 			drag.scale = 1 / frame.h
 
 		} else {
 			var dx = frame.position * frame.w
-			this.setElement(drag.element, frame.x + dx, frame.y, 1, frame.h)
+			this.setElement(drag.element, frame.x + dx, frame.y, this.helperSize, frame.h)
 			dom.addclass(drag.element, 'tile-helper-horizontal')
 			dom.remclass(drag.element, 'tile-helper-vertical')
 			drag.scale = 1 / frame.w
