@@ -56,7 +56,7 @@ Atlas = {
 	get: function(id) {
 		if(!Atlas.svg) return null
 
-		var icon = Atlas.svg.querySelector('#'+ id)
+		var icon = Atlas.svg.getElementById(id)
 		if(!icon) return null
 
 		var svg = Atlas.svg.cloneNode(false)

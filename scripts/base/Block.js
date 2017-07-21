@@ -317,12 +317,12 @@ Block.Menu = f.unit(Block.List, {
 		this.events.emit('hover', block)
 	},
 
-	set: function(index) {
+	set: function(index, emitEvent) {
 		var block = this.blocks[index]
 		if(block === this.activeBlock) return
 
-		this.unsetBlock(this.activeBlock)
-		if(block) block.set(1)
+		this.unsetBlock(this.activeBlock, emitEvent)
+		if(block) block.set(1, emitEvent)
 
 		this.update()
 	},
@@ -337,10 +337,10 @@ Block.Menu = f.unit(Block.List, {
 		return this.set(-1)
 	},
 
-	unsetBlock: function(block) {
+	unsetBlock: function(block, emitEvent) {
 		if(block) {
 			if(!this.deselect) block.disabled = false
-			block.set(0)
+			block.set(0, emitEvent)
 		}
 	}
 })
