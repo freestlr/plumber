@@ -1,0 +1,34 @@
+id_param_extra
+
+
+id - вид соединения, _желательно_ использовать международные обозначения,
+     например М14 - для метрической резьбы 14мм,
+     если таковых нет, то указывать размер соединения (мм - просто число, дюймы - ")
+
+     немного размеров:
+     https://www.teesing.com/files/en/brochures/Type-of-thread.pdf
+     https://sizes.com/materials/pipe_PVC.htm
+
+
+param - опции соединения (папа, мама, и так сойдет)
+        f, female, in, inner, internal - для мамы
+        m, male, out, outer, external - для папы
+        u, uniform - для всего остального
+
+
+extra - анимация соединения, варианты:
+        screw - резьба
+        clamp - зажим
+
+
+
+
+
+
+
+M14_m_screw - болт
+M14_f_screw - гайка
+M14_u_clamp - шайба
+
+PIPE2"_in_clamp - двухдюймовая труба
+PIPE2"_out_clamp - фитинг на трубу
