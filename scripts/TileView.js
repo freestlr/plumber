@@ -47,7 +47,7 @@ TileView.prototype = {
 		this.ehelpers.innerHTML = ''
 		for(var i = 0; i < this.splits.length; i++) {
 			var frame = this.splits[i]
-			var drag = new Drag(dom.div('helper', this.ehelpers))
+			var drag = new Drag(dom.div('tile-helper', this.ehelpers))
 
 			drag.min.x = drag.min.y = 0
 			drag.max.x = drag.max.y = 1
@@ -148,9 +148,9 @@ TileView.prototype = {
 		this.setClients()
 
 		this.frames.forEach(function(frame, index) {
-			var cli = dom.div('cli-test', this.econtent)
-			,   idx = dom.div('cli-idx absmid', cli)
-			,   siz = dom.div('cli-siz absmid', cli)
+			var cli = dom.div('tile-client tile-client-test', this.econtent)
+			,   idx = dom.div('tile-client-index absmid', cli)
+			,   siz = dom.div('tile-client-size absmid', cli)
 
 			cli.style.backgroundColor = f.rcolor()
 			idx.innerHTML = index
@@ -187,15 +187,15 @@ TileView.prototype = {
 		if(frame.split === TileView.VERTICAL_SPLIT) {
 			var dy = frame.position * frame.h
 			this.setElement(drag.element, frame.x, frame.y + dy, frame.w, 1)
-			dom.addclass(drag.element, 'vertical')
-			dom.remclass(drag.element, 'horizontal')
+			dom.addclass(drag.element, 'tile-helper-vertical')
+			dom.remclass(drag.element, 'tile-helper-horizontal')
 			drag.scale = 1 / frame.h
 
 		} else {
 			var dx = frame.position * frame.w
 			this.setElement(drag.element, frame.x + dx, frame.y, 1, frame.h)
-			dom.addclass(drag.element, 'horizontal')
-			dom.remclass(drag.element, 'vertical')
+			dom.addclass(drag.element, 'tile-helper-horizontal')
+			dom.remclass(drag.element, 'tile-helper-vertical')
 			drag.scale = 1 / frame.w
 		}
 	},
