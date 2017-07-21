@@ -70,6 +70,21 @@ function Sample(def, parent) {
 
 Sample.prototype = {
 
+	traverse: function(object, func, scope, data, inc, level) {
+		if(!object) return
+
+		if(level == null) level = 0
+
+		func.call(scope || this, object, data, level)
+
+		if(!object.children) return
+
+		var l = object.children.length
+		for(var i = inc ? 0 : l - 1; inc ? i < l : i >= 0; inc ? i++ : i--) {
+			this.traverse(object.children[i], func, scope, data, inc, level +1)
+		}
+	},
+
 	load: function() {
 		var sample = this
 		,   source = this.parent.folder + this.src
@@ -145,7 +160,7 @@ Sample.prototype = {
 
 		this.parts = []
 
-		this.object.traverse(f.binds(this.configurePart, this))
+		this.traverse(this.object, this.configurePart)
 
 		this.parent.events.emit('sample_ready', this)
 	},
@@ -280,6 +295,42 @@ Sample.prototype = {
 
 	bake: function(options) {
 		return this.mold(this.raw(), options)
+	},
+
+	describeObject: function(object, data, level) {
+		// if(object.material) console.log(object.material)
+		console.log(Array(level +1).join('\t'), object.type,
+			'name: {'+ object.name + '}',
+			(object.material ? 'mat: {'+ object.material.name +'}' : '[no mat]'),
+
+		// 'pos: {',
+		// 	'x:', f.mround(object.position.x, 3),
+		// 	'y:', f.mround(object.position.y, 3),
+		// 	'z:', f.mround(object.position.z, 3),
+		// '}',
+
+		// 'rot: {',
+		// 	'x:', f.hround(f.xdeg * object.rotation.x),
+		// 	'y:', f.hround(f.xdeg * object.rotation.y),
+		// 	'z:', f.hround(f.xdeg * object.rotation.z),
+		// '}',
+
+		'pos: ['+ [
+			f.mround(object.position.x, 3),
+			f.mround(object.position.y, 3),
+			f.mround(object.position.z, 3),
+		].join(', ') +']',
+
+		'rot: ['+ [
+			f.hround(f.xdeg * object.rotation.x),
+			f.hround(f.xdeg * object.rotation.y),
+			f.hround(f.xdeg * object.rotation.z),
+		].join(', ') +']')
+	},
+
+	describe: function() {
+		console.log('sample id: {'+ this.id +'} src: {'+ (this.src || '') +'}')
+		this.traverse(this.object, this.describeObject, null, true)
 	},
 
 	dump: function() {

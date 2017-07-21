@@ -76,25 +76,26 @@ function makeMenu() {
 
 
 	var mat = main.imagery.materials.gold
-	if(!mat) return
-	var col = mat.specular
+	var col = mat && mat.specular
 
 	main.gui = new dat.GUI({
 		// autoPlace: false,
 		hideable: false
 	})
-
 	main.gui.closed = true
 
-	var props = {
-		number: 3,
-		color: '#'+ col.getHexString()
-	}
+	var props = {}
+
+	props.number = 3
 	main.gui.add(props, 'number').name('Number')
-	main.gui.addColor(props, 'color').name('Color').onChange(function(color) {
-		col.set(color)
-		main.view.needsRedraw = true
-	})
+
+	if(col) {
+		props.color = '#'+ col.getHexString()
+		main.gui.addColor(props, 'color').name('Color').onChange(function(color) {
+			col.set(color)
+			main.view.needsRedraw = true
+		})
+	}
 }
 
 function onSubAdd(block) {
@@ -124,8 +125,7 @@ function setSample(sid) {
 
 	var object = sample.clone()
 
-	console.log('sample', sample.src)
-	traverse(object, describeObject)
+	sample.describe()
 
 
 	main.view.setTree(object)
@@ -135,50 +135,6 @@ function setSample(sid) {
 	return true
 }
 
-function traverse(object, callback, scope, data, level) {
-	if(!object) return
-
-	if(level == null) level = 0
-
-	callback.call(scope || this, object, data, level)
-
-	if(object.children) for(var i = 0; i < object.children.length; i++) {
-	// if(object.children) for(var i = object.children.length -1; i >= 0; i--) {
-		this.traverse(object.children[i], callback, scope, data, level +1)
-	}
-}
-
-
-function describeObject(object, data, level) {
-	// if(object.material) console.log(object.material)
-	console.log(Array(level +1).join('\t'), object.type,
-	'name: {'+ object.name + '}',
-	(object.material ? 'mat: {'+ object.material.name +'}' : '[no mat]'),
-
-	// 'pos: {',
-	// 	'x:', f.mround(object.position.x, 3),
-	// 	'y:', f.mround(object.position.y, 3),
-	// 	'z:', f.mround(object.position.z, 3),
-	// '}',
-
-	// 'rot: {',
-	// 	'x:', f.hround(f.xdeg * object.rotation.x),
-	// 	'y:', f.hround(f.xdeg * object.rotation.y),
-	// 	'z:', f.hround(f.xdeg * object.rotation.z),
-	// '}',
-
-	'pos: ['+ [
-		f.mround(object.position.x, 3),
-		f.mround(object.position.y, 3),
-		f.mround(object.position.z, 3),
-	].join(', ') +']',
-
-	'rot: ['+ [
-		f.hround(f.xdeg * object.rotation.x),
-		f.hround(f.xdeg * object.rotation.y),
-		f.hround(f.xdeg * object.rotation.z),
-	].join(', ') +']')
-}
 
 function onkey(e) {
 	if(kbd.down && kbd.changed) switch(kbd.key) {
