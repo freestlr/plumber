@@ -259,10 +259,10 @@ f.todeg = function(val) {
 	return val * f.xdeg
 }
 
-f.radist = function(delta) {
-	return Math.abs(delta) > Math.PI
-		? delta - 2 * Math.PI * delta / Math.abs(delta)
-		: delta
+f.radist = function(rad) {
+	return Math.abs(rad) > Math.PI
+		? rad - 2 * Math.PI * Math.ceil(Math.floor(Math.abs(rad) / Math.PI) / 2) * (rad < 0 ? -1 : 1)
+		: rad
 }
 
 f.prop = function(name) {
@@ -302,7 +302,9 @@ f.rangep = function(length, start, step) {
 	return r
 }
 
-f.qsenc = function(object) {
+f.qsenc = function(object, scheme) {
+	if(!scheme) scheme = '&='
+
 	var pairs = []
 	for(var key in object) {
 		var ken = encodeURIComponent(key)
@@ -311,21 +313,23 @@ f.qsenc = function(object) {
 
 		if(val instanceof Array) {
 			for(var i = 0; i < val.length; i++) {
-				pairs.push(ken +'='+ encodeURIComponent(val[i]))
+				pairs.push(ken + scheme[1] + encodeURIComponent(val[i]))
 			}
 		} else {
-			pairs.push(ken +'='+ encodeURIComponent(val))
+			pairs.push(ken + scheme[1] + encodeURIComponent(val))
 		}
 	}
-	return pairs.join('&')
+	return pairs.join(scheme[0])
 }
 
-f.qsdec = function(string) {
+f.qsdec = function(string, scheme) {
+	if(!scheme) scheme = '&='
+
 	var object = {}
-	,   pairs  = string.split('&')
+	,   pairs  = string.split(scheme[0])
 
 	for(var i = 0; i < pairs.length; i++) {
-		var pair = pairs[i].split('=')
+		var pair = pairs[i].split(scheme[1])
 		,   key = decodeURIComponent(pair[0])
 		,   val = decodeURIComponent(pair[1])
 
@@ -350,6 +354,15 @@ f.follow = function(item, name) {
 
 f.copy = function(destination, source) {
 	for(var name in source) {
+		if(Object.prototype.hasOwnProperty.call(source, name)) {
+			destination[name] = source[name]
+		}
+	}
+	return destination
+}
+
+f.copylist = function(destination, source, list) {
+	for(var name in source) if(list.indexOf(name) !== -1) {
 		if(Object.prototype.hasOwnProperty.call(source, name)) {
 			destination[name] = source[name]
 		}
@@ -501,15 +514,6 @@ f.bindr = function(func, scope, bound, replace) {
 		}
 		while(a < arguments.length) args.push(arguments[a++])
 		return func.apply(scope, args)
-	}
-}
-
-f.callown = function(name, scope) {
-	return function(item) {
-		if(item
-		&& Object.prototype.hasOwnProperty.call(item, name)
-		&& typeof item[name] === 'function')
-			return item[name].call(scope || item)
 	}
 }
 

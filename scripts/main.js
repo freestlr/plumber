@@ -213,6 +213,7 @@ function onDragOver(e) {
 function onDrop(e) {
 	var file = e.dataTransfer.files[0]
 	if(file) main.file.importJSON(file)
+	e.preventDefault()
 }
 
 function onSampleImport(item) {

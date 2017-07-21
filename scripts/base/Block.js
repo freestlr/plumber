@@ -1,8 +1,8 @@
 Block = f.unit({
 	unitName: 'Block',
+
 	etag: 'div',
 	ename: 'block',
-	iname: '',
 	visibleMethod: dom.display,
 	cacheSize: true,
 
@@ -12,8 +12,22 @@ Block = f.unit({
 	init: function(options) {
 		f.copy(this, options)
 
-		this.protochain.forEach(f.callown('create', this))
-		this.protochain.forEach(f.callown('createPost', this))
+		this.watchAtlas  = []
+		this.watchLocale = []
+
+		for(var i = 0; i < this.protochain.length; i++) {
+			this.invoke(this.protochain[i], 'create')
+		}
+		for(var i = 0; i < this.protochain.length; i++) {
+			this.invoke(this.protochain[i], 'createPost')
+		}
+	},
+
+	invoke: function(proto, method) {
+		if(Object.prototype.hasOwnProperty.call(proto, method)
+		&& typeof proto[method] === 'function') {
+			return proto[method].call(this)
+		}
 	},
 
 	create: function() {
@@ -25,57 +39,38 @@ Block = f.unit({
 
 	createPost: function() {
 		dom.addclass(this.element, this.ename)
-		dom.addclass(this.element, this.iname)
 
 		this.visible.events.on('change', this.visibleMethod, this, this.element)
+		this.visible.check(true)
 
 		if(this.text) {
 			dom.text(this.element, this.text)
 		}
 		if(this.elabel) {
-			this.elabel = new Block.TextBlock({
-				ename: 'block-label',
-				eroot: this.element,
-				token: this.elabel
-			})
+			this.watchLocale.push(
+				Locale.setText(dom.div('block-label', this.element), this.elabel))
 		}
 		if(this.etext) {
-			Locale.setText(this.element, this.etext)
+			this.watchLocale.push(
+				Locale.setText(this.element, this.etext))
 		}
 		if(this.etitle) {
-			Locale.setTitle(this.element, this.etitle)
+			this.watchLocale.push(
+				Locale.setTitle(this.element, this.etitle))
 		}
 		if(this.eicon) {
-			Atlas.set(this.element, this.eicon)
+			Atlas.set(this.element, this.eicon, 'absmid')
 			dom.addclass(this.element, 'eicon')
+			this.watchAtlas.push(this.element)
 		}
 	},
 
-	proxyEvent: function(name, func, scope, element) {
-		this.events.on(name, func, scope || this)
-		dom.on(name, element || this.element, this.events.will(name))
-	},
+	destroy: function() {
+		this.watchAtlas.forEach(Atlas.free)
+		this.watchAtlas = []
 
-	updateTransform: function() {
-		var st = this.element.style
-		,   tf = 'translate('+ this.x +'px,'+ this.y +'px)'
-
-		st.webkitTransform = tf
-		st.   mozTransform = tf
-		st.    msTransform = tf
-		st.     OTransform = tf
-		st.      transform = tf
-	},
-
-	move: function(x, y) {
-		x = f.hround(x)
-		y = f.hround(y)
-
-		if(x === this.x && y === this.y) return
-
-		this.x = x
-		this.y = y
-		this.updateTransform()
+		this.watchLocale.forEach(Locale.unwatch)
+		this.watchLocale = []
 	},
 
 	resize: function(w, h) {
@@ -95,9 +90,6 @@ Block = f.unit({
 	},
 
 	autoresize: function() {
-		this.element.style.width  = ''
-		this.element.style.height = ''
-
 		var w = this.element.offsetWidth
 		,   h = this.element.offsetHeight
 
@@ -115,58 +107,61 @@ Block = f.unit({
 	}
 })
 
-Block.TextBlock = f.unit(Block, {
-	unitName: 'Block_TextBlock',
-	token: null,
-	ename: 'textblock',
-
-	create: function() {
-		Locale.setText(this.element, this.token)
-	}
-})
-
 
 Block.Toggle = f.unit(Block, {
 	unitName: 'Block_Toggle',
 	ename: 'toggle',
+
 	active: true,
+	reset: false,
 	disabled: false,
-	handed: true,
+	deselect: true,
+	auto: true,
 
 	create: function() {
-		this.proxyEvent('tap', this.ontap)
+		this.htap  = new EventHandler(this.ontap,  this).listen('tap',        this.element)
+		this.hover = new EventHandler(this.onover, this).listen('mouseenter', this.element)
 	},
 
 	createPost: function() {
 		this.update()
 	},
 
-	set: function(active, emitEvent) {
-		if(this.active == active
-		|| this.disabled) return false
+	ontap: function() {
+		if(this.auto) this.toggle(true)
+	},
 
-		this.active = active
-		this.update()
-
-		if(emitEvent) {
-			this.events.emit('change', this.active)
-			this.events.emit(this.active ? 'active' : 'inactive')
-		}
-		return true
+	onover: function() {
+		this.events.emit('hover', this)
 	},
 
 	toggle: function(emitEvent) {
 		this.set(!this.active, emitEvent)
 	},
 
-	ontap: function() {
-		if(!this.noauto) this.toggle(true)
+	set: function(active, emitEvent, force) {
+		if(!force) {
+			if(this.disabled
+			|| this.active == active
+			|| (!this.deselect && !active)) return false
+		}
+
+		if(!this.reset) {
+			this.active = active
+			this.update()
+		}
+
+		if(emitEvent) {
+			this.events.emit('change', active)
+			this.events.emit(active ? 'active' : 'inactive', active)
+		}
+		return true
 	},
 
 	update: function() {
 		dom.togclass(this.element, 'active',   this.active)
 		dom.togclass(this.element, 'disabled', this.disabled)
-		if(this.handed) dom.togclass(this.element, 'hand', !this.active)
+		dom.togclass(this.element, 'hand', !this.disabled && (this.deselect || !this.active))
 	}
 })
 
@@ -175,7 +170,6 @@ Block.List = f.unit(Block, {
 	unitName: 'Block_List',
 	ename: 'list',
 	cname: 'list-item',
-	itemprefix: 'item-',
 
 	blocks: null,
 	items: null,
@@ -224,7 +218,7 @@ Block.List = f.unit(Block, {
 		}
 
 		if(typeof data === 'string') {
-			options.iname = data
+			options.ename += ' '+ data
 
 		} else if(data && typeof data === 'object') {
 			for(var name in data) options[name] = data[name]
@@ -233,17 +227,13 @@ Block.List = f.unit(Block, {
 		return options
 	},
 
-	createItem: function(options, index) {
-		return new this.factory(options)
-	},
-
 	addItemList: function(items) {
 		if(items) items.forEach(this.addItem, this)
 	},
 
 	addItem: function(item) {
 		var options = this.collectOptions(item, this.blocks.length)
-		,   block   = this.createItem(options, this.blocks.length)
+		,   block   = new this.factory(options/* , this.blocks.length */)
 
 		this.addBlock(block)
 
@@ -252,7 +242,6 @@ Block.List = f.unit(Block, {
 
 	addBlock: function(block) {
 		this.blocks.push(block)
-		if(block.events) block.events.link(this.events, this.itemprefix, block)
 		this.events.emit('add-block', block)
 	},
 
@@ -262,11 +251,19 @@ Block.List = f.unit(Block, {
 			this.blocks.splice(index, 1)
 			if(block.events) block.events.unlink(this.events)
 			dom.remove(block.element)
+			return true
 		}
 	},
 
-	clearBlocks: function() {
-		for(var i = this.blocks.length; i >= 0; i--) {
+	destroy: function() {
+		Block.prototype.destroy.call(this)
+
+		this.clearBlocks(true)
+	},
+
+	clearBlocks: function(destroy) {
+		for(var i = this.blocks.length -1; i >= 0; i--) {
+			if(destroy) this.blocks[i].destroy()
 			this.removeBlock(this.blocks[i])
 		}
 	}
@@ -281,65 +278,69 @@ Block.Menu = f.unit(Block.List, {
 	disabled: [],
 
 	factory: Block.Toggle,
-	options: {
-		ontap: null
+
+	addBlock: function(block) {
+		Block.List.prototype.addBlock.call(this, block)
+
+		block.events.on('change', this.onitemchange, this, block)
+		block.events.on('hover',  this.onitemhover,  this, block)
 	},
 
-	create: function() {
-		this.selection = []
-		this.events.on('item-tap', this.onitemtap, this)
-	},
-
-	onitemtap: function(block) {
-		this.set(this.blocks.indexOf(block), true)
-	},
-
-	set: function(index, emitEvent, multiple) {
-		if(this.deselect
-		&& index === this.active
-		&& index !== -1) {
-			return this.set(-1, emitEvent)
+	removeBlock: function(block) {
+		if(Block.List.prototype.removeBlock.call(this, block)) {
+			block.events.off('change', this.onitemchange, this, block)
+			block.events.off('hover',  this.onitemhover,  this, block)
 		}
-		console.log('set', index, emitEvent, multiple)
-
-		var next = this.blocks[index]
-		if(!next && multiple) return false
-
-		if(next && !next.set(1, true)) return false
-
-		if(!multiple) for(var i = this.selection.length -1; i >= 0; i--) {
-			this.selection[i].set(0, true)
-			this.selection.splice(i, 1)
-		}
-
-		if(next) this.selection.push(next)
-
-		this.active      = index
-		this.activeBlock = next
-		this.activeItem  = next ? next.data : null
-
-		emitEvent && this.events.emit('change', this.activeItem)
-		return true
 	},
 
-	setItem: function(item, emitEvent) {
+	update: function() {
+		for(var i = this.blocks.length -1; i >= 0; i--) {
+			var block = this.blocks[i]
+			if(!this.deselect) {
+				block.disabled = block.active
+			}
+			if(!block.active) continue
+
+			this.active = i
+			this.activeBlock = block
+			this.activeItem  = block ? block.data : null
+		}
+	},
+
+	onitemchange: function(block, active) {
+		this.unsetBlock(this.activeBlock)
+		this.update()
+		this.events.emit('change', this.activeItem)
+	},
+
+	onitemhover: function(block) {
+		this.events.emit('hover', block)
+	},
+
+	set: function(index) {
+		var block = this.blocks[index]
+		if(block === this.activeBlock) return
+
+		this.unsetBlock(this.activeBlock)
+		if(block) block.set(1)
+
+		this.update()
+	},
+
+	setItem: function(item) {
 		for(var i = 0; i < this.blocks.length; i++) {
 			var block = this.blocks[i]
 			if(!block.hasOwnProperty('data') || block.data !== item) continue
 
-			return this.set(i, emitEvent)
+			return this.set(i)
 		}
-		return this.set(-1, emitEvent)
+		return this.set(-1)
 	},
 
-	setItemList: function(itemList, emitEvent) {
-		this.set(-1, emitEvent)
-
-		for(var i = 0; i < this.blocks.length; i++) {
-			var block = this.blocks[i]
-			if(itemList.indexOf(block.data) === -1) continue
-
-			this.set(i, emitEvent, true)
+	unsetBlock: function(block) {
+		if(block) {
+			if(!this.deselect) block.disabled = false
+			block.set(0)
 		}
 	}
 })
@@ -373,13 +374,13 @@ Block.Tip = f.unit(Block, {
 	moveToElement: function(element, align, distance) {
 		if(!element) return
 
-		if(align == null) {
-			align = this.getAlign(element)
-		}
-
 		var width  = element.offsetWidth
 		,   height = element.offsetHeight
 		,   offset = dom.offset(element, this.element.offsetParent)
+
+		if(align == null) {
+			align = this.getAlign(offset.x, offset.y, width, height)
+		}
 
 		var x = offset.x
 		,   y = offset.y
@@ -407,7 +408,7 @@ Block.Tip = f.unit(Block, {
 	},
 
 	move: function(x, y, align, distance) {
-		this.align = align
+		this.align = align == null ? this.getAlign(x, y, 0, 0) : align
 
 		var re = this.element.offsetParent
 		if(!re) return
@@ -426,6 +427,7 @@ Block.Tip = f.unit(Block, {
 				vertical = false
 				epl = x - ew - ao
 				ept = y - eh/2
+				// apl = ew -2 -aw
 				apl = ew -2
 				apt = eh/2
 			break
@@ -434,6 +436,7 @@ Block.Tip = f.unit(Block, {
 				vertical = false
 				epl = x + ao
 				ept = y - eh/2
+				// apl = aw
 				apl = 0
 				apt = eh/2
 			break
@@ -443,6 +446,7 @@ Block.Tip = f.unit(Block, {
 				epl = x - ew/2
 				ept = y - ao - eh
 				apl = ew/2
+				// apt = eh -2 + aw
 				apt = eh -2
 			break
 
@@ -451,6 +455,7 @@ Block.Tip = f.unit(Block, {
 				epl = x - ew/2
 				ept = y + ao
 				apl = ew/2
+				// apt = -aw
 				apt = 0
 			break
 
@@ -483,19 +488,18 @@ Block.Tip = f.unit(Block, {
 		this.arrow.style.top  = apt +'px'
 	},
 
-	getAlign: function(element) {
-		var offset = dom.offset(element)
-		,   aligns = ['top', 'right', 'bottom', 'left']
+	getAlign: function(x, y, w, h) {
+		var aligns = ['top', 'right', 'bottom', 'left']
 		,   wh     = window.innerHeight
 		,   ww     = window.innerWidth
 
 		var tw = this.element.offsetWidth
 		,   th = this.element.offsetHeight
 
-		var top    = offset.y
-		,   right  = ww - offset.x - element.offsetWidth
-		,   bottom = wh - offset.y - element.offsetHeight
-		,   left   = offset.x
+		var top    = y
+		,   right  = ww - x - w
+		,   bottom = wh - y - h
+		,   left   = x
 
 		var offsets = [top - th, right - tw, bottom - th, left - tw]
 

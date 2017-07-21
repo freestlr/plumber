@@ -3,7 +3,10 @@ Atlas = {
 	items: [],
 
 	setSource: function(svg) {
-		Atlas.svg = svg
+		if(!svg) return
+		Atlas.svg = svg.documentElement || svg
+        Atlas.svg.removeAttribute('width')
+        Atlas.svg.removeAttribute('height')
 		Atlas.update()
 	},
 
@@ -53,10 +56,10 @@ Atlas = {
 	get: function(id) {
 		if(!Atlas.svg) return null
 
-		var icon = Atlas.svg.getElementById(id)
+		var icon = Atlas.svg.querySelector('#'+ id)
 		if(!icon) return null
 
-		var svg = Atlas.svg.documentElement.cloneNode(false)
+		var svg = Atlas.svg.cloneNode(false)
 		svg.appendChild(icon.cloneNode(true))
 		return svg
 	}

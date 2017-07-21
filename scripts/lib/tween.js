@@ -22,19 +22,28 @@ var TWEEN = {
 
 	add: function(tween) {
 		tween.drop = false
-		TWEEN.tweens.push(tween)
+		if(TWEEN.tweens.indexOf(tween) === -1) {
+			TWEEN.tweens.push(tween)
+		}
 	},
 
 	remove: function(tween) {
+		tween.playing = false
 		tween.drop = true
+	},
+
+	loop: function() {
+		TWEEN.update()
+		TWEEN.timer = requestAnimationFrame(TWEEN.loop)
+	},
+
+	loopEnd: function() {
+		cancelAnimationFrame(TWEEN.timer)
 	},
 
 	update: function(time) {
 		var length = TWEEN.tweens.length
-
-		if(length === 0) {
-			return false
-		}
+		if(!length) return false
 
 		time = isNaN(time) ? window.performance.now() : +time
 
@@ -42,6 +51,7 @@ var TWEEN = {
 			var tween = TWEEN.tweens[i]
 
 			if(tween.drop || !tween.update(time)) {
+				if(tween.debug) console.trace(tween.debug, 'ended')
 				TWEEN.tweens.splice(i, 1)
 			}
 		}
@@ -51,8 +61,9 @@ var TWEEN = {
 }
 
 TWEEN.Tween = function(object) {
-	this.source = null
-	this.target = null
+	this.source = {}
+	this.target = {}
+	this.delta  = {}
 
 	this.durationTime = 1000
 	this.delayTime = 0
@@ -80,7 +91,7 @@ TWEEN.Tween = function(object) {
 
 	this.playing = false
 
-	this.setSource(object)
+	if(object) this.setSource(object)
 }
 
 TWEEN.Tween.prototype = {
@@ -167,8 +178,6 @@ TWEEN.Tween.prototype = {
 	stop: function() {
 		TWEEN.remove(this)
 
-		this.playing = false
-
 		if(this.onStopCallback !== null) {
 			this.onStopCallback.call(this.onStopScope, this.source)
 		}
@@ -243,6 +252,12 @@ TWEEN.Tween.prototype = {
 		this.updateSource()
 		this.updateTarget()
 
+		for(var property in this.valuesTarget) {
+			this.delta[property] = this.source[property]
+		}
+
+		if(this.debug) console.trace(this.debug, 'start')
+
 		return this
 	},
 
@@ -258,6 +273,8 @@ TWEEN.Tween.prototype = {
 			if(this.onStartCallback !== null) {
 				this.onStartCallback.call(this.onStartScope, this.source)
 			}
+
+			if(this.debug) console.trace(this.debug, 'playing')
 		}
 
 		var elapsed = (time - this.startTime) / this.durationTime
@@ -268,12 +285,16 @@ TWEEN.Tween.prototype = {
 		for(var property in this.valuesTarget) {
 			var valueTarget = this.valuesTarget[property]
 			,   valueSource = this.valuesSource[property]
+			,   valueCurrent
 
 			if(valueTarget instanceof Array) {
-				this.source[property] = this.interpolationFunction(valueTarget, value)
+				valueCurrent = this.interpolationFunction(valueTarget, value)
 			} else {
-				this.source[property] = valueSource + (valueTarget - valueSource) * value
+				valueCurrent = valueSource + (valueTarget - valueSource) * value
 			}
+
+			this.delta[property] = valueCurrent - this.source[property]
+			this.source[property] = valueCurrent
 		}
 
 		if(this.onUpdateCallback !== null) {
@@ -313,6 +334,7 @@ TWEEN.Tween.prototype = {
 
 
 			} else {
+				this.playing = false
 
 				if(this.onCompleteCallback !== null) {
 					this.onCompleteCallback.call(this.onCompleteScope, this.source)
@@ -324,7 +346,6 @@ TWEEN.Tween.prototype = {
 					this.chainedTweens[i].start(this.startTime + this.durationTime)
 				}
 
-				this.playing = false
 				return false
 			}
 		}
@@ -803,27 +824,3 @@ TWEEN.Interpolation = {
 	}
 
 };
-
-// UMD (Universal Module Definition)
-(function (root) {
-
-	if (typeof define === 'function' && define.amd) {
-
-		// AMD
-		define([], function () {
-			return TWEEN;
-		});
-
-	} else if (typeof exports === 'object') {
-
-		// Node.js
-		module.exports = TWEEN;
-
-	} else {
-
-		// Global variable
-		root.TWEEN = TWEEN;
-
-	}
-
-})(this);

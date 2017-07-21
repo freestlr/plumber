@@ -25,7 +25,7 @@ Locale = {
 	set: function(name) {
 		Locale.name = name
 		Locale.data = Locale.assets[Locale.name]
-		if(Locale.data) Locale.update()
+		Locale.update()
 	},
 
 	update: function() {

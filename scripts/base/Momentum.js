@@ -1,6 +1,4 @@
 function Momentum() {
-	this.events = new EventEmitter
-
 	this.speed  = { x: 0, y: 0, z: 0 }
 	this.point  = { x: 0, y: 0, z: 0 }
 	this.delta  = { x: 0, y: 0, z: 0 }
@@ -12,8 +10,8 @@ function Momentum() {
 Momentum.prototype = {
 
 	pointsLength: 5,
-	acceleration: 0.87,
-	speedThreshold: 1e-5,
+	friction: Math.pow(0.87, 60 / 1000),
+	threshold: 1e-5,
 
 	time: function() {
 		return window.performance && window.performance.now ? window.performance.now()
@@ -45,9 +43,8 @@ Momentum.prototype = {
 			this.speed.z * this.speed.z)
 	},
 
-	updateAccel: function(acceleration) {
-		this.accel = Math.pow(acceleration || this.acceleration, 60 / 1000)
-		this.limit = 1 / (1 - this.accel)
+	updateAccel: function(friction) {
+		this.limit = 1 / (1 - this.friction)
 	},
 
 	updateTarget: function() {
@@ -68,7 +65,7 @@ Momentum.prototype = {
 	},
 
 	updateDuration: function() {
-		this.duration = Math.log(this.speedThreshold / this.speed0) / Math.log(this.accel)
+		this.duration = Math.log(this.threshold / this.speed0) / Math.log(this.friction)
 	},
 
 	go: function() {
@@ -84,19 +81,34 @@ Momentum.prototype = {
 		this.speed.x = dx / dt
 		this.speed.y = dy / dt
 		this.speed.z = dz / dt
+
 		this.updateSpeed()
+		this.updateAccel()
+		this.updateTarget()
+		this.updateDuration()
+		this.updateDistance()
 
-		if(this.speed0 > this.speedThreshold) {
-			this.updateAccel()
-			this.updateTarget()
-			this.updateDuration()
-			this.updateDistance()
-
-			this.start()
-		}
+		this.start()
 	},
 
-	to: function(t, x, y, z) {
+	to: function(x, y, z) {
+		this.target.x = +x || 0
+		this.target.y = +y || 0
+		this.target.z = +z || 0
+
+		this.updateDistance()
+		this.updateAccel()
+
+		this.speed.x = this.delta.x / this.limit
+		this.speed.y = this.delta.y / this.limit
+		this.speed.z = this.delta.z / this.limit
+		this.updateSpeed()
+		this.updateDuration()
+
+		this.start()
+	},
+
+	tot: function(t, x, y, z) {
 		this.duration = +t || 0
 		this.target.x = +x || 0
 		this.target.y = +y || 0
@@ -122,8 +134,8 @@ Momentum.prototype = {
 		while( Math.abs(targetDuration - this.duration) / targetDuration > 1e-4
 			|| Math.abs(targetDistance - this.distance) / targetDistance > 1e-4) {
 
-			this.accel = Math.pow(this.speedThreshold / this.speed0, 1 / targetDuration)
-			this.limit = 1 / (1 - this.accel)
+			this.friction = Math.pow(this.threshold / this.speed0, 1 / targetDuration)
+			this.limit = 1 / (1 - this.friction)
 
 			this.updateTarget()
 			this.updateDistance()
@@ -142,9 +154,7 @@ Momentum.prototype = {
 		this.updateTarget()
 		this.updateDistance()
 
-		if(this.speed0 > this.speedThreshold) {
-			this.start()
-		}
+		this.start()
 	},
 
 	update: function() {
@@ -156,28 +166,41 @@ Momentum.prototype = {
 		this.timeLast += this.timeDelta
 
 
-		var accelSum = 0
-		for(var i = 0; i < this.timeDelta; i++) accelSum += Math.pow(this.accel, i)
+		for(var a = 0, i = 0; i < this.timeDelta; i++) {
+			a += Math.pow(this.friction, i)
+		}
 
-		this.point.x += this.speed.x * accelSum
-		this.point.y += this.speed.y * accelSum
-		this.point.z += this.speed.z * accelSum
+		this.delta.x = this.speed.x * a
+		this.delta.y = this.speed.y * a
+		this.delta.z = this.speed.z * a
 
-		var accelDelta = Math.pow(this.accel, this.timeDelta)
+		this.point.x += this.delta.x
+		this.point.y += this.delta.y
+		this.point.z += this.delta.z
+
+		var accelDelta = Math.pow(this.friction, this.timeDelta)
 
 		this.speed.x *= accelDelta
 		this.speed.y *= accelDelta
 		this.speed.z *= accelDelta
 		this.updateSpeed()
 
-		if(this.speed0 < this.speedThreshold) {
+		if(this.speed0 < this.threshold) {
 			this.ended = true
 			this.stop()
 		}
 	},
 
 	start: function() {
-		this.timeLast  = this.point.t
+		this.updateSpeed()
+
+		if(this.debug) {
+			console.log(this.debug, 'start', this.speed0 < this.threshold)
+		}
+
+		if(this.speed0 < this.threshold) return
+
+		this.timeLast  = this.time()
 		this.timeStart = this.timeLast
 		this.timeEnd   = this.timeStart + this.duration
 
@@ -185,10 +208,13 @@ Momentum.prototype = {
 	},
 
 	stop: function() {
+		if(this.debug) {
+			console.log(this.debug, 'stop', this.active)
+		}
+
 		if(!this.active) return
 
 		this.points = []
 		this.active = false
-		this.events.emit('stop')
 	}
 }

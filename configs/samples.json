@@ -14,5 +14,7 @@
 	{"hide": 0, "id": "w200b_optimaze", "src": "w200b_optimaze_2.FBX"},
 	{"hide": 1, "id": "w200b_optimaze_dae", "src": "w200b_optimaze.DAE"},
 	{"hide": 0, "id": "scene", "src": "scene.json"},
-	{"hide": 0, "id": "w200b_optimaze_text", "src": "w200b_optimaze_text.FBX"}
+	{"hide": 0, "id": "B100", "src": "B100.json"},
+	{"hide": 0, "id": "BSP_FBSPORX", "src": "BSP_FBSPORX.json"},
+	{"hide": 0, "id": "EFG6K", "src": "EFG6K.json"}
 ]
