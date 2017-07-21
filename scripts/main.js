@@ -1,6 +1,7 @@
 var main = {}
-main.get = new Loader
 
+main.get = new Loader
+main.timer = new Timer(loop)
 main.file = new FileImport
 
 main.imagery = new Imagery
@@ -9,13 +10,42 @@ main.sampler = new Sampler
 main.sampler.setImagery(main.imagery)
 main.sampler.folder = 'samples/'
 
-main.timer = new Timer(loop)
+main.tiles = new TileView
+// main.tiles.setLayout(['v', ['h', 0, 0, 0.7], 0, 0.8])
+main.tiles.setLayout(['h', 0, 0, 0.9])
+
+// main.splitV = main.tiles.splits[0]
+// main.viewportL = main.tiles.frames[0]
+// main.viewportR = main.tiles.frames[1]
+// main.tiles.showClients()
+
+
+// main.tiles.events.on('update', main.onTilesUpdate, main)
+
+main.renderer = new THREE.WebGLRenderer({ antialias: true })
+
 main.view = new View3({
-	eroot: document.body,
+	// eroot: document.body,
+	renderer: main.renderer,
 	enableWireframe: false
 })
 
+main.view2 = new View3({
+	// eroot: document.body,
+	renderer: main.renderer,
+	enableWireframe: false
+})
+
+
+main.tiles.setClients([main.view, main.view2])
+
+
+dom.addclass(main.renderer.domElement, 'canvas-main')
+dom.append(main.tiles.element, main.renderer.domElement)
+dom.append(document.body, main.tiles.element)
 dom.append(document.body, main.file.input)
+
+
 
 main.get.xml('images/atlas.svg').defer
 	.then(Atlas.setSource)
@@ -94,6 +124,7 @@ function makeMenu() {
 		main.gui.addColor(props, 'color').name('Color').onChange(function(color) {
 			col.set(color)
 			main.view.needsRedraw = true
+			main.view2.needsRedraw = true
 		})
 	}
 }
@@ -130,6 +161,9 @@ function setSample(sid) {
 
 	main.view.setTree(object)
 	main.view.focusOnTree(300)
+
+	main.view2.setTree(sample.clone())
+	main.view2.focusOnTree(300)
 	main.sample = object
 
 	return true
@@ -158,7 +192,11 @@ function onhashchange(e) {
 }
 
 function onresize() {
-	main.view.onResize()
+	var element = main.tiles.element
+	main.renderer.setSize(element.offsetWidth, element.offsetHeight)
+
+	main.tiles.autoresize()
+	// main.view.onResize()
 }
 
 function onDragOver(e) {
@@ -207,4 +245,5 @@ function loop(t, dt) {
 	TWEEN.update()
 
 	main.view.onTick(dt)
+	main.view2.onTick(dt)
 }

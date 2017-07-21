@@ -203,6 +203,8 @@ TileView.prototype = {
 	},
 
 	updateClient: function(client, index) {
+		if(!client) return
+
 		var frame = this.frames[index]
 
 		if(client.element) {
@@ -212,6 +214,7 @@ TileView.prototype = {
 		if(frame) {
 			this.setElement(client.element, frame.x, frame.y, frame.w, frame.h)
 			if(client.resize) client.resize(frame.w, frame.h)
+			if(client.setViewport) client.setViewport(frame)
 		}
 	}
 }
