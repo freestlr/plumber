@@ -53,29 +53,29 @@ main.get.xml('images/atlas.svg').defer
 main.get.image('images/textures/cubemap.png').defer
 	.then(main.imagery.unwrapCubemap3x2, main.imagery)
 
-main.get.image('images/textures/cloth_45.jpg').defer
-	.then(function(image) {
-
-		main.imagery.setMaterial('gold', {
-			id: 1111,
-			color: 0xf7d78a,
-			texture: {
-				image: main.imagery.pixel.image,
-				loaded: true,
-				repeatX: 120,
-				repeatY: 80
-			},
-			bump: {
-				image: image,
-				loaded: true,
-				repeatX: 120,
-				repeatY: 80
-			}
-		})
-	})
+// main.get.image('images/textures/cloth_45.jpg').defer
+// 	.then(function(image) {
+// 
+// 		main.imagery.setMaterial('gold', {
+// 			id: 1111,
+// 			color: 0xf7d78a,
+// 			texture: {
+// 				image: main.imagery.pixel.image,
+// 				loaded: true,
+// 				repeatX: 120,
+// 				repeatY: 80
+// 			},
+// 			bump: {
+// 				image: image,
+// 				loaded: true,
+// 				repeatX: 120,
+// 				repeatY: 80
+// 			}
+// 		})
+// 	})
 
 main.get.json('configs/samples.json').defer
-	.then(main.sampler.fetch, main.sampler)
+	.then(main.sampler.addSampleList, main.sampler)
 	.then(makeMenu)
 	.then(run)
 
@@ -146,27 +146,32 @@ function setSampleImage(element, sid) {
 	return Atlas.set(element, UI.getSampleImage(sid))
 }
 
-function setSample(sid) {
+function loadSample(sid) {
 	var sample = main.sampler.samples[sid]
 	if(!sample) return false
+
+	if(!sample.object && !sample.src) return false
 
 	main.sampleMenu.set(0, true)
 	UI.setSampleImage(main.sampleMenu.element, sid)
 
 
-	var object = sample.clone()
+	if(main.deferSample) {
+		main.deferSample.set(null)
+	}
+	main.sample = sample
+	main.deferSample = main.sample.load().then(setSample)
+	return true
+}
 
-	sample.describe()
+function setSample() {
+	main.sample.describe()
 
-
-	main.view.setTree(object)
+	main.view.setTree(main.sample.clone())
 	main.view.focusOnTree(300)
 
-	main.view2.setTree(sample.clone())
+	main.view2.setTree(main.sample.clone())
 	main.view2.focusOnTree(300)
-	main.sample = object
-
-	return true
 }
 
 
@@ -182,7 +187,7 @@ function onkey(e) {
 function onhashchange(e) {
 	var id = location.hash.slice(1)
 	if(id) {
-		if(!setSample(id)) {
+		if(!loadSample(id)) {
 			location.hash = ''
 		}
 

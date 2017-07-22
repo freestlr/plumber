@@ -15,9 +15,12 @@ Sampler.prototype = {
 		var sample = new Sample(def, this)
 		if(sample.hide) return
 
-		if(sample.src) sample.load()
-
 		this.samples[sample.id] = sample
+		return sample
+	},
+
+	addSampleList: function(samples) {
+		samples.forEach(this.addSample, this)
 	},
 
 	getList: function(type) {
@@ -27,30 +30,6 @@ Sampler.prototype = {
 			if(!type || sample.type === type) list.push(sample.id)
 		}
 		return list.filter(f.uniq)
-	},
-
-	getSamples: function(type) {
-		var list = this.getList(type)
-
-		var samples = []
-		for(var i = 0; i < list.length; i++) {
-			samples.push(this.samples[list[i]])
-		}
-
-		return samples
-	},
-
-	fetch: function(samples) {
-		samples.forEach(this.addSample, this)
-
-		return this.get.ready(this.configureSamples, this)
-	},
-
-	configureSamples: function() {
-		for(var sid in this.samples) {
-			this.samples[sid].configure()
-		}
-		this.ready = true
 	}
 }
 
@@ -86,73 +65,74 @@ Sample.prototype = {
 	},
 
 	load: function() {
+		if(this.deferLoad) return this.deferLoad
+
 		var sample = this
-		,   source = this.parent.folder + this.src
+		,   defer  = new Defer
+		,   url    = this.parent.folder + this.src
 		,   get    = this.parent.get
+
+		if(!this.src) {
+			defer.resolve(null)
+			return defer
+		}
 
 		switch(this.format) {
 			case 'obj':
-				get.obj(source, { saveTo: this, saveAs: 'object' })
+				get.obj(url).defer.push(defer)
 			break
 
 			case 'fbx':
 				var loader = new THREE.FBXLoader
-				,   defer = new Defer
-
-				loader.load(source, function(data) {
-					console.log(sample.src, data)
-					sample.object = data
+				loader.load(url, function(data) {
 					defer.resolve(data)
 
 				}, undefined, function(err) {
-					console.error(sample.src, err)
 					defer.reject(err)
 				})
-
-				get.wait(defer)
 			break
 
 			case 'dae':
 				var loader = new THREE.ColladaLoader
-				,   defer = new Defer
-
-				loader.load(source, function(data) {
-					// console.log(sample.src, data)
-					sample.object = data.scene
-					defer.resolve(data)
+				loader.load(url, function(data) {
+					defer.resolve(data.scene)
 
 				}, undefined, function(err) {
-					console.error(sample.src, err)
 					defer.reject(err)
 				})
-
-				get.wait(defer)
 			break
 
 			case 'json':
-				get.json(source).defer.then(function(data) {
-					var loader = new THREE.ObjectLoader
-					this.object = loader.parse(data)
-					// console.log(this.json, data, this.object)
-				}, this)
+				var loader = new THREE.ObjectLoader
+				get.json(url).defer.then(function(data) {
+					return loader.parse(data)
+
+				}, this).push(defer)
 			break
 		}
 
-		if(this.awg) {
-			if(window.config) {
-				this.config = config.awg[this.awg]
-			} else {
-				this.get.json(this.folder + this.awg, { saveTo: this, saveAs: 'config' })
-			}
-		}
+		// if(this.awg) {
+		// 	if(window.config) {
+		// 		this.config = config.awg[this.awg]
+		// 	} else {
+		// 		this.get.json(this.folder + this.awg, { saveTo: this, saveAs: 'config' })
+		// 	}
+		// }
+
+		this.deferLoad = defer.then(this.configure, this.loadError, this)
+		return this.deferLoad
 	},
 
-	configure: function() {
-		if(this.configured) return
-		this.configured = true
+	loadError: function(err) {
+		console.warn('Sample load error', this.id, err)
+	},
+
+	configure: function(object) {
+		if(!object) return
+
+		this.object = object
 
 		if(!this.config) this.config = {}
-		if(!this.object) this.object = new THREE.Object3D
 		if(!this.width ) this.width  = this.config.width  || 1
 		if(!this.height) this.height = this.config.height || 1
 		if(!this.depth ) this.depth  = this.config.depth  || 1
@@ -225,10 +205,7 @@ Sample.prototype = {
 	},
 
 	mold: function(object, options) {
-		if(!this.configured) {
-			console.warn('autoconfiguring sample', this.id)
-			this.configure()
-		}
+		if(!object) return
 
 		if(!options) options = {}
 
@@ -261,10 +238,7 @@ Sample.prototype = {
 	},
 
 	raw: function() {
-		if(!this.configured) {
-			console.warn('autoconfiguring sample', this.id)
-			this.configure()
-		}
+		if(!this.object) return
 
 		var object = this.clone()
 		for(var i = 0; i < object.children.length; i++) {
@@ -277,10 +251,7 @@ Sample.prototype = {
 	},
 
 	clone: function() {
-		if(!this.configured) {
-			console.warn('autoconfiguring sample', this.id)
-			this.configure()
-		}
+		if(!this.object) return
 
 		return this.object.clone(true)
 
