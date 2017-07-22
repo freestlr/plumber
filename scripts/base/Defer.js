@@ -16,7 +16,14 @@ Defer.all = function(list) {
 	}
 
 	for(var i = 0; i < length; i++) {
-		list[i].push(defer)
+		var item = list[i]
+		if(item instanceof Defer) {
+			item.push(defer)
+
+		} else {
+			result[i] = item
+			loaded++
+		}
 	}
 
 	function check(value, success, item) {
