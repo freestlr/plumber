@@ -2,6 +2,10 @@ function Sampler() {
 	this.get     = new Loader
 	this.events  = new EventEmitter
 	this.samples = {}
+
+
+	this.joinSlaveMatrix = new THREE.Matrix4
+	this.joinSlaveMatrix.makeRotationY(Math.PI)
 }
 
 Sampler.prototype = {
@@ -43,11 +47,14 @@ function Sample(def, parent) {
 		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
 	}
 
+	this.joints = []
+
 	this.parent = parent
 	this.parent.events.emit('sample_new', this)
 }
 
 Sample.prototype = {
+	jointRE: /^([^_]*)_([^_]*)_([^_]*)/,
 
 	traverse: function(object, func, scope, data, inc, level) {
 		if(!object) return
@@ -131,6 +138,7 @@ Sample.prototype = {
 		if(!object) return
 
 		this.object = object
+		this.object.updateMatrixWorld()
 
 		if(!this.config) this.config = {}
 		if(!this.width ) this.width  = this.config.width  || 1
@@ -145,10 +153,37 @@ Sample.prototype = {
 		this.parent.events.emit('sample_ready', this)
 	},
 
+	configureJoint: function(object, match) {
+		if(!match) return
+
+		var jso = new THREE.Object3D
+		,   jmo = new THREE.Object3D
+
+		var joint = {
+			id: match[1],
+			param: match[2],
+			extra: match[3],
+			name: object.name,
+			object: object,
+			joinMaster: jmo,
+			joinSlave: jso
+		}
+
+		object.matrixWorld.decompose(jso.position, jso.rotation, jso.scale)
+		object.matrixWorld.decompose(jmo.position, jmo.rotation, jmo.scale)
+
+		jso.applyMatrix(this.parent.joinSlaveMatrix)
+
+		this.joints.push(joint)
+	},
+
 	configurePart: function(mesh) {
 		if(this.parent.imagery) {
 			this.parent.imagery.configureSampleMaterial(mesh)
 		}
+
+		this.configureJoint(mesh, mesh.name.match(this.jointRE))
+
 
 		if(!mesh.geometry || !mesh.geometry.vertices) return
 

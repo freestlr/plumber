@@ -16,5 +16,5 @@
 	{"hide": 0, "id": "scene", "src": "scene.json"},
 	{"hide": 0, "id": "B100", "src": "B100.json"},
 	{"hide": 0, "id": "BSP_FBSPORX", "src": "BSP_FBSPORX.json"},
-	{"hide": 0, "id": "EFG6K", "src": "EFG6K.json"}
+	{"hide": 0, "id": "EFG6K", "src": "test.json"}
 ]

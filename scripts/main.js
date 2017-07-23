@@ -44,6 +44,11 @@ main.view2 = new View3({
 })
 
 
+main.tfc = new THREE.TransformControls(main.view.camera, main.view.element)
+main.tfc.addEventListener('change', onTransformControlsChange)
+main.view.scene.add(main.tfc)
+
+
 main.tiles.setClients([main.view, main.view2])
 
 
@@ -172,7 +177,16 @@ function loadSample(sid) {
 }
 
 function setSample() {
-	main.sample.describe()
+	// main.sample.describe()
+
+	// console.log(main.sample.joints)
+	var joint0 = main.sample.joints[0]
+	if(joint0) {
+		main.tfc.attach(joint0.object)
+
+	} else {
+		main.tfc.detach()
+	}
 
 	main.view.setTree(main.sample.clone())
 	main.view.focusOnTree(300)
@@ -184,6 +198,11 @@ function setSample() {
 
 function onkey(e) {
 	if(kbd.down && kbd.changed) switch(kbd.key) {
+		case '1': return main.tfc.setMode('translate')
+		case '2': return main.tfc.setMode('rotate')
+		case '3': return main.tfc.setMode('scale')
+		case '4': return main.tfc.setSpace(main.tfc.space === 'world' ? 'local' : 'world')
+
 		case 'v':
 			main.gui.closed ? main.gui.open() : main.gui.close()
 		return
@@ -234,6 +253,10 @@ function onSampleImport(item) {
 	menu.set(menu.blocks.indexOf(block), true)
 }
 
+function onTransformControlsChange() {
+	main.view.needsRedraw = true
+}
+
 
 function run() {
 	dom.on('hashchange', window, onhashchange)
@@ -255,6 +278,8 @@ function run() {
 
 function loop(t, dt) {
 	TWEEN.update()
+
+	main.tfc.update()
 
 	main.view.onTick(dt)
 	main.view2.onTick(dt)
