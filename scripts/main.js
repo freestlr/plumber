@@ -203,6 +203,11 @@ function onkey(e) {
 		case '3': return main.tfc.setMode('scale')
 		case '4': return main.tfc.setSpace(main.tfc.space === 'world' ? 'local' : 'world')
 
+		case 'c':
+			main.view.focusOnTree()
+			main.view2.focusOnTree()
+		return
+
 		case 'v':
 			main.gui.closed ? main.gui.open() : main.gui.close()
 		return
