@@ -22,17 +22,24 @@ main.tiles.setLayout(['h', 0, 0, 0.9])
 
 // main.tiles.events.on('update', main.onTilesUpdate, main)
 
-main.renderer = new THREE.WebGLRenderer({ antialias: true })
+main.renderer = new THREE.WebGLRenderer({
+	antialias: true,
+	preserveDrawingBuffer: true
+})
+main.renderer.autoClear = false
+
 
 main.view = new View3({
 	// eroot: document.body,
 	renderer: main.renderer,
+	clearColor: 0xFF00FF,
 	enableWireframe: false
 })
 
 main.view2 = new View3({
 	// eroot: document.body,
 	renderer: main.renderer,
+	clearColor: 0x00FF00,
 	enableWireframe: false
 })
 

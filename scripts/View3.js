@@ -282,7 +282,7 @@ View3.prototype = {
 			}
 
 			this.renderer.setClearColor(this.clearColor)
-			// this.renderer.clear()
+			this.renderer.clear()
 
 			this.grid.visible = false
 			this.root.visible = true
