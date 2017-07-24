@@ -4,8 +4,6 @@ function Sampler() {
 	this.samples = {}
 
 
-	this.joinSlaveMatrix = new THREE.Matrix4
-	this.joinSlaveMatrix.makeRotationY(Math.PI)
 }
 
 Sampler.prototype = {
@@ -46,6 +44,8 @@ function Sample(def, parent) {
 		this.name   = this.src.replace(/\.[^\.]+$/, '').replace(/.*\//, '')
 		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
 	}
+
+	this.box = new THREE.Box3
 
 	this.joints = []
 
@@ -148,33 +148,21 @@ Sample.prototype = {
 
 		this.parts = []
 
+		this.box.makeEmpty()
 		this.traverse(this.object, this.configurePart)
 
 		this.parent.events.emit('sample_ready', this)
 	},
 
 	configureJoint: function(object, match) {
-		if(!match) return
-
-		var jso = new THREE.Object3D
-		,   jmo = new THREE.Object3D
-
-		var joint = {
-			id: match[1],
-			param: match[2],
-			extra: match[3],
-			name: object.name,
-			object: object,
-			joinMaster: jmo,
-			joinSlave: jso
-		}
-
-		object.matrixWorld.decompose(jso.position, jso.rotation, jso.scale)
-		object.matrixWorld.decompose(jmo.position, jmo.rotation, jmo.scale)
-
-		jso.applyMatrix(this.parent.joinSlaveMatrix)
-
-		this.joints.push(joint)
+		if(match) this.joints.push({
+			id     : match[1],
+			param  : match[2],
+			extra  : match[3],
+			name   : object.name,
+			object : object,
+			matrix : object.matrixWorld
+		})
 	},
 
 	configurePart: function(mesh) {
@@ -185,8 +173,20 @@ Sample.prototype = {
 		this.configureJoint(mesh, mesh.name.match(this.jointRE))
 
 
-		if(!mesh.geometry || !mesh.geometry.vertices) return
+		if(!mesh.geometry) return
 
+		mesh.geometry.persistent = true
+
+		if(!mesh.geometry.boundingBox) {
+			mesh.geometry.computeBoundingBox()
+		}
+
+		this.box.union(mesh.geometry.boundingBox)
+
+		// this.configureAnchors(mesh)
+	},
+
+	configureAnchors: function(mesh) {
 		var sx = this.width
 		,   sy = this.height
 		,   sz = this.depth
@@ -229,7 +229,6 @@ Sample.prototype = {
 			part.offsets.push(new THREE.Vector3(ox, oy, oz))
 		}
 
-		mesh.geometry.persistent = true
 		this.parts.push(part)
 
 		if((AX && !useAX)

@@ -81,6 +81,12 @@ Defer.prototype = {
 		return this.push(new Defer(func, func, scope, unsafe))
 	},
 
+	detach: function(func, scope) {
+		this.push(new Defer(function(value) {
+			setTimeout(function() { func.call(scope, value) }, 0)
+		}))
+	},
+
 	push: function(defer) {
 		if(this.head) {
 			this.tail = this.tail.next = defer

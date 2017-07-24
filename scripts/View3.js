@@ -11,10 +11,7 @@ function View3(options) {
 	this.root      = new THREE.Object3D
 	this.grid      = new THREE.Object3D
 
-	this.box       = new THREE.Box3
-	this.boxCenter = new THREE.Vector3(0, 0, 0)
-	this.boxSize   = new THREE.Vector3(1, 1, 1).normalize()
-	this.boxLength = 1
+
 
 	this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
 
@@ -37,27 +34,10 @@ function View3(options) {
 	this.makeGridSystem()
 
 
-	// this.tiles = new TileView
-	// // this.tiles.setLayout(['v', ['h', 0, 0, 0.7], 0, 0.8])
-	// this.tiles.setLayout(['h', 0, 0, 0.9])
-
-	// this.splitV = this.tiles.splits[0]
-	// this.frameL = this.tiles.frames[0]
-	// this.frameR = this.tiles.frames[1]
-	// this.tiles.showClients()
-	// this.tiles.setClients([{
-	// 	element: this.view.element,
-	// 	resize: f.binds(this.view.onResize, this.view)
-	// }])
-	// this.tiles.events.on('update', this.onTilesUpdate, this)
-
-
 	this.root.add(this.ambLight)
 	this.root.add(this.dirLight)
 	this.scene.add(this.root)
 	this.scene.add(this.grid)
-
-	// dom.append(this.element, this.tiles.element)
 }
 
 View3.prototype = {
@@ -141,45 +121,16 @@ View3.prototype = {
 		// this.gridYZ.position.x = 0.4 * projYZ + this.camera.position.x
 	},
 
-	traverse: function(object, func, scope, data) {
-		if(object) {
-			func.call(scope, object, data)
-
-			if(object.children) for(var i = object.children.length -1; i >= 0; i--) {
-				this.traverse(object.children[i], func, scope, data)
-			}
-		}
-	},
-
-	boxUnion: function(object, box) {
-		if(!object.geometry) return
-
-		if(!object.geometry.boundingBox) {
-			object.geometry.computeBoundingBox()
-		}
-
-		box.union(object.geometry.boundingBox)
-	},
-
-	computeSize: function() {
-		this.box.makeEmpty()
-		this.traverse(this.tree, this.boxUnion, this, this.box)
-
-		if(this.box.isEmpty()) {
-			this.boxCenter.set(0, 0, 0)
-			this.boxSize.set(1, 1, 1).normalize()
-			this.boxLength = 1
+	focusOnTree: function() {
+		if(this.tree) {
+			this.camera.position.set(1, 1, 1).setLength(this.tree.boxLength * 1.5)
+			this.orbit.target.copy(this.tree.boxCenter)
 
 		} else {
-			this.box.getCenter(this.boxCenter)
-			this.box.getSize(this.boxSize)
-			this.boxLength = this.boxSize.length()
+			this.camera.position.set(1, 1, 1).setLength(1.5)
+			this.orbit.target.set(0, 0, 0)
 		}
-	},
 
-	focusOnTree: function() {
-		this.camera.position.set(1, 1, 1).setLength(this.boxLength * 1.5)
-		this.orbit.target.copy(this.boxCenter)
 		this.orbit.update()
 	},
 
@@ -187,16 +138,15 @@ View3.prototype = {
 
 	},
 
-	setTree: function(tree) {
+	setTree: function(node) {
 		if(this.tree) {
-			this.root.remove(this.tree)
+			this.root.remove(this.tree.object)
 		}
 
-		this.tree = tree
+		this.tree = node
 
 		if(this.tree) {
-			this.root.add(this.tree)
-			this.computeSize()
+			this.root.add(this.tree.object)
 			this.updateProjection()
 		}
 
@@ -204,11 +154,12 @@ View3.prototype = {
 	},
 
 	updateProjection: function() {
+		var size = this.tree ? this.tree.boxLength : 1
+
 		this.camera.fov    = 70
 		this.camera.aspect = this.width / this.height
-		// this.camera.aspect = this.frameL.w / this.frameL.h
-		this.camera.far    = this.boxLength * 100
-		this.camera.near   = this.boxLength * 0.01
+		this.camera.far    = size * 100
+		this.camera.near   = size * 0.01
 		this.camera.updateProjectionMatrix()
 	},
 
@@ -226,11 +177,6 @@ View3.prototype = {
 		}
 	},
 
-	// onTilesUpdate: function() {
-	// 	this.updateProjection()
-
-	// 	this.needsRedraw = true
-	// },
 
 	setViewport: function(viewport) {
 		this.viewport = viewport
@@ -244,7 +190,6 @@ View3.prototype = {
 
 		this.elementOffset = dom.offset(this.element)
 
-		// this.tiles.autoresize()
 
 		if(!this.viewport) {
 			this.renderer.setSize(this.width, this.height)

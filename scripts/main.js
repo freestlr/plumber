@@ -89,7 +89,7 @@ main.get.image('images/textures/cubemap.png').defer
 main.get.json('configs/samples.json').defer
 	.then(main.sampler.addSampleList, main.sampler)
 	.then(makeMenu)
-	.then(run)
+	.detach(run)
 
 
 
@@ -172,7 +172,7 @@ function loadSample(sid) {
 		main.deferSample.set(null)
 	}
 	main.sample = sample
-	main.deferSample = main.sample.load().then(setSample)
+	main.deferSample = main.sample.load().detach(setSample)
 	return true
 }
 
@@ -188,10 +188,12 @@ function setSample() {
 		main.tfc.detach()
 	}
 
-	main.view.setTree(main.sample.clone())
-	main.view.focusOnTree(300)
+	var node = new TNode(main.sample)
 
-	main.view2.setTree(main.sample.clone())
+	// main.view.setTree(main.sample.clone())
+	// main.view.focusOnTree(300)
+
+	main.view2.setTree(node)
 	main.view2.focusOnTree(300)
 }
 
