@@ -123,6 +123,7 @@ View3.prototype = {
 
 	focusOnTree: function() {
 		if(this.tree) {
+			this.tree.updateBox()
 			this.camera.position.set(1, 1, 1).setLength(this.tree.boxLength * 1.5)
 			this.orbit.target.copy(this.tree.boxCenter)
 
@@ -147,6 +148,7 @@ View3.prototype = {
 
 		if(this.tree) {
 			this.root.add(this.tree.object)
+			this.tree.updateBox()
 			this.updateProjection()
 		}
 

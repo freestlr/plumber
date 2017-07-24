@@ -257,9 +257,9 @@ Imagery.prototype = {
 		t.minFilter = THREE.LinearMipMapLinearFilter
 		t.magFilter = THREE.LinearFilter
 		t.anisotropy = 4
-		t.needsUpdate = true
 		t.image = this.pixel.image
 		f.copy(t, options)
+		t.needsUpdate = true
 		return t
 	},
 

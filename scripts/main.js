@@ -12,7 +12,7 @@ main.sampler.folder = 'samples/'
 
 main.tiles = new TileView
 // main.tiles.setLayout(['v', ['h', 0, 0, 0.7], 0, 0.8])
-main.tiles.setLayout(['h', 0, 0, 0.9])
+main.tiles.setLayout(['h', 0, 0, 0.7])
 
 // main.splitV = main.tiles.splits[0]
 // main.viewportL = main.tiles.frames[0]
@@ -32,14 +32,14 @@ main.renderer.autoClear = false
 main.view = new View3({
 	// eroot: document.body,
 	renderer: main.renderer,
-	clearColor: 0xFF00FF,
+	// clearColor: 0xFF00FF,
 	enableWireframe: false
 })
 
 main.view2 = new View3({
 	// eroot: document.body,
 	renderer: main.renderer,
-	clearColor: 0x00FF00,
+	// clearColor: 0x00FF00,
 	enableWireframe: false
 })
 
@@ -143,6 +143,11 @@ function makeMenu() {
 
 function onSubAdd(block) {
 	block.element.setAttribute('draggable', true)
+	block.hDragStart = new EventHandler(onSubDrag, null, block).listen('dragstart', block.element)
+}
+
+function onSubDrag(block, e) {
+	e.dataTransfer.setData('text/sample', block.data)
 }
 
 function onSubChange(sid) {
@@ -180,7 +185,7 @@ function setSample() {
 	// main.sample.describe()
 
 	// console.log(main.sample.joints)
-	var joint0 = main.sample.joints[0]
+	var joint0 = main.sample.joints[1]
 	if(joint0) {
 		main.tfc.attach(joint0.object)
 
@@ -243,9 +248,44 @@ function onDragOver(e) {
 }
 
 function onDrop(e) {
-	var file = e.dataTransfer.files[0]
-	if(file) main.file.importJSON(file)
+	var dt = e.dataTransfer
+
+	var file = dt.files[0]
+	if(file) {
+		main.file.importJSON(file)
+	} else {
+		connectSample(dt.getData('text/sample'))
+	}
 	e.preventDefault()
+}
+
+function connectSample(id) {
+	var sample = main.sampler.samples[id]
+	if(!sample) return
+
+	if(main.tree) {
+		var connected = false
+		main.tree.traverse(function(node) {
+			if(connected) return
+
+			for(var i = 0; i < node.connections.length; i++) {
+				var con = node.connections[i]
+
+				if(!con.node) {
+					node.connect(i, new TNode(sample), 0)
+					connected = true
+					return
+				}
+			}
+		})
+
+	} else {
+		main.tree = new TNode(sample)
+		main.view.setTree(main.tree)
+	}
+
+	main.view.focusOnTree()
+	main.view.needsRedraw = true
 }
 
 function onSampleImport(item) {
@@ -261,6 +301,7 @@ function onSampleImport(item) {
 }
 
 function onTransformControlsChange() {
+	// console.log(main.tfc.object.matrix.elements)
 	main.view.needsRedraw = true
 }
 
