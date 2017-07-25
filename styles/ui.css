@@ -214,6 +214,7 @@ body .dg .close-button {
 }
 
 .sample-item {
+	position: relative;
 	height: 42px;
 	font-size: 12px;
 	font-family: monospace;
@@ -226,4 +227,21 @@ body .dg .close-button {
 }
 .sample-item.active {
 	background-color: #bbb;
+}
+
+.sample-remove {
+	left: auto;
+	right: 12px;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	border: 1px solid transparent;
+}
+.sample-remove:hover {
+	//background-color: #ccc;
+	border-color: black;
+}
+.sample-remove svg {
+	width: 10px;
+	height: 10px;
 }

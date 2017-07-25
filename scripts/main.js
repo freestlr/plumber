@@ -248,7 +248,24 @@ function onSampleImport(item) {
 		text: sample.src
 	})
 
+	block.remove = dom.div('sample-remove absmid hand', block.element)
+	Atlas.set(block.remove, 'i-cross', 'absmid')
+
+	block.hRemove = new EventHandler(removeSample, null, block).listen('tap', block.remove)
+
 	menu.set(menu.blocks.indexOf(block), true)
+}
+
+function removeSample(block) {
+	main.sampleMenu.removeBlock(block)
+
+	Atlas.free(block.remove)
+	block.hRemove.release()
+
+	var sample = main.sampler.samples[block.data]
+	if(sample) {
+		delete main.sampler.samples[sample.id]
+	}
 }
 
 function run() {
