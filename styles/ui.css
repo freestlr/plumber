@@ -172,21 +172,32 @@ body .dg .close-button {
 
 .file-import {
 	position: absolute;
-	left: 20px;
+	left: 10%;
+	right: 10%;
 	top: 20px;
+	width: 80%;
+	height: 42px;
+	border: 1px solid black;
+}
+.file-import svg {
+	width: 40px;
+	height: 40px;
+}
+.file-import:hover {
+	background-color: #eee;
 }
 
 .view-clear {
 	position: absolute;
-	top: 14px;
-	right: 14px;
-	width: 36px;
-	height: 36px;
+	top: 20px;
+	right: 24px;
+	width: 42px;
+	height: 42px;
 	border-radius: 50%;
 }
 .view-clear svg {
-	width: 24px;
-	height: 24px;
+	width: 26px;
+	height: 26px;
 }
 .view-clear:hover {
 	background-color: #ccc;
@@ -196,6 +207,10 @@ body .dg .close-button {
 .samples-list {
 	position: absolute;
 	background-color: white;
+}
+
+.sample-menu {
+	margin-top: 80px;
 }
 
 .sample-item {

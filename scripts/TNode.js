@@ -64,6 +64,7 @@ TNode = f.unit({
 
 		joint.matrix.decompose(slave.position, slave.rotation, slave.scale)
 		joint.matrix.decompose(master.position, master.rotation, master.scale)
+		// slave.position.negate()
 		slave.rotateY(Math.PI)
 
 		// con.helper = this.makeConnectionHelper(joint.name)
@@ -74,7 +75,7 @@ TNode = f.unit({
 		// slave.applyMatrix(joinSlaveMatrix)
 
 
-		console.log(master.rotation, slave.rotation)
+		// console.log(master.rotation, slave.rotation)
 
 		this.object.add(master)
 		this.connections.push(con)

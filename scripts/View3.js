@@ -243,7 +243,8 @@ View3.prototype = {
 			case '1': return this.transform.setMode('translate')
 			case '2': return this.transform.setMode('rotate')
 			case '3': return this.transform.setMode('scale')
-			case '4': return this.transform.setSpace(this.transform.space === 'world' ? 'local' : 'world')
+			case 'q': return this.transform.setSpace('local')
+			case 'w': return this.transform.setSpace('world')
 
 			case 'x':
 				this.enableWireframe = !this.enableWireframe

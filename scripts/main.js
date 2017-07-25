@@ -52,7 +52,7 @@ dom.addclass(document.body, 'ontouchstart' in window ? 'touch' : 'no-touch')
 dom.addclass(main.renderer.domElement, 'canvas-main')
 dom.append(main.tiles.element, main.renderer.domElement)
 dom.append(document.body, main.tiles.element)
-dom.append(document.body, main.file.input)
+dom.append(main.list, main.file.element)
 
 
 
@@ -131,15 +131,17 @@ function onSubChange(sid) {
 function onViewClear() {
 	main.tree = null
 	main.view.setTree(null)
+	location.hash = ''
 }
 
 
 function loadSample(sid) {
+	main.sampleMenu.setItem(sid)
+
 	var sample = main.sampler.samples[sid]
 	if(!sample) return false
 
 	if(!sample.object && !sample.src) return false
-
 
 
 	if(main.deferSample) {
@@ -215,8 +217,8 @@ function onkey(e) {
 }
 
 function onhashchange(e) {
-	var id = location.hash.slice(1)
-	if(id && !loadSample(id)) {
+	var ok = loadSample(location.hash.slice(1))
+	if(!ok) {
 		location.hash = ''
 	}
 }

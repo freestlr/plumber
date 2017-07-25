@@ -1,12 +1,17 @@
 function FileImport() {
+	this.element = dom.div('file-import hand')
 	this.events = new EventEmitter
 	this.readerJSON = new FileReader
 
 	this.input = dom.input('file', 'file-import')
 	this.input.setAttribute('accept', '.json')
 
+
+	Atlas.set(this.element, 'i-file-load', 'absmid')
+
 	dom.on('load', this.readerJSON, this)
 	dom.on('change', this.input, this)
+	dom.on('tap', this.element, this)
 	// dom.on('drop', window, this)
 }
 
@@ -16,6 +21,7 @@ FileImport.prototype = {
 			case 'load':   return this.onReaderLoad(e)
 			case 'change': return this.onInputChange(e)
 			case 'drop':   return this.onDrop(e)
+			case 'tap':    return this.onTap(e)
 		}
 	},
 
@@ -48,6 +54,10 @@ FileImport.prototype = {
 	importJSON: function(file) {
 		this.file = file
 		this.readerJSON.readAsText(file)
+	},
+
+	onTap: function() {
+		this.input.click()
 	},
 
 	onDrop: function(e) {

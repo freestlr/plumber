@@ -326,14 +326,14 @@ Block.Menu = f.unit(Block.List, {
 		this.update()
 	},
 
-	setItem: function(item) {
+	setItem: function(item, emitEvent) {
 		for(var i = 0; i < this.blocks.length; i++) {
 			var block = this.blocks[i]
 			if(!block.hasOwnProperty('data') || block.data !== item) continue
 
-			return this.set(i)
+			return this.set(i, emitEvent)
 		}
-		return this.set(-1)
+		return this.set(-1, emitEvent)
 	},
 
 	unsetBlock: function(block, emitEvent) {
