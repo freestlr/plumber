@@ -36,7 +36,7 @@ FileImport.prototype = {
 		}
 
 		this.events.emit('import', {
-			id: this.file.name,
+			id: f.range(10).map(f.randchar).join(''),
 			src: this.file.name,
 			object: object
 		})

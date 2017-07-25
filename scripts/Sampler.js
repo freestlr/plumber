@@ -14,6 +14,10 @@ Sampler.prototype = {
 		var sample = new Sample(def, this)
 		if(sample.hide) return
 
+		if(this.samples[sample.id]) {
+			console.warn('Sample with id', sample.id, 'already exists')
+		}
+
 		this.samples[sample.id] = sample
 		return sample
 	},
@@ -22,13 +26,8 @@ Sampler.prototype = {
 		samples.forEach(this.addSample, this)
 	},
 
-	getList: function(type) {
-		var list = []
-		for(var id in this.samples) {
-			var sample = this.samples[id]
-			if(!type || sample.type === type) list.push(sample.id)
-		}
-		return list.filter(f.uniq)
+	getList: function() {
+		return Object.keys(this.samples)
 	}
 }
 
@@ -41,17 +40,17 @@ function Sample(def, parent) {
 	this.joints = []
 	this.box    = new THREE.Box3
 
+
 	if(this.hide) {
 		return
 	}
 
-	if(this.src) {
-		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
-		this.load()
-	}
-
 	if(this.object) {
 		this.configure(this.object)
+
+	} else if(this.src) {
+		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
+		this.load()
 	}
 }
 

@@ -166,8 +166,8 @@ function setSample() {
 	}
 }
 
-function connectSample(id) {
-	var sample = main.sampler.samples[id]
+function connectSample(sid) {
+	var sample = main.sampler.samples[sid]
 	if(!sample) return
 
 	if(main.tree) {
@@ -240,12 +240,12 @@ function onDrop(e) {
 }
 
 function onSampleImport(item) {
-	main.sampler.addSample(item)
-
+	var sample = main.sampler.addSample(item)
 	var menu = main.sampleMenu
+
 	var block = menu.addItem({
-		data: item.id,
-		text: item.src
+		data: sample.id,
+		text: sample.src
 	})
 
 	menu.set(menu.blocks.indexOf(block), true)
