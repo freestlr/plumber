@@ -57,6 +57,9 @@ function View3(options) {
 View3.prototype = {
 
 	enableGrid: false,
+	enableRender: true,
+	enableWireframe: false,
+
 	clearColor: 0xAAAAAA,
 
 	makeGrid: function() {
@@ -188,14 +191,9 @@ View3.prototype = {
 	},
 
 	addConnectionMarker: function(node, con, index) {
-		// if(con.node) return
+		var color = con.connected ? con.master ? 'tomato' : 'yellow' : 'white'
 
-		var position = new THREE.Vector3()
-		position.setFromMatrixPosition(con.joinMaster.matrixWorld)
-
-		var color = con.node ? 'yellow' : 'white'
-
-		con.marker = this.markers.addMarker(position, con.joint.id, color, con)
+		con.marker = this.markers.addMarker(con.getPosition(), con.data.object.name, color, con)
 	},
 
 	updateProjection: function() {
@@ -212,26 +210,11 @@ View3.prototype = {
 
 	onTransformControlsChange: function() {
 		var con = this.transformConnection
-		if(!con) return
-
-		var matrix = con.joint.object.matrix
-		,   master = con.joinMaster
-		,   slave  = con.joinSlave
-
-		matrix.decompose(slave.position, slave.rotation, slave.scale)
-		matrix.decompose(master.position, master.rotation, master.scale)
-
-		// con.helper = this.makeConnectionHelper(joint.name)
-		// joint.object.add(con.helper)
-
-		// var joinSlaveMatrix = new THREE.Matrix4
-		// joinSlaveMatrix.makeRotationY(Math.PI)
-		// slave.applyMatrix(joinSlaveMatrix)
-
-		slave.rotateY(Math.PI)
-		// console.log(master.position, slave.position, slave.rotation)
-		this.updateConnections()
-		this.markers.removeMarker(con.marker)
+		if(con) {
+			con.updateControl()
+			this.updateConnections()
+			this.markers.removeMarker(con.marker)
+		}
 
 		this.needsRedraw = true
 	},
@@ -251,6 +234,11 @@ View3.prototype = {
 				this.needsRedraw = true
 			return
 
+			case 'z':
+				this.enableRender = !this.enableRender
+				this.needsRedraw = true
+			return
+
 			case 'g':
 				this.enableGrid = !this.enableGrid
 				this.needsRedraw = true
@@ -267,8 +255,9 @@ View3.prototype = {
 
 	onTap: function(e) {
 		if(this.transformConnection && e.target === this.element) {
-			this.transform.detach()
+			this.transformConnection.detachControl()
 			this.transformConnection = null
+
 			this.updateConnections()
 			this.needsRedraw = true
 		}
@@ -278,10 +267,11 @@ View3.prototype = {
 
 		if(kbd.state.CTRL) {
 			var con = marker.data
-			this.transform.attach(con.joint.object)
-			this.transformConnection = con
-			this.markers.removeMarker(con.marker)
 
+			this.transformConnection = con
+			this.transformConnection.attachControl(this.transform)
+
+			this.markers.removeMarker(con.marker)
 			this.needsRedraw = true
 		}
 	},
@@ -336,9 +326,11 @@ View3.prototype = {
 			this.renderer.setClearColor(this.clearColor)
 			this.renderer.clear()
 
-			this.grid.visible = false
-			this.root.visible = true
-			this.renderer.render(this.scene, this.camera)
+			if(this.enableRender) {
+				this.grid.visible = false
+				this.root.visible = true
+				this.renderer.render(this.scene, this.camera)
+			}
 
 			if(this.enableGrid) {
 				this.grid.visible = true

@@ -159,10 +159,7 @@ Sample.prototype = {
 			id     : match[1],
 			param  : match[2],
 			extra  : match[3],
-
-			object : object,
-			name   : object.name,
-			matrix : object.matrixWorld
+			object : object
 		})
 	},
 
@@ -181,12 +178,31 @@ Sample.prototype = {
 		if(!mesh.geometry.boundingBox) {
 			mesh.geometry.computeBoundingBox()
 		}
-
-		// mesh.geometry.computeVertexNormals()
-
 		this.box.union(mesh.geometry.boundingBox)
 
+
+		// mesh.geometry = this.smoothShadeGeometry(mesh.geometry)
+		// mesh.geometry.computeVertexNormals()
+
+
+
 		// this.configureAnchors(mesh)
+	},
+
+	smoothShadeGeometry: function(geometry) {
+		var g = new THREE.Geometry
+
+		if(geometry instanceof THREE.BufferGeometry) {
+			g.fromBufferGeometry(geometry)
+		} else {
+			g.copy(geometry)
+		}
+
+		g.mergeVertices()
+		g.computeVertexNormals()
+		g.computeFaceNormals()
+
+		return g
 	},
 
 	configureAnchors: function(mesh) {

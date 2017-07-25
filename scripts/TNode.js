@@ -19,7 +19,7 @@ TNode = f.unit({
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
 
-			if(con.master && con.node) con.node.traverse(func, scope, data)
+			if(con.connected && con.master) con.target.traverse(func, scope, data)
 		}
 	},
 
@@ -29,7 +29,7 @@ TNode = f.unit({
 
 			func.call(scope || this, this, con, i, data)
 
-			if(con.master && con.node) con.node.traverseConnections(func, scope, data)
+			if(con.connected && con.master) con.target.traverseConnections(func, scope, data)
 		}
 	},
 
@@ -38,85 +38,22 @@ TNode = f.unit({
 			return console.warn('TN.setSample: node already has sample')
 		}
 
+		var object = sample.clone()
+		if(!object) {
+			return console.warn('TN.setSample: got no sample object')
+		}
+
 		this.sample = sample
-		this.sampleObject = sample.clone()
+		this.sampleObject = object
 
 		this.object.add(this.sampleObject)
 
 		this.connections = []
 		sample.joints.forEach(this.addConnection, this)
-
-		// this.boxNeedsUpdate = true
-		// this.updateBox()
 	},
 
 	addConnection: function(joint) {
-		var master = new THREE.Object3D
-		,   slave = new THREE.Object3D 
-
-		var con = {
-			node: null,
-			master: null,
-			joint: joint,
-			joinMaster: master,
-			joinSlave: slave
-		}
-
-		joint.matrix.decompose(slave.position, slave.rotation, slave.scale)
-		joint.matrix.decompose(master.position, master.rotation, master.scale)
-		// slave.position.negate()
-		slave.rotateY(Math.PI)
-
-		// con.helper = this.makeConnectionHelper(joint.name)
-		// joint.object.add(con.helper)
-
-		// var joinSlaveMatrix = new THREE.Matrix4
-		// joinSlaveMatrix.makeRotationY(Math.PI)
-		// slave.applyMatrix(joinSlaveMatrix)
-
-
-		// console.log(master.rotation, slave.rotation)
-
-		this.object.add(master)
-		this.connections.push(con)
-	},
-
-	makeConnectionHelper: function(id) {
-		var s = 256
-		var ctx = main.imagery.makeCanvas(s, s)
-		ctx.fillStyle = f.rcolor()
-		ctx.fillRect(0, 0, s, s)
-		ctx.fillStyle = 'white'
-		ctx.strokeStyle = 'black'
-		ctx.textAlign = 'center'
-		ctx.font = '18px monospace'
-		ctx.strokeText(id, s/2, s/2)
-		ctx.fillText(id, s/2, s/2)
-
-		var t = new THREE.Texture(ctx.canvas)
-		t.wrapS = THREE.RepeatWrapping
-		t.wrapT = THREE.RepeatWrapping
-		t.needsUpdate = true
-
-		var object = new THREE.Object3D
-
-		var line = new THREE.Line(
-			new THREE.Geometry,
-			new THREE.LineBasicMaterial({ color: 'black' }))
-
-		var mesh = new THREE.Mesh(
-			new THREE.CubeGeometry(10, 10, 10),
-			new THREE.MeshBasicMaterial({ map: t }))
-
-		line.geometry.vertices.push(
-			new THREE.Vector3(0, 0, 0),
-			new THREE.Vector3(0, 50, 0))
-
-		mesh.position.set(0, 50, 0)
-
-		object.add(line)
-		object.add(mesh)
-		return object
+		this.connections.push(new TConnection(this, joint))
 	},
 
 	connect: function(indexA, node, indexB) {
@@ -131,68 +68,34 @@ TNode = f.unit({
 			return console.warn('TN.connect with undefined joint')
 		}
 
-		if(conA.node || conB.node) {
+		if(conA.connected || conB.connected) {
 			return console.warn('TN.connect to used joint')
 		}
 
-		this.object.add(conA.joinMaster)
-		conA.joinMaster.add(conB.joinSlave)
-		conB.joinSlave.add(node.object)
-
-		conA.node = node
-		conB.node = this
-
-		conA.master = true
-		conB.master = false
-
-		// this.boxNeedsUpdate = true
-		// node.boxNeedsUpdate = true
-		// node.updateBox()
-		// this.updateBox()
+		conA.connect(conB)
 	},
 
 	disconnect: function(indexA) {
 
 	},
 
-	// boxUnion: function(box) {
-	// 	box.union(this.sample.box)
-
-	// 	for(var i = 0; i < this.connections.length; i++) {
-	// 		var con = this.connections[i]
-
-	// 		if(con.master && con.node) con.node.boxUnion(box)
-	// 	}
-	// },
-
 	boxUnion: function(node, box) {
 		node.updateBox()
-		box.union(node.sample.box)
+		if(node.sample) box.union(node.sample.box)
 	},
 
 	updateBox: function() {
-		// if(!this.boxNeedsUpdate) return
-		// this.boxNeedsUpdate = false
-
 		this.object.updateMatrixWorld()
 
 		this.box.makeEmpty()
 
 		var box = new THREE.Box3
 		this.traverse(function(node) {
-			box.copy(node.sample.box)
+			if(node.sample) box.copy(node.sample.box)
 			box.applyMatrix4(node.object.matrixWorld)
 			this.box.union(box)
 
 		}, this)
-
-		// this.box.makeEmpty()
-		// this.boxUnion(this.box)
-		// this.traverse(this.boxUnion, this, this.box)
-
-		// this.object.updateMatrixWorld()
-		// this.box.copy(this.sample.box)
-		// this.box.applyMatrix4(this.object.matrixWorld)
 
 		// console.log('box:',
 		// 	this.box.min.toArray().map(f.hround),

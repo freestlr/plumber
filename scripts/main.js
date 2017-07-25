@@ -25,15 +25,13 @@ main.renderer.autoClear = false
 main.view = new View3({
 	// eroot: document.body,
 	renderer: main.renderer,
-	// clearColor: 0xFF00FF,
-	enableWireframe: false
+	// clearColor: 0xFF00FF
 })
 
 main.view2 = new View3({
 	// eroot: document.body,
 	renderer: main.renderer,
-	// clearColor: 0x00FF00,
-	enableWireframe: false
+	// clearColor: 0x00FF00
 })
 
 
@@ -153,7 +151,7 @@ function loadSample(sid) {
 }
 
 function setSample() {
-	// main.sample.describe()
+	main.sample.describe()
 
 	var node = new TNode(main.sample)
 
@@ -173,19 +171,12 @@ function connectSample(id) {
 	if(!sample) return
 
 	if(main.tree) {
-		var connected = false
-		main.tree.traverse(function(node) {
-			if(connected) return
+		var found = false
+		main.tree.traverseConnections(function(node, con, index) {
+			if(found || con.connected) return
 
-			for(var i = 0; i < node.connections.length; i++) {
-				var con = node.connections[i]
-
-				if(!con.node) {
-					node.connect(i, new TNode(sample), 0)
-					connected = true
-					return
-				}
-			}
+			node.connect(index, new TNode(sample), 0)
+			found = true
 		})
 
 	} else {
