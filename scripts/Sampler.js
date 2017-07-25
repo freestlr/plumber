@@ -51,6 +51,8 @@ function Sample(def, parent) {
 
 	this.parent = parent
 	this.parent.events.emit('sample_new', this)
+
+	if(this.object) this.configure(this.object)
 }
 
 Sample.prototype = {

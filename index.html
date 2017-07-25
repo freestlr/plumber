@@ -3,48 +3,224 @@
 	<title>fit test</title>
 	<meta charset="utf-8" />
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+	<script>
+		!function() {
+		"use strict";
 
-	<link rel="stylesheet" href="styles/main.css" />
-	<link rel="stylesheet" href="styles/TileView.css" />
-	<link rel="stylesheet" href="styles/ui.css" />
+		var scripts = {}
+		var styles  = {}
 
-	<script src="scripts/lib/f.js"></script>
-	<script src="scripts/lib/pf.js"></script>
-	<script src="scripts/lib/dom.js"></script>
-	<script src="scripts/lib/kbd.js"></script>
-	<script src="scripts/lib/perf.js"></script>
-	<script src="scripts/lib/tween.js"></script>
-	<script src="scripts/lib/three.js"></script>
-	<script src="scripts/lib/dat.gui.min.js"></script>
-	<script src="scripts/lib/inflate.min.js"></script>
-	<script src="scripts/base/EventEmitter.js"></script>
-	<script src="scripts/base/EventHandler.js"></script>
-	<script src="scripts/base/Observable.js"></script>
-	<script src="scripts/base/Timer.js"></script>
-	<script src="scripts/base/Defer.js"></script>
-	<script src="scripts/base/Gate.js"></script>
-	<script src="scripts/base/Loader.js"></script>
-	<script src="scripts/base/Loader.obj.js"></script>
-	<script src="scripts/base/Drag.js"></script>
-	<script src="scripts/base/Momentum.js"></script>
-	<script src="scripts/base/Block.js"></script>
-	<script src="scripts/base/Atlas.js"></script>
-	<script src="scripts/THREE.extend.js"></script>
-	<script src="scripts/THREE.OrbitControls.js"></script>
-	<script src="scripts/THREE.FirstPersonControls.js"></script>
-	<script src="scripts/TransformControls.js"></script>
-	<script src="scripts/FBXLoader.js"></script>
-	<script src="scripts/ColladaLoader.js"></script>
-	<script src="scripts/FileImport.js"></script>
-	<script src="scripts/TileView.js"></script>
-	<script src="scripts/Imagery.js"></script>
-	<script src="scripts/Sampler.js"></script>
-	<script src="scripts/View3.js"></script>
-	<script src="scripts/TNode.js"></script>
-	<script src="scripts/UI.js"></script>
+		var html5_scripts = [
+			'scripts/lib/f.js',
+			'scripts/lib/pf.js',
+			'scripts/lib/dom.js',
+			'scripts/lib/kbd.js',
+			'scripts/lib/perf.js',
+			'scripts/lib/tween.js',
+			'scripts/lib/three.js',
+			'scripts/lib/dat.gui.min.js',
+			'scripts/lib/inflate.min.js',
+			'scripts/base/EventEmitter.js',
+			'scripts/base/EventHandler.js',
+			'scripts/base/Observable.js',
+			'scripts/base/Timer.js',
+			'scripts/base/Defer.js',
+			'scripts/base/Gate.js',
+			'scripts/base/Loader.js',
+			'scripts/base/Loader.obj.js',
+			'scripts/base/Drag.js',
+			'scripts/base/Momentum.js',
+			'scripts/base/Block.js',
+			'scripts/base/Atlas.js',
+			'scripts/THREE.extend.js',
+			'scripts/THREE.OrbitControls.js',
+			'scripts/THREE.FirstPersonControls.js',
+			'scripts/TransformControls.js',
+			'scripts/FBXLoader.js',
+			'scripts/ColladaLoader.js',
+			'scripts/FileImport.js',
+			'scripts/TileView.js',
+			'scripts/Imagery.js',
+			'scripts/Sampler.js',
+			'scripts/View3.js',
+			'scripts/TNode.js',
+
+			'scripts/UI/UI.js',
+			'scripts/UI/Submenu.js',
+
+			'scripts/main.js'
+		]
+		var html5_styles = [
+			'styles/main.css',
+			'styles/TileView.css',
+			'styles/ui.css',
+		]
+		var flash_scripts = [
+
+		]
+		var flash_styles = [
+
+		]
+
+		var first = document.getElementsByTagName('script')[0]
+		function add_script(src, callback) {
+			var elem    = document.createElement('script')
+			elem.type   = 'text/javascript'
+			elem.src    = window.scriptname = src // +'?'+ Math.random()
+			elem.onload = callback
+			first.parentNode.insertBefore(elem, first)
+		}
+		function add_style(href) {
+			var elem  = document.createElement('link')
+			elem.rel  = 'stylesheet'
+			elem.href = href
+			elem.type = 'text/css'
+			first.parentNode.insertBefore(elem, first)
+		}
+
+		window.loadScripts = function(scripts) {
+			var scripts_progress = 0.8
+			,   scripts_total = scripts.length
+			!function run_scripts() {
+				if(typeof bootProgress === 'function') {
+					bootProgress(scripts_progress * (1 - scripts.length / scripts_total))
+				}
+				if(scripts.length) add_script(scripts.shift(), run_scripts)
+			}()
+		}
+		window.loadStyles = function(styles) {
+			while(styles.length) add_style(styles.shift())
+		}
+
+
+		try { var FLASH = new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version') } catch(e) {}
+		try { var FLASH = navigator.plugins['Shockwave Flash'].description && navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin } catch(e) {}
+		try { var CANVAS = !!document.createElement('canvas').getContext('2d') } catch(e) {}
+
+		loadScripts(html5_scripts)
+		loadStyles(html5_styles)
+
+		if(FLASH && CANVAS) {
+
+		} else if(FLASH) {
+
+		} else if(CANVAS) {
+
+		} else {
+
+		}
+
+		}()
+	</script>
 </head>
+<body>
+	<div id="eLoading" class="loading absmid">
+		<style>
+			.absmid {
+				position: absolute;
+				left: 0;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				margin: auto;
+			}
+			.loading {
+				background-color: white;
 
-<body class="no-touch">
+				-webkit-transition: opacity 0.5s ease-in-out;
+				   -moz-transition: opacity 0.5s ease-in-out;
+				    -ms-transition: opacity 0.5s ease-in-out;
+				     -o-transition: opacity 0.5s ease-in-out;
+				        transition: opacity 0.5s ease-in-out;
+
+				z-index: 9001;
+			}
+			.loading.done {
+				opacity: 0;
+			}
+			.loading-center {
+			}
+			.loading-image {
+				width: 52px;
+				height: 54px;
+			}
+			.loading-canvas {
+				position: absolute;
+			}
+		</style>
+		<div id="eBootCenter" class="loading-center absmid">
+			<img src="images/boot.gif" class="loading-image absmid">
+			<canvas id="eBootCanvas" class="loading-canvas"></canvas>
+		</div>
+	</div>
+
+	<script>
+	!function() {
+		var fps    = 30
+		,   size   = 300
+		,   radius = 56
+		,   thick  = 2
+		,   half   = size /2
+		,   torad  = Math.PI / 180
+		,   offset = -Math.PI / 2
+		,   callback = function() {}
+		,   source = 0
+		,   target = 0
+
+		var angles = [46, 192, 255, 314, 360]
+		,   colors = ['#ea4335', '#fbbc05', '#4285f4', '#34a853', '#ea4335']
+		,   context = eBootCanvas.getContext('2d')
+
+		eBootCanvas.width = eBootCanvas.height = size
+		eBootCanvas.style.top = '-1px'
+		eBootCanvas.style.left = 0
+		eBootCenter.style.width = eBootCenter.style.height = size +'px'
+
+		function drawProgress(progress) {
+			var curr = Math.min(1, progress) * Math.PI * 2
+			,   prev = 0
+
+			context.clearRect(0, 0, size, size)
+			for(var i = 0; i < angles.length; i++) {
+				var next = angles[i] * torad
+
+				context.lineWidth = thick
+				context.strokeStyle = colors[i]
+				context.beginPath()
+				context.arc(half, half, radius, prev + offset, Math.min(curr, next) + offset)
+				context.stroke()
+
+				if(next > curr) break
+				prev = next
+			}
+		}
+
+		var timer = setInterval(function() {
+			if(source < target) {
+				source += (target + 0.2 - source) / 20
+
+			} else {
+				source += (1 - source) * 0.001
+			}
+
+			drawProgress(source)
+
+			if(source >= 1) {
+				clearInterval(timer)
+				setTimeout(function() { eLoading.className += ' done' }, 200)
+				setTimeout(function() { eLoading.parentNode.removeChild(eLoading); callback() }, 700)
+			}
+		}, 1000 / fps)
+
+		window.bootProgress = function(progress) {
+			target = progress
+		}
+
+		window.bootCallback = function(func) {
+			if(typeof callback === 'function') callback = func
+		}
+
+	}()
+	</script>
 </body>
-
-<script src="scripts/main.js"></script>

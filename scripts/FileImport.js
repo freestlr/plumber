@@ -31,7 +31,7 @@ FileImport.prototype = {
 
 		this.events.emit('import', {
 			id: this.file.name,
-			name: this.file.name,
+			src: this.file.name,
 			object: object
 		})
 	},

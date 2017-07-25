@@ -12,7 +12,7 @@ main.sampler.folder = 'samples/'
 
 main.tiles = new TileView
 // main.tiles.setLayout(['v', ['h', 0, 0, 0.7], 0, 0.8])
-main.tiles.setLayout(['h', 0, 0, 0.7])
+main.tiles.setLayout(['h', ['h', 0, 0, 1], 0, 0.7])
 
 // main.splitV = main.tiles.splits[0]
 // main.viewportL = main.tiles.frames[0]
@@ -52,6 +52,7 @@ main.view.scene.add(main.tfc)
 main.tiles.setClients([main.view, main.view2])
 
 
+dom.addclass(document.body, 'ontouchstart' in window ? 'touch' : 'no-touch')
 dom.addclass(main.renderer.domElement, 'canvas-main')
 dom.append(main.tiles.element, main.renderer.domElement)
 dom.append(document.body, main.tiles.element)
@@ -65,27 +66,6 @@ main.get.xml('images/atlas.svg').defer
 main.get.image('images/textures/cubemap.png').defer
 	.then(main.imagery.unwrapCubemap3x2, main.imagery)
 
-// main.get.image('images/textures/cloth_45.jpg').defer
-// 	.then(function(image) {
-// 
-// 		main.imagery.setMaterial('gold', {
-// 			id: 1111,
-// 			color: 0xf7d78a,
-// 			texture: {
-// 				image: main.imagery.pixel.image,
-// 				loaded: true,
-// 				repeatX: 120,
-// 				repeatY: 80
-// 			},
-// 			bump: {
-// 				image: image,
-// 				loaded: true,
-// 				repeatX: 120,
-// 				repeatY: 80
-// 			}
-// 		})
-// 	})
-
 main.get.json('configs/samples.json').defer
 	.then(main.sampler.addSampleList, main.sampler)
 	.then(makeMenu)
@@ -95,7 +75,7 @@ main.get.json('configs/samples.json').defer
 
 function makeMenu() {
 	var samples = main.sampler.getList()
-	,   names = samples.map(getSampleImage)
+	,   names = samples.map(function(sid) { return main.sampler.samples[sid].src })
 
 	main.sampleMenu = new UI.Submenu({
 		ename: 'sample sample-item absmid hand',
@@ -154,14 +134,6 @@ function onSubChange(sid) {
 	location.hash = sid
 }
 
-function getSampleImage(sid) {
-	var sample = main.sampler.samples[sid]
-	return sample ? sample.name : 'unknown/'+ sid
-}
-
-function setSampleImage(element, sid) {
-	return Atlas.set(element, UI.getSampleImage(sid))
-}
 
 function loadSample(sid) {
 	var sample = main.sampler.samples[sid]
@@ -170,7 +142,7 @@ function loadSample(sid) {
 	if(!sample.object && !sample.src) return false
 
 	main.sampleMenu.set(0, true)
-	UI.setSampleImage(main.sampleMenu.element, sid)
+	dom.text(main.sampleMenu.element, sample.src)
 
 
 	if(main.deferSample) {
@@ -198,8 +170,44 @@ function setSample() {
 	// main.view.setTree(main.sample.clone())
 	// main.view.focusOnTree(300)
 
-	main.view2.setTree(node)
-	main.view2.focusOnTree(300)
+	if(main.tree) {
+		main.view2.setTree(node)
+		main.view2.focusOnTree(300)
+
+	} else {
+		main.tree = node
+		main.view.setTree(node)
+		main.view.focusOnTree(300)
+	}
+}
+
+function connectSample(id) {
+	var sample = main.sampler.samples[id]
+	if(!sample) return
+
+	if(main.tree) {
+		var connected = false
+		main.tree.traverse(function(node) {
+			if(connected) return
+
+			for(var i = 0; i < node.connections.length; i++) {
+				var con = node.connections[i]
+
+				if(!con.node) {
+					node.connect(i, new TNode(sample), 0)
+					connected = true
+					return
+				}
+			}
+		})
+
+	} else {
+		main.tree = new TNode(sample)
+		main.view.setTree(main.tree)
+	}
+
+	main.view.focusOnTree()
+	main.view.needsRedraw = true
 }
 
 
@@ -259,35 +267,6 @@ function onDrop(e) {
 	e.preventDefault()
 }
 
-function connectSample(id) {
-	var sample = main.sampler.samples[id]
-	if(!sample) return
-
-	if(main.tree) {
-		var connected = false
-		main.tree.traverse(function(node) {
-			if(connected) return
-
-			for(var i = 0; i < node.connections.length; i++) {
-				var con = node.connections[i]
-
-				if(!con.node) {
-					node.connect(i, new TNode(sample), 0)
-					connected = true
-					return
-				}
-			}
-		})
-
-	} else {
-		main.tree = new TNode(sample)
-		main.view.setTree(main.tree)
-	}
-
-	main.view.focusOnTree()
-	main.view.needsRedraw = true
-}
-
 function onSampleImport(item) {
 	main.sampler.addSample(item)
 
@@ -321,6 +300,7 @@ function run() {
 
 	onresize()
 	onhashchange()
+	bootProgress(1)
 	main.timer.play()
 }
 
