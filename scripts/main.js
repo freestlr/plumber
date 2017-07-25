@@ -37,10 +37,6 @@ main.view2 = new View3({
 })
 
 
-main.tfc = new THREE.TransformControls(main.view.camera, main.view.element)
-main.tfc.addEventListener('change', onTransformControlsChange)
-// main.view.scene.add(main.tfc)
-
 main.list = dom.div('samples-list')
 
 main.tiles.setClients([main.view, main.view2, { element: main.list }])
@@ -157,19 +153,7 @@ function loadSample(sid) {
 function setSample() {
 	// main.sample.describe()
 
-	// console.log(main.sample.joints)
-	var joint0 = main.sample.joints[1]
-	if(joint0) {
-		main.tfc.attach(joint0.object)
-
-	} else {
-		main.tfc.detach()
-	}
-
 	var node = new TNode(main.sample)
-
-	// main.view.setTree(main.sample.clone())
-	// main.view.focusOnTree(300)
 
 	if(main.tree) {
 		main.view2.setTree(node)
@@ -217,11 +201,6 @@ function onkey(e) {
 	if(e.ctrlKey || e.shiftKey || e.altKey) {
 
 	} else if(kbd.down && kbd.changed) switch(kbd.key) {
-		case '1': return main.tfc.setMode('translate')
-		case '2': return main.tfc.setMode('rotate')
-		case '3': return main.tfc.setMode('scale')
-		case '4': return main.tfc.setSpace(main.tfc.space === 'world' ? 'local' : 'world')
-
 		case 'c':
 			main.view.focusOnTree()
 			main.view2.focusOnTree()
@@ -279,12 +258,6 @@ function onSampleImport(item) {
 	menu.set(menu.blocks.indexOf(block), true)
 }
 
-function onTransformControlsChange() {
-	// console.log(main.tfc.object.matrix.elements)
-	main.view.needsRedraw = true
-}
-
-
 function run() {
 	dom.on('hashchange', window, onhashchange)
 	dom.on('resize',  window, onresize)
@@ -306,8 +279,6 @@ function run() {
 
 function loop(t, dt) {
 	TWEEN.update()
-
-	main.tfc.update()
 
 	main.view.onTick(dt)
 	main.view2.onTick(dt)

@@ -1,5 +1,6 @@
 [
 	{"hide": 0, "id": "1", "src": "1.obj"},
+	{"hide": 0, "id": "2", "src": "2.json"},
 	{"hide": 0, "id": "CM2T", "src": "CM2T.obj"},
 	{"hide": 1, "id": "CM2T01", "src": "CM2T01.obj"},
 	{"hide": 1, "id": "CM2T_MTF", "src": "CM2T_MTF.obj"},

@@ -5,15 +5,20 @@ UI.MarkerSystem = f.unit(Block, {
 		this.markers = []
 	},
 
-	addMarker: function(position, data) {
+	addMarker: function(position, text, color, data) {
 		if(!this.projector) return
 
 		var marker = new UI.Marker({
 			eroot: this.element,
 			events: this.events,
 			point: this.projector.addPoint(),
-			text: data
+			data: data,
+			text: text
 		})
+
+		if(color) {
+			marker.element.style.backgroundColor = color
+		}
 
 		if(position) {
 			marker.point.world.copy(position)

@@ -1,9 +1,6 @@
 function Sampler() {
-	this.get     = new Loader
-	this.events  = new EventEmitter
+	this.get = new Loader
 	this.samples = {}
-
-
 }
 
 Sampler.prototype = {
@@ -40,22 +37,26 @@ Sampler.prototype = {
 function Sample(def, parent) {
 	for(var name in def) this[name] = def[name]
 
-	if(this.src) {
-		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
+	this.parent = parent
+	this.joints = []
+	this.box    = new THREE.Box3
+
+	if(this.hide) {
+		return
 	}
 
-	this.box = new THREE.Box3
+	if(this.src) {
+		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
+		this.load()
+	}
 
-	this.joints = []
-
-	this.parent = parent
-	this.parent.events.emit('sample_new', this)
-
-	if(this.object) this.configure(this.object)
+	if(this.object) {
+		this.configure(this.object)
+	}
 }
 
 Sample.prototype = {
-	jointRE: /^([^_]*)_([^_]*)_([^_]*)/,
+	jointRE: /^:([^_]*)_([^_]*)_([^_]*)/,
 
 	traverse: function(object, func, scope, data, inc, level) {
 		if(!object) return
@@ -150,9 +151,7 @@ Sample.prototype = {
 		this.parts = []
 
 		this.box.makeEmpty()
-		this.traverse(this.object, this.configurePart)
-
-		this.parent.events.emit('sample_ready', this)
+		this.traverse(this.object, this.configureObject)
 	},
 
 	configureJoint: function(object, match) {
@@ -160,13 +159,14 @@ Sample.prototype = {
 			id     : match[1],
 			param  : match[2],
 			extra  : match[3],
-			name   : object.name,
+
 			object : object,
+			name   : object.name,
 			matrix : object.matrixWorld
 		})
 	},
 
-	configurePart: function(mesh) {
+	configureObject: function(mesh) {
 		if(this.parent.imagery) {
 			this.parent.imagery.configureSampleMaterial(mesh)
 		}
@@ -181,6 +181,8 @@ Sample.prototype = {
 		if(!mesh.geometry.boundingBox) {
 			mesh.geometry.computeBoundingBox()
 		}
+
+		// mesh.geometry.computeVertexNormals()
 
 		this.box.union(mesh.geometry.boundingBox)
 

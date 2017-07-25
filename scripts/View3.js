@@ -11,6 +11,9 @@ function View3(options) {
 	this.root      = new THREE.Object3D
 	this.grid      = new THREE.Object3D
 
+	this.transform = new THREE.TransformControls(this.camera, this.element)
+	this.transform.addEventListener('change', f.binds(this.onTransformControlsChange, this))
+
 	this.projector = new PointProjector(this.camera)
 
 	this.markers = new UI.MarkerSystem({
@@ -46,6 +49,9 @@ function View3(options) {
 	this.root.add(this.dirLight)
 	this.scene.add(this.root)
 	this.scene.add(this.grid)
+	this.scene.add(this.transform)
+
+	dom.on('tap', this.element, this)
 }
 
 View3.prototype = {
@@ -129,6 +135,14 @@ View3.prototype = {
 		// this.gridYZ.position.x = 0.4 * projYZ + this.camera.position.x
 	},
 
+	handleEvent: function(e) {
+		switch(e.type) {
+			case 'tap':
+				this.onTap(e)
+			return
+		}
+	},
+
 	focusOnTree: function() {
 		if(this.tree) {
 			this.tree.updateBox()
@@ -174,13 +188,14 @@ View3.prototype = {
 	},
 
 	addConnectionMarker: function(node, con, index) {
-		if(con.node) return
+		// if(con.node) return
 
 		var position = new THREE.Vector3()
 		position.setFromMatrixPosition(con.joinMaster.matrixWorld)
-		console.log(position)
 
-		this.markers.addMarker(position, con.joint.id)
+		var color = con.node ? 'yellow' : 'white'
+
+		con.marker = this.markers.addMarker(position, con.joint.id, color, con)
 	},
 
 	updateProjection: function() {
@@ -195,17 +210,50 @@ View3.prototype = {
 		this.needsRetrace = true
 	},
 
+	onTransformControlsChange: function() {
+		var con = this.transformConnection
+		if(!con) return
+
+		var matrix = con.joint.object.matrix
+		,   master = con.joinMaster
+		,   slave  = con.joinSlave
+
+		matrix.decompose(slave.position, slave.rotation, slave.scale)
+		matrix.decompose(master.position, master.rotation, master.scale)
+
+		// con.helper = this.makeConnectionHelper(joint.name)
+		// joint.object.add(con.helper)
+
+		// var joinSlaveMatrix = new THREE.Matrix4
+		// joinSlaveMatrix.makeRotationY(Math.PI)
+		// slave.applyMatrix(joinSlaveMatrix)
+
+		slave.rotateY(Math.PI)
+		// console.log(master.position, slave.position, slave.rotation)
+		this.updateConnections()
+		this.markers.removeMarker(con.marker)
+
+		this.needsRedraw = true
+	},
+
 	onKey: function(e) {
-		if(kbd.down && kbd.changed) switch(kbd.key) {
+		if(e.ctrlKey || e.shiftKey || e.altKey) {
+
+		} else if(kbd.down && kbd.changed) switch(kbd.key) {
+			case '1': return this.transform.setMode('translate')
+			case '2': return this.transform.setMode('rotate')
+			case '3': return this.transform.setMode('scale')
+			case '4': return this.transform.setSpace(this.transform.space === 'world' ? 'local' : 'world')
+
 			case 'x':
 				this.enableWireframe = !this.enableWireframe
 				this.needsRedraw = true
-			break
+			return
 
 			case 'g':
 				this.enableGrid = !this.enableGrid
 				this.needsRedraw = true
-			break
+			return
 		}
 	},
 
@@ -216,8 +264,25 @@ View3.prototype = {
 		this.onResize()
 	},
 
+	onTap: function(e) {
+		if(this.transformConnection && e.target === this.element) {
+			this.transform.detach()
+			this.transformConnection = null
+			this.updateConnections()
+			this.needsRedraw = true
+		}
+	},
+
 	onMarkerTap: function(marker) {
-		console.log('onMarkerTap', marker)
+
+		if(kbd.state.CTRL) {
+			var con = marker.data
+			this.transform.attach(con.joint.object)
+			this.transformConnection = con
+			this.markers.removeMarker(con.marker)
+
+			this.needsRedraw = true
+		}
 	},
 
 	onResize: function() {
@@ -238,6 +303,7 @@ View3.prototype = {
 	},
 
 	onTick: function(dt) {
+		this.transform.update()
 
 		this.camera.updateMatrix()
 		if(!this.lastcam.equals(this.camera.matrix)) {
