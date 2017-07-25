@@ -189,10 +189,10 @@ body .dg .close-button {
 
 .view-clear {
 	position: absolute;
-	top: 20px;
+	top: 12px;
 	right: 24px;
-	width: 42px;
-	height: 42px;
+	width: 56px;
+	height: 56px;
 	border-radius: 50%;
 }
 .view-clear svg {

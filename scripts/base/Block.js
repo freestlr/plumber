@@ -302,8 +302,14 @@ Block.Menu = f.unit(Block.List, {
 
 			this.active = i
 			this.activeBlock = block
-			this.activeItem  = block ? block.data : null
+			this.activeItem  = block.data
+
+			return
 		}
+
+		this.active = -1
+		this.activeBlock = null
+		this.activeItem  = null
 	},
 
 	onitemchange: function(block, active) {

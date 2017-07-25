@@ -62,6 +62,8 @@ View3.prototype = {
 
 	clearColor: 0xAAAAAA,
 
+	focusDistance: 1.5,
+
 	makeGrid: function() {
 		var size = 10
 		,   divisions = 200
@@ -149,11 +151,11 @@ View3.prototype = {
 	focusOnTree: function() {
 		if(this.tree) {
 			this.tree.updateBox()
-			this.camera.position.set(1, 1, 1).setLength(this.tree.boxLength * 1.01)
+			this.camera.position.set(1, 1, 1).setLength(this.tree.boxLength * this.focusDistance)
 			this.orbit.target.copy(this.tree.boxCenter)
 
 		} else {
-			this.camera.position.set(1, 1, 1).setLength(1.01)
+			this.camera.position.set(1, 1, 1).setLength(this.focusDistance)
 			this.orbit.target.set(0, 0, 0)
 		}
 

@@ -2,16 +2,17 @@ function Drag(element) {
 	this.element = element
 	this.events  = new EventEmitter
 
-	this.offset  = {}
-	this.origin  = {}
-	this.begin   = {}
-	this.point   = {}
-	this.delta   = {}
+	this.offset = { x: 0, y: 0 }
+	this.origin = { x: 0, y: 0 }
+	this.point  = { x: 0, y: 0 }
+	this.mouse  = { x: 0, y: 0 }
+	this.begin  = { x: 0, y: 0 }
+	this.delta  = { x: 0, y: 0 }
+	this.scale  = { x: 1, y: 1 }
+	this.moves  = 0
 
-	this.min = {}
-	this.max = {}
-
-	this.reset()
+	this.min = { x: -Infinity, y: -Infinity }
+	this.max = { x:  Infinity, y:  Infinity }
 
 	this.bind('mousedown',  this.element)
 	this.bind('touchstart', this.element)
@@ -20,51 +21,43 @@ function Drag(element) {
 Drag.prototype = {
 	active: false,
 	disabled: false,
-	scale: 1,
-
-	reset: function() {
-		this.offset.x = this.offset.y = 0
-		this.origin.x = this.origin.y = 0
-		this.begin .x = this.begin .y = 0
-		this.point .x = this.point .y = 0
-		this.delta .x = this.delta .y = 0
-
-		this.max.x = this.max.y =  Infinity
-		this.min.x = this.min.y = -Infinity
-	},
 
 	start: function(x, y) {
-		this.active  = true
-		this.changed = false
-
-		this.delta.x = 0
-		this.delta.y = 0
+		this.active = true
+		this.moves = 0
 
 		this.begin.x = x
 		this.begin.y = y
 
-		this.origin.x = this.offset.x
-		this.origin.y = this.offset.y
+		this.origin.x = this.point.x
+		this.origin.y = this.point.y
+
+		this.offset.x = this.delta.x = 0
+		this.offset.y = this.delta.y = 0
 	},
 
 	move: function(x, y) {
 		if(!this.active) return
 
-		this.changed = true
+		this.moves++
 
-		this.delta.x = x - this.begin.x
-		this.delta.y = y - this.begin.y
+		this.delta.x = -this.point.x
+		this.delta.y = -this.point.y
 
-		this.offset.x = this.origin.x + this.delta.x * this.scale
-		this.offset.y = this.origin.y + this.delta.y * this.scale
+		this.offset.x = (x - this.begin.x) * this.scale.x
+		this.offset.y = (y - this.begin.y) * this.scale.y
 
-		this.offset.x = Math.min(this.max.x, Math.max(this.min.x, this.offset.x))
-		this.offset.y = Math.min(this.max.y, Math.max(this.min.y, this.offset.y))
+		this.point.x = Math.min(this.max.x, Math.max(this.min.x, this.origin.x + this.offset.x))
+		this.point.y = Math.min(this.max.y, Math.max(this.min.y, this.origin.y + this.offset.y))
+
+		this.delta.x += this.point.x
+		this.delta.y += this.point.y
 	},
 
 	end: function() {
 		this.active = false
 	},
+
 
 	enable: function() {
 		this.disabled = false
@@ -84,27 +77,28 @@ Drag.prototype = {
 		if(elem) elem.removeEventListener(type, this)
 	},
 
+
 	handleEvent: function(e) {
 		if(this.disabled) return
 
-		this.point.x = 0
-		this.point.y = 0
+		this.mouse.x = 0
+		this.mouse.y = 0
 
 		if(e.touches) {
 			var l = e.touches.length
 			for(var i = 0; i < l; i++) {
 				var p = e.touches[i]
 
-				this.point.x += p.pageX
-				this.point.y += p.pageY
+				this.mouse.x += p.pageX
+				this.mouse.y += p.pageY
 			}
 
-			this.point.x /= l
-			this.point.y /= l
+			this.mouse.x /= l
+			this.mouse.y /= l
 
 		} else {
-			this.point.x = e.pageX
-			this.point.y = e.pageY
+			this.mouse.x = e.pageX
+			this.mouse.y = e.pageY
 		}
 
 
@@ -118,14 +112,14 @@ Drag.prototype = {
 					this.bind('mousemove', window)
 					this.bind('mouseup', window)
 				}
-				this.start(this.point.x, this.point.y)
+				this.start(this.mouse.x, this.mouse.y)
 				emitEvent = 'start'
 			break
 
 			case 'mousemove':
 				if(!this.mouseActive) return
 
-				this.move(this.point.x, this.point.y)
+				this.move(this.mouse.x, this.mouse.y)
 				emitEvent = 'drag'
 			break
 
@@ -149,14 +143,14 @@ Drag.prototype = {
 					this.bind('touchend', window)
 					this.unbind('touchstart', this.element)
 				}
-				this.start(this.point.x, this.point.y)
+				this.start(this.mouse.x, this.mouse.y)
 				emitEvent = 'start'
 			break
 
 			case 'touchmove':
 				if(!this.touchActive) return
 
-				this.move(this.point.x, this.point.y)
+				this.move(this.mouse.x, this.mouse.y)
 				emitEvent = 'drag'
 			break
 
@@ -164,7 +158,7 @@ Drag.prototype = {
 				if(!this.touchActive) return
 
 				if(e.touches.length) {
-					this.start(this.point.x, this.point.y)
+					this.start(this.mouse.x, this.mouse.y)
 
 				} else {
 					this.touchActive = false
@@ -179,7 +173,7 @@ Drag.prototype = {
 			break
 		}
 
-		if(emitEvent) this.events.emit(emitEvent, [this.offset, e])
+		if(emitEvent) this.events.emit(emitEvent, [this, e])
 
 		e.preventDefault()
 	}

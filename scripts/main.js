@@ -13,6 +13,13 @@ main.sampler.folder = 'samples/'
 main.tiles = new TileView
 main.tiles.setLayout(['h', ['h', 0, 0, 1], 0, 0.8])
 
+main.splitView = main.tiles.splits[0]
+
+
+main.viewTween = new TWEEN.Tween(main.splitView)
+	.to({ position: 0.5 }, 400)
+	.easing(TWEEN.Easing.Cubic.Out)
+	.onUpdate(main.tiles.update, main.tiles)
 
 
 main.renderer = new THREE.WebGLRenderer({
@@ -46,6 +53,11 @@ Atlas.set(clear, 'i-cross', 'absmid')
 new EventHandler(onViewClear).listen('tap', clear)
 
 
+var clear2 = dom.div('view-clear hand', main.view2.element)
+Atlas.set(clear2, 'i-cross', 'absmid')
+new EventHandler(onViewClear2).listen('tap', clear2)
+
+
 dom.addclass(document.body, 'ontouchstart' in window ? 'touch' : 'no-touch')
 dom.addclass(main.renderer.domElement, 'canvas-main')
 dom.append(main.tiles.element, main.renderer.domElement)
@@ -76,6 +88,7 @@ function makeMenu() {
 		ename: 'sample-menu',
 		cname: 'sample-item',
 		eroot: main.list,
+		deselect: true,
 
 		texts: names,
 		items: samples
@@ -122,13 +135,18 @@ function onSubDrag(block, e) {
 }
 
 function onSubChange(sid) {
-	location.hash = sid
+	location.hash = sid || ''
 }
 
 
 function onViewClear() {
 	main.tree = null
 	main.view.setTree(null)
+	location.hash = ''
+}
+
+
+function onViewClear2() {
 	location.hash = ''
 }
 
@@ -151,7 +169,7 @@ function loadSample(sid) {
 }
 
 function setSample() {
-	main.sample.describe()
+	// main.sample.describe()
 
 	var node = new TNode(main.sample)
 
@@ -159,10 +177,14 @@ function setSample() {
 		main.view2.setTree(node)
 		main.view2.focusOnTree(300)
 
+		main.viewTween.target.position = 0.5
+		main.viewTween.start()
+
 	} else {
 		main.tree = node
 		main.view.setTree(node)
 		main.view.focusOnTree(300)
+		location.hash = ''
 	}
 }
 
@@ -210,6 +232,8 @@ function onkey(e) {
 function onhashchange(e) {
 	var ok = loadSample(location.hash.slice(1))
 	if(!ok) {
+		main.viewTween.target.position = 1
+		main.viewTween.start()
 		location.hash = ''
 	}
 }
@@ -236,6 +260,7 @@ function onDrop(e) {
 	} else {
 		connectSample(dt.getData('text/sample'))
 	}
+
 	e.preventDefault()
 }
 

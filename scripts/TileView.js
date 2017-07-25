@@ -53,7 +53,6 @@ TileView.prototype = {
 
 			drag.min.x = drag.min.y = 0
 			drag.max.x = drag.max.y = 1
-			drag.offset.x = drag.offset.y = frame.position
 			drag.events.on('start', this.startHelper, this, frame)
 			drag.events.on('drag', this.dragHelper, this, frame)
 			this.helpers.push(drag)
@@ -168,15 +167,16 @@ TileView.prototype = {
 		this.update()
 	},
 
-	startHelper: function(frame, origin) {
-		origin.x = origin.y = frame.position
+	startHelper: function(frame, drag) {
+		drag.point.x = drag.origin.x = frame.position
+		drag.point.y = drag.origin.y = frame.position
 	},
 
-	dragHelper: function(frame, offset) {
+	dragHelper: function(frame, drag) {
 		if(frame.split === TileView.VERTICAL_SPLIT) {
-			frame.position = f.clamp(offset.y, 0, 1)
+			frame.position = f.clamp(drag.point.y, 0, 1)
 		} else {
-			frame.position = f.clamp(offset.x, 0, 1)
+			frame.position = f.clamp(drag.point.x, 0, 1)
 		}
 		frame.source[3] = frame.position
 		this.resizeFrame(frame)
@@ -191,14 +191,14 @@ TileView.prototype = {
 			this.setElement(drag.element, frame.x, frame.y + dy, frame.w, this.helperSize)
 			dom.addclass(drag.element, 'tile-helper-vertical')
 			dom.remclass(drag.element, 'tile-helper-horizontal')
-			drag.scale = 1 / frame.h
+			drag.scale.y = 1 / frame.h
 
 		} else {
 			var dx = frame.position * frame.w
 			this.setElement(drag.element, frame.x + dx, frame.y, this.helperSize, frame.h)
 			dom.addclass(drag.element, 'tile-helper-horizontal')
 			dom.remclass(drag.element, 'tile-helper-vertical')
-			drag.scale = 1 / frame.w
+			drag.scale.x = 1 / frame.w
 		}
 	},
 
