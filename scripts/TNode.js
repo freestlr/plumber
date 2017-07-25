@@ -23,6 +23,16 @@ TNode = f.unit({
 		}
 	},
 
+	traverseConnections: function(func, scope, data) {
+		for(var i = 0; i < this.connections.length; i++) {
+			var con = this.connections[i]
+
+			func.call(scope || this, this, con, i, data)
+
+			if(con.master && con.node) con.node.traverseConnections(func, scope, data)
+		}
+	},
+
 	setSample: function(sample) {
 		if(this.sample) {
 			return console.warn('TN.setSample: node already has sample')
@@ -55,16 +65,17 @@ TNode = f.unit({
 		joint.matrix.decompose(slave.position, slave.rotation, slave.scale)
 		joint.matrix.decompose(master.position, master.rotation, master.scale)
 
-		con.helper = this.makeConnectionHelper(joint.name)
-		joint.object.add(con.helper)
+		// con.helper = this.makeConnectionHelper(joint.name)
+		// joint.object.add(con.helper)
 
 		// var joinSlaveMatrix = new THREE.Matrix4
 		// joinSlaveMatrix.makeRotationY(Math.PI)
 		// slave.applyMatrix(joinSlaveMatrix)
 
 		slave.rotateY(Math.PI)
-		console.log(master.position, slave.position, slave.rotation)
+		// console.log(master.position, slave.position, slave.rotation)
 
+		this.object.add(master)
 		this.connections.push(con)
 	},
 
@@ -181,9 +192,9 @@ TNode = f.unit({
 		// this.box.copy(this.sample.box)
 		// this.box.applyMatrix4(this.object.matrixWorld)
 
-		console.log('a:',
-			this.box.min.toArray().map(f.hround),
-			this.box.max.toArray().map(f.hround))
+		// console.log('box:',
+		// 	this.box.min.toArray().map(f.hround),
+		// 	this.box.max.toArray().map(f.hround))
 
 		if(this.box.isEmpty()) {
 			this.boxCenter.set(0, 0, 0)

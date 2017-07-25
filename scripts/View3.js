@@ -11,6 +11,14 @@ function View3(options) {
 	this.root      = new THREE.Object3D
 	this.grid      = new THREE.Object3D
 
+	this.projector = new PointProjector(this.camera)
+
+	this.markers = new UI.MarkerSystem({
+		eroot: this.element,
+		projector: this.projector
+	})
+	this.markers.events.on('marker_tap', this.onMarkerTap, this)
+
 
 
 	this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
@@ -152,7 +160,27 @@ View3.prototype = {
 			this.updateProjection()
 		}
 
+		this.updateConnections()
 		this.needsRedraw = true
+	},
+
+	updateConnections: function() {
+		this.markers.clear()
+
+		if(!this.tree) return
+
+		this.tree.object.updateMatrixWorld()
+		this.tree.traverseConnections(this.addConnectionMarker, this)
+	},
+
+	addConnectionMarker: function(node, con, index) {
+		if(con.node) return
+
+		var position = new THREE.Vector3()
+		position.setFromMatrixPosition(con.joinMaster.matrixWorld)
+		console.log(position)
+
+		this.markers.addMarker(position)
 	},
 
 	updateProjection: function() {
@@ -163,6 +191,8 @@ View3.prototype = {
 		this.camera.far    = size * 100
 		this.camera.near   = size * 0.01
 		this.camera.updateProjectionMatrix()
+
+		this.needsRetrace = true
 	},
 
 	onKey: function(e) {
@@ -186,11 +216,17 @@ View3.prototype = {
 		this.onResize()
 	},
 
+	onMarkerTap: function(marker) {
+		console.log('onMarkerTap', marker)
+	},
+
 	onResize: function() {
 		this.width  = this.element.offsetWidth
 		this.height = this.element.offsetHeight
 
 		this.elementOffset = dom.offset(this.element)
+
+		this.projector.resize(this.width, this.height)
 
 
 		if(!this.viewport) {
@@ -213,6 +249,8 @@ View3.prototype = {
 		if(this.needsRetrace) {
 			this.needsRetrace = false
 			this.needsRedraw = true
+
+			this.projector.updateMatrices()
 
 			this.updateLights()
 			this.updateGrid()
@@ -246,6 +284,9 @@ View3.prototype = {
 				this.renderer.render(this.scene, this.camera)
 				this.scene.overrideMaterial = null
 			}
+
+			this.projector.update()
+			this.markers.update()
 		}
 	}
 }

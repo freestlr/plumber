@@ -11,16 +11,9 @@ main.sampler.setImagery(main.imagery)
 main.sampler.folder = 'samples/'
 
 main.tiles = new TileView
-// main.tiles.setLayout(['v', ['h', 0, 0, 0.7], 0, 0.8])
-main.tiles.setLayout(['h', ['h', 0, 0, 1], 0, 0.7])
-
-// main.splitV = main.tiles.splits[0]
-// main.viewportL = main.tiles.frames[0]
-// main.viewportR = main.tiles.frames[1]
-// main.tiles.showClients()
+main.tiles.setLayout(['h', ['h', 0, 0, 1], 0, 0.8])
 
 
-// main.tiles.events.on('update', main.onTilesUpdate, main)
 
 main.renderer = new THREE.WebGLRenderer({
 	antialias: true,
@@ -46,10 +39,17 @@ main.view2 = new View3({
 
 main.tfc = new THREE.TransformControls(main.view.camera, main.view.element)
 main.tfc.addEventListener('change', onTransformControlsChange)
-main.view.scene.add(main.tfc)
+// main.view.scene.add(main.tfc)
+
+main.list = dom.div('samples-list')
+
+main.tiles.setClients([main.view, main.view2, { element: main.list }])
 
 
-main.tiles.setClients([main.view, main.view2])
+
+var clear = dom.div('view-clear hand', main.view.element)
+Atlas.set(clear, 'i-cross', 'absmid')
+new EventHandler(onViewClear).listen('tap', clear)
 
 
 dom.addclass(document.body, 'ontouchstart' in window ? 'touch' : 'no-touch')
@@ -77,22 +77,19 @@ function makeMenu() {
 	var samples = main.sampler.getList()
 	,   names = samples.map(function(sid) { return main.sampler.samples[sid].src })
 
-	main.sampleMenu = new UI.Submenu({
-		ename: 'sample sample-item absmid hand',
-		sname: 'submenu',
-		cname: 'submenu-item sample-item',
-		eroot: document.body,
-		distance: 18,
-		visibleMethod: dom.visible,
-		align: 'bottom',
-		square: false,
+
+	main.sampleMenu = new Block.Menu({
+		ename: 'sample-menu',
+		cname: 'sample-item',
+		eroot: main.list,
 
 		texts: names,
 		items: samples
 	})
 
-	main.sampleMenu.menu.events.on('add-block', onSubAdd)
-	main.sampleMenu.menu.blocks.forEach(onSubAdd)
+	main.sampleMenu.events.on('add-block', onSubAdd)
+	main.sampleMenu.blocks.forEach(onSubAdd)
+
 
 
 
@@ -135,14 +132,18 @@ function onSubChange(sid) {
 }
 
 
+function onViewClear() {
+	main.tree = null
+	main.view.setTree(null)
+}
+
+
 function loadSample(sid) {
 	var sample = main.sampler.samples[sid]
 	if(!sample) return false
 
 	if(!sample.object && !sample.src) return false
 
-	main.sampleMenu.set(0, true)
-	dom.text(main.sampleMenu.element, sample.src)
 
 
 	if(main.deferSample) {
@@ -206,13 +207,16 @@ function connectSample(id) {
 		main.view.setTree(main.tree)
 	}
 
+	main.view.updateConnections()
 	main.view.focusOnTree()
 	main.view.needsRedraw = true
 }
 
 
 function onkey(e) {
-	if(kbd.down && kbd.changed) switch(kbd.key) {
+	if(e.ctrlKey || e.shiftKey || e.altKey) {
+
+	} else if(kbd.down && kbd.changed) switch(kbd.key) {
 		case '1': return main.tfc.setMode('translate')
 		case '2': return main.tfc.setMode('rotate')
 		case '3': return main.tfc.setMode('scale')
@@ -227,18 +231,14 @@ function onkey(e) {
 			main.gui.closed ? main.gui.open() : main.gui.close()
 		return
 	}
+
 	main.view.onKey(e)
 }
 
 function onhashchange(e) {
 	var id = location.hash.slice(1)
-	if(id) {
-		if(!loadSample(id)) {
-			location.hash = ''
-		}
-
-	} else {
-		main.sampleMenu.set(1, true)
+	if(id && !loadSample(id)) {
+		location.hash = ''
 	}
 }
 
@@ -270,10 +270,10 @@ function onDrop(e) {
 function onSampleImport(item) {
 	main.sampler.addSample(item)
 
-	var menu = main.sampleMenu.menu
+	var menu = main.sampleMenu
 	var block = menu.addItem({
 		data: item.id,
-		text: item.name
+		text: item.src
 	})
 
 	menu.set(menu.blocks.indexOf(block), true)
@@ -294,7 +294,7 @@ function run() {
 	dom.on('dragover', main.view.element, onDragOver)
 	dom.on('drop', main.view.element, onDrop)
 
-	main.sampleMenu.menu.events.on('change', onSubChange)
+	main.sampleMenu.events.on('change', onSubChange)
 	main.file.events.on('import', onSampleImport)
 
 

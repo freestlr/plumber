@@ -31,10 +31,9 @@ Block = f.unit({
 	},
 
 	create: function() {
-		this.visible = new Gate(Gate.AND, !this.hidden)
-
 		if(!this.events)  this.events  = new EventEmitter
 		if(!this.element) this.element = dom.elem(this.etag, null, this.eroot)
+		if(!this.visible) this.visible = new Gate(Gate.AND, !this.hidden)
 	},
 
 	createPost: function() {

@@ -168,16 +168,47 @@ body .dg .close-button {
 	height: 100%;
 	fill: #d821ef;
 }
-.sample-item {
-	font-size: 12px;
-	font-family: monospace;
-	text-align: center;
-	line-height: 48px;
-}
 
 
 .file-import {
 	position: absolute;
 	left: 20px;
 	top: 20px;
+}
+
+.view-clear {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+}
+.view-clear svg {
+	width: 24px;
+	height: 24px;
+}
+.view-clear:hover {
+	background-color: #ccc;
+}
+
+
+.samples-list {
+	position: absolute;
+	background-color: white;
+}
+
+.sample-item {
+	height: 42px;
+	font-size: 12px;
+	font-family: monospace;
+	text-align: center;
+	line-height: 48px;
+	border-bottom: 1px solid black;
+}
+.sample-item:hover {
+	background-color: #eee;
+}
+.sample-item.active {
+	background-color: #bbb;
 }

@@ -21,6 +21,7 @@
 			'scripts/lib/three.js',
 			'scripts/lib/dat.gui.min.js',
 			'scripts/lib/inflate.min.js',
+
 			'scripts/base/EventEmitter.js',
 			'scripts/base/EventHandler.js',
 			'scripts/base/Observable.js',
@@ -33,14 +34,17 @@
 			'scripts/base/Momentum.js',
 			'scripts/base/Block.js',
 			'scripts/base/Atlas.js',
+
 			'scripts/THREE.extend.js',
 			'scripts/THREE.OrbitControls.js',
 			'scripts/THREE.FirstPersonControls.js',
 			'scripts/TransformControls.js',
 			'scripts/FBXLoader.js',
 			'scripts/ColladaLoader.js',
+
 			'scripts/FileImport.js',
 			'scripts/TileView.js',
+			'scripts/PointProjector.js',
 			'scripts/Imagery.js',
 			'scripts/Sampler.js',
 			'scripts/View3.js',
@@ -48,19 +52,15 @@
 
 			'scripts/UI/UI.js',
 			'scripts/UI/Submenu.js',
+			'scripts/UI/MarkerSystem.js',
 
 			'scripts/main.js'
 		]
 		var html5_styles = [
 			'styles/main.css',
 			'styles/TileView.css',
+			'styles/MarkerSystem.css',
 			'styles/ui.css',
-		]
-		var flash_scripts = [
-
-		]
-		var flash_styles = [
-
 		]
 
 		var first = document.getElementsByTagName('script')[0]
@@ -94,22 +94,8 @@
 		}
 
 
-		try { var FLASH = new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version') } catch(e) {}
-		try { var FLASH = navigator.plugins['Shockwave Flash'].description && navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin } catch(e) {}
-		try { var CANVAS = !!document.createElement('canvas').getContext('2d') } catch(e) {}
-
 		loadScripts(html5_scripts)
 		loadStyles(html5_styles)
-
-		if(FLASH && CANVAS) {
-
-		} else if(FLASH) {
-
-		} else if(CANVAS) {
-
-		} else {
-
-		}
 
 		}()
 	</script>
