@@ -41,7 +41,6 @@ function Sample(def, parent) {
 	for(var name in def) this[name] = def[name]
 
 	if(this.src) {
-		this.name   = this.src.replace(/\.[^\.]+$/, '').replace(/.*\//, '')
 		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
 	}
 

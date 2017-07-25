@@ -132,11 +132,11 @@ View3.prototype = {
 	focusOnTree: function() {
 		if(this.tree) {
 			this.tree.updateBox()
-			this.camera.position.set(1, 1, 1).setLength(this.tree.boxLength * 1.5)
+			this.camera.position.set(1, 1, 1).setLength(this.tree.boxLength * 1.01)
 			this.orbit.target.copy(this.tree.boxCenter)
 
 		} else {
-			this.camera.position.set(1, 1, 1).setLength(1.5)
+			this.camera.position.set(1, 1, 1).setLength(1.01)
 			this.orbit.target.set(0, 0, 0)
 		}
 
@@ -180,7 +180,7 @@ View3.prototype = {
 		position.setFromMatrixPosition(con.joinMaster.matrixWorld)
 		console.log(position)
 
-		this.markers.addMarker(position)
+		this.markers.addMarker(position, con.joint.id)
 	},
 
 	updateProjection: function() {

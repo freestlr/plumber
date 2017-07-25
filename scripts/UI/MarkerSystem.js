@@ -11,7 +11,8 @@ UI.MarkerSystem = f.unit(Block, {
 		var marker = new UI.Marker({
 			eroot: this.element,
 			events: this.events,
-			point: this.projector.addPoint()
+			point: this.projector.addPoint(),
+			text: data
 		})
 
 		if(position) {

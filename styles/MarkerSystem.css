@@ -13,12 +13,12 @@
 
 .marker {
 	position: absolute;
-	width: 42px;
-	height: 42px;
+	height: 30px;
+	line-height: 30px;
 	margin-left: -21px;
-	margin-top: -121px;
+	margin-top: -115px;
+	padding: 0 10px;
 	background-color: white;
-	border-radius: 50%;
 	border: 1px solid black;
 	font-family: Arial, sans-serif;
 	font-size: 14px;
@@ -30,10 +30,10 @@
 	content: "";
 	position: absolute;
 	bottom: 0;
-	left: 50%;
+	left: 21px;
 	width: 0;
-	height: 79px;
-	margin-bottom: -79px;
+	height: 85px;
+	margin-bottom: -85px;
 	border-right: 1px solid black;
 }
 .marker:hover {
