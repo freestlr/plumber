@@ -1,8 +1,9 @@
 TConnection = f.unit({
 	unitName: 'TConnection',
 
-	init: function(node, joint) {
+	init: function(node, joint, index) {
 		this.node   = node
+		this.index  = index
 		this.target = null
 		this.master = null
 		this.connected = null

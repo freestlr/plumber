@@ -281,6 +281,30 @@ function onSampleImport(item) {
 	menu.set(menu.blocks.indexOf(block), true)
 }
 
+
+main.connectionParts = []
+function onConnectionTap(view, index, con) {
+	var parts = main.connectionParts
+
+	parts[index] = con
+
+	var master = parts[0]
+	,   slave = parts[1]
+
+	if(master && slave) {
+		main.view.selectConnection(null)
+		main.view2.selectConnection(null)
+
+		main.view2.setTree(null)
+
+		master.node.connect(master.index, slave.node, slave.index)
+		main.view.focusOnTree(300)
+		main.view.needsRedraw = true
+
+		location.hash = ''
+	}
+}
+
 function removeSample(block) {
 	main.sampleMenu.removeBlock(block)
 
@@ -304,6 +328,9 @@ function run() {
 
 	main.sampleMenu.events.on('change', onSubChange)
 	main.file.events.on('import', onSampleImport)
+
+	main.view.events.on('connection_select', onConnectionTap, null, [main.view, 0])
+	main.view2.events.on('connection_select', onConnectionTap, null, [main.view2, 1])
 
 
 	onresize()

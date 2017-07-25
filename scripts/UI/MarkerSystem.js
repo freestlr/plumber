@@ -12,13 +12,10 @@ UI.MarkerSystem = f.unit(Block, {
 			eroot: this.element,
 			events: this.events,
 			point: this.projector.addPoint(),
+			color: color,
 			data: data,
 			text: text
 		})
-
-		if(color) {
-			marker.element.style.backgroundColor = color
-		}
 
 		if(position) {
 			marker.point.world.copy(position)
@@ -68,6 +65,11 @@ UI.Marker = f.unit(Block, {
 
 	create: function() {
 		this.bind()
+		this.setColor(this.color)
+	},
+
+	setColor: function(color) {
+		this.element.style.backgroundColor = color || 'white'
 	},
 
 	visibleMethod: function(element, visible) {

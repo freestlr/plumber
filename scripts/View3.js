@@ -2,6 +2,7 @@ function View3(options) {
 	for(var name in options) this[name] = options[name]
 
 	this.element   = dom.div('view-3', this.eroot)
+	this.events    = new EventEmitter
 	this.scene     = new THREE.Scene
 	this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
 	this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 1.0)
@@ -255,26 +256,50 @@ View3.prototype = {
 		this.onResize()
 	},
 
-	onTap: function(e) {
-		if(this.transformConnection && e.target === this.element) {
-			this.transformConnection.detachControl()
-			this.transformConnection = null
+	selectConnection: function(con) {
+		if(this.selectedConnection === con) return
 
-			this.updateConnections()
-			this.needsRedraw = true
+		if(this.selectedConnection) {
+			this.selectedConnection.marker.setColor(null)
+		}
+
+		this.selectedConnection = con
+
+		if(this.selectedConnection) {
+			this.selectedConnection.marker.setColor('lime')
+		}
+
+		this.events.emit('connection_select', this.selectedConnection)
+	},
+
+	onTap: function(e) {
+		if(e.target === this.element) {
+
+			if(this.transformConnection) {
+				this.transformConnection.detachControl()
+				this.transformConnection = null
+
+				this.updateConnections()
+				this.needsRedraw = true
+
+			} else {
+				this.selectConnection(null)
+			}
 		}
 	},
 
 	onMarkerTap: function(marker) {
+		var con = marker.data
 
 		if(kbd.state.CTRL) {
-			var con = marker.data
-
 			this.transformConnection = con
 			this.transformConnection.attachControl(this.transform)
 
 			this.markers.removeMarker(con.marker)
 			this.needsRedraw = true
+
+		} else {
+			this.selectConnection(con)
 		}
 	},
 

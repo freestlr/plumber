@@ -73,6 +73,12 @@ Sample.prototype = {
 	},
 
 	load: function() {
+		if(this.object) {
+			var defer = new Defer
+			defer.resolve(true)
+			return defer
+		}
+
 		if(this.deferLoad) return this.deferLoad
 
 		var sample = this

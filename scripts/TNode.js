@@ -53,7 +53,7 @@ TNode = f.unit({
 	},
 
 	addConnection: function(joint) {
-		this.connections.push(new TConnection(this, joint))
+		this.connections.push(new TConnection(this, joint, this.connections.length))
 	},
 
 	connect: function(indexA, node, indexB) {
