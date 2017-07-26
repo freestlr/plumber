@@ -125,21 +125,33 @@ function onSubDrag(block, e) {
 }
 
 function onSubChange(sid) {
-	location.hash = sid || ''
+	displayView2(sid)
 }
 
 
 function onViewClear() {
 	main.tree = null
 	main.view.setTree(null)
-	location.hash = ''
+	displayView2(null)
 }
 
 
 function onViewClear2() {
-	location.hash = ''
+	displayView2(null)
 }
 
+
+function displayView2(sid) {
+	var ok = loadSample(sid)
+	if(!ok) {
+		main.viewTween.target.position = 1
+		main.viewTween.start()
+
+		main.sample = null
+
+		// location.hash = ''
+	}
+}
 
 function loadSample(sid) {
 	main.sampleMenu.setItem(sid)
@@ -161,7 +173,7 @@ function loadSample(sid) {
 }
 
 function setSample() {
-	main.sample.describe()
+	// main.sample.describe()
 
 	var node = new TNode(main.sample)
 
@@ -175,7 +187,7 @@ function setSample() {
 		main.tree = node
 		main.view.setTree(node)
 
-		location.hash = ''
+		displayView2(null)
 	}
 }
 
@@ -218,17 +230,9 @@ function onkey(e) {
 	main.view2.onKey(e)
 }
 
-function onhashchange(e) {
-	var ok = loadSample(location.hash.slice(1))
-	if(!ok) {
-		main.viewTween.target.position = 1
-		main.viewTween.start()
-
-		main.sample = null
-
-		location.hash = ''
-	}
-}
+// function onhashchange(e) {
+// 	displayView2(location.hash.slice(1))
+// }
 
 function onresize() {
 	var element = main.tiles.element
@@ -304,7 +308,7 @@ function makeViewConnection(master, slave) {
 
 	master.playConnection()
 
-	location.hash = ''
+	displayView2(null)
 }
 
 function removeSample(block) {
@@ -320,7 +324,7 @@ function removeSample(block) {
 }
 
 function run() {
-	dom.on('hashchange', window, onhashchange)
+	// dom.on('hashchange', window, onhashchange)
 	dom.on('resize',  window, onresize)
 	dom.on('keydown', window, onkey)
 	dom.on('keyup',   window, onkey)
@@ -339,7 +343,7 @@ function run() {
 
 
 	onresize()
-	onhashchange()
+	// onhashchange()
 	bootProgress(1)
 	main.timer.play()
 }
