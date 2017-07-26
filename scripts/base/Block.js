@@ -375,7 +375,7 @@ Block.Tip = f.unit(Block, {
 		this.arrowPoint   = { x: 0, y: 0 }
 		this.elementPoint = { x: 0, y: 0 }
 
-		this.transitionTween = new TWEEN.Tween({ o: 1, x: 0, y: 0 })
+		this.transitionTween = new TWEEN.Tween({ o: 0, x: 0, y: 0 })
 			.easing(TWEEN.Easing.Cubic.Out)
 			.to({}, this.animationTime)
 			.onUpdate(this.updateTween, this)
@@ -589,11 +589,6 @@ Block.Tip = f.unit(Block, {
 	},
 
 	visibleMethod: function(elem, v) {
-		if(!this.firstVisible) {
-			this.firstVisible = true
-			dom.visible(elem, v)
-		}
-
 		var s = this.transitionTween.source
 		,   t = this.transitionTween.target
 		,   d = this.tweenDistance
@@ -601,9 +596,15 @@ Block.Tip = f.unit(Block, {
 		var ox = { left: d, right: -d } [this.lastAlign] || 0
 		,   oy = { top: d, bottom: -d } [this.lastAlign] || 0
 
-		s.x = v ? ox : 0
-		s.y = v ? oy : 0
-		s.o = +!v
+
+		if(!this.initVisible) {
+			this.initVisible = true
+			dom.visible(elem, v)
+
+			s.x = v ? ox : 0
+			s.y = v ? oy : 0
+			s.o = +!v
+		}
 
 		t.x = v ? 0 : ox
 		t.y = v ? 0 : oy

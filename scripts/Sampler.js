@@ -86,9 +86,7 @@ Sample.prototype = {
 
 	load: function() {
 		if(this.object) {
-			var defer = new Defer
-			defer.resolve(true)
-			return defer
+			this.deferLoad = new Defer().resolve(this)
 		}
 
 		if(this.deferLoad) return this.deferLoad

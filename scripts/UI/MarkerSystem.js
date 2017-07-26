@@ -4,6 +4,15 @@ UI.MarkerSystem = f.unit(Block, {
 
 	create: function() {
 		this.markers = []
+
+		this.markersVisible = new Gate(Gate.AND, true)
+		this.markersVisible.events.on('change', this.onMarkersVisible, this)
+	},
+
+	onMarkersVisible: function(visible) {
+		for(var i = 0; i < this.markers.length; i++) {
+			this.markers[i].visible.set(visible, 'system')
+		}
 	},
 
 	addMarker: function(position, text, con) {
@@ -21,7 +30,10 @@ UI.MarkerSystem = f.unit(Block, {
 			marker.point.world.copy(position)
 		}
 
+		marker.visible.set(this.markersVisible.value, 'system')
+		marker.updateState()
 		// this.updateMarker(marker)
+
 		this.markers.push(marker)
 
 		0&& console.log('addMarker',
@@ -63,6 +75,7 @@ UI.MarkerSystem = f.unit(Block, {
 UI.Marker = f.unit(Block.Tip, {
 	unitName: 'UI_Marker',
 	ename: 'marker hand',
+	hidden: true,
 
 	align: 'top',
 	distance: 100,
@@ -87,7 +100,6 @@ UI.Marker = f.unit(Block.Tip, {
 			inactive: false,
 			master: false
 		}
-		this.updateState()
 
 		if(this.connection) {
 			dom.text(this.elemId,   this.connection.data.id)

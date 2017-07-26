@@ -125,69 +125,61 @@ function onSubDrag(block, e) {
 }
 
 function onSubChange(sid) {
-	displayView2(sid)
+	displaySample(sid)
 }
 
 
 function onViewClear() {
 	main.tree = null
 	main.view.setTree(null)
-	displayView2(null)
+	displaySample(null)
 }
 
 
 function onViewClear2() {
-	displayView2(null)
+	displaySample(null)
 }
 
 
-function displayView2(sid) {
-	var ok = loadSample(sid)
-	if(!ok) {
-		main.viewTween.target.position = 1
-		main.viewTween.start()
-
-		main.sample = null
-
-		// location.hash = ''
-	}
-}
-
-function loadSample(sid) {
-	main.sampleMenu.setItem(sid)
-
+function displaySample(sid) {
 	var sample = main.sampler.samples[sid]
-	if(!sample) return false
+	if(sample === main.sampleView2) return
 
-	if(sample === main.sample) return false
+	main.sampleView2 = main.tree ? sample : null
+	main.sampleMenu.setItem(main.sampleView2 && main.sampleView2.id)
 
-	if(!sample.object && !sample.src) return false
+	var openView2 = main.sampleView2 && (main.sampleView2.object || main.sampleView2.src)
 
+	main.view.markers.markersVisible.set(!!openView2, 'view2')
+
+	var splitPosition = openView2 ? 0.5 : 1
+	if(splitPosition !== main.viewTween.target.position) {
+		main.viewTween.target.position = splitPosition
+		main.viewTween.start()
+	}
 
 	if(main.deferSample) {
 		main.deferSample.set(null)
+		main.deferSample = null
 	}
-	main.sample = sample
-	main.deferSample = main.sample.load().detach(setSample)
-	return true
+	if(sample) {
+		main.deferSample = sample.load().detach(setSample)
+		// sample.describe()
+	}
 }
 
-function setSample() {
-	// main.sample.describe()
 
-	var node = new TNode(main.sample)
+function setSample(sample) {
+	if(!sample) return
+
+	var node = new TNode(sample)
 
 	if(main.tree) {
 		main.view2.setTree(node)
 
-		main.viewTween.target.position = 0.5
-		main.viewTween.start()
-
 	} else {
 		main.tree = node
 		main.view.setTree(node)
-
-		displayView2(null)
 	}
 }
 
@@ -231,7 +223,7 @@ function onkey(e) {
 }
 
 // function onhashchange(e) {
-// 	displayView2(location.hash.slice(1))
+// 	displaySample(location.hash.slice(1))
 // }
 
 function onresize() {
@@ -308,7 +300,7 @@ function makeViewConnection(master, slave) {
 
 	master.playConnection()
 
-	displayView2(null)
+	displaySample(null)
 }
 
 function removeSample(block) {
