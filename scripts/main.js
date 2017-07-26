@@ -227,6 +227,7 @@ function onkey(e) {
 	}
 
 	main.view.onKey(e)
+	main.view2.onKey(e)
 }
 
 function onhashchange(e) {
