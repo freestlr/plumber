@@ -250,6 +250,7 @@ View3.prototype = {
 
 		if(this.tree) {
 			this.root.add(this.tree.object)
+			this.root.updateMatrixWorld()
 			this.tree.updateBox()
 			this.updateProjection()
 		}
@@ -367,6 +368,7 @@ View3.prototype = {
 
 	onMarkerTap: function(marker) {
 		var con = marker.connection
+		console.log(marker.point.world, con.connected ? con.master ? 'master' : 'slave' : 'empty')
 
 		if(kbd.state.CTRL) {
 			this.transformConnection = con

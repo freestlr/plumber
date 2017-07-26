@@ -16,6 +16,7 @@ TConnection = f.unit({
 
 		this.data = joint
 
+		// this.node.object.add(this.object)
 		this.setPosition(joint.object.matrix)
 	},
 
@@ -23,6 +24,10 @@ TConnection = f.unit({
 		this.matrix.copy(matrix)
 		this.point.setFromMatrixPosition(matrix)
 		this.normal.set(1, 0, 0).applyMatrix4(matrix).sub(this.point)
+
+		if(!this.connected) {
+			// this.object.position.copy(this.point)
+		}
 	},
 
 	getPosition: function(target) {
@@ -33,10 +38,13 @@ TConnection = f.unit({
 				target.setFromMatrixPosition(this.object.matrixWorld)
 
 			} else {
-				target.setFromMatrixPosition(this.object.matrixWorld)
+				target.setFromMatrixPosition(this.node.object.matrixWorld)
 			}
 
-		} else target.copy(this.point)
+		} else {
+			// target.setFromMatrixPosition(this.object.matrixWorld)
+			target.setFromMatrixPosition(this.node.object.matrixWorld).add(this.point)
+		}
 
 		return target
 	},

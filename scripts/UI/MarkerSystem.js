@@ -6,14 +6,15 @@ UI.MarkerSystem = f.unit(Block, {
 		this.markers = []
 	},
 
-	addMarker: function(position, text, connection) {
+	addMarker: function(position, text, con) {
 		if(!this.projector) return
 
 		var marker = new UI.Marker({
 			eroot: this.element,
 			events: this.events,
-			point: this.projector.addPoint(),
-			connection: connection
+			projector: this.projector,
+			// point: this.projector.addPoint(),
+			connection: con
 		})
 
 		if(position) {
@@ -22,6 +23,11 @@ UI.MarkerSystem = f.unit(Block, {
 
 		this.updateMarker(marker)
 		this.markers.push(marker)
+
+		console.log('addMarker',
+			con.data.id,
+			marker.point.world,
+			con.connected ? con.master ? 'master' : 'slave' : 'empty')
 		return marker
 	},
 
@@ -48,14 +54,7 @@ UI.MarkerSystem = f.unit(Block, {
 	},
 
 	updateMarker: function(marker, index) {
-		marker.scale = 0.7 * (1.3 - Math.min(0.7, marker.point.distance / 1.5))
-
-		marker.visible.set(marker.point.visible, 'onScreen')
-
-		if(marker.visible.value) {
-			marker.update(marker.point.screen, index)
-			// marker.updateState()
-		}
+		marker.update(index)
 	}
 })
 
@@ -96,8 +95,17 @@ UI.Marker = f.unit(Block.Tip, {
 
 		}
 
+		this.point = this.projector.addPoint()
+
 		this.watchEvents.push(
 			new EventHandler(this.onTap, this).listen('tap', this.element))
+	},
+
+	destroy: function() {
+		Block.Tip.prototype.destroy.call(this)
+
+		this.connection.events.off('connect', null, this)
+		this.projector.remPoint(this.point)
 	},
 
 	updateState: function() {
@@ -106,16 +114,21 @@ UI.Marker = f.unit(Block.Tip, {
 		}
 
 		dom.setclass(this.element, this.state)
-		this.visible.set(!this.state.connected, 'connected')
+		this.visible.set(!this.state.connected, 'available')
 	},
 
 	onTap: function() {
 		this.events.emit('marker_tap', this)
 	},
 
-	update: function(point, z) {
-		var x = Math.round(point.x)
-		,   y = Math.round(point.y)
+	update: function(z) {
+		this.scale = 0.7 * (1.3 - Math.min(0.7, this.point.distance / 1.5))
+
+		this.visible.set(this.point.visible, 'onScreen')
+		if(!this.visible.value) return
+
+		var x = Math.round(this.point.screen.x)
+		,   y = Math.round(this.point.screen.y)
 
 		this.move(x, y, this.align)
 		this.element.style.zIndex = z
