@@ -278,7 +278,6 @@ View3.prototype = {
 		this.camera.aspect = this.width / this.height
 		this.camera.far    = size * 100
 		this.camera.near   = size * 0.01
-		this.camera.updateProjectionMatrix()
 
 		this.needsRetrace = true
 	},
@@ -406,9 +405,9 @@ View3.prototype = {
 			this.needsRedraw = true
 		}
 
-		this.camera.updateMatrix()
-		if(!this.lastcam.equals(this.camera.matrix)) {
-			this.lastcam.copy(this.camera.matrix)
+		this.camera.updateMatrixWorld()
+		if(!this.lastcam.equals(this.camera.matrixWorld)) {
+			this.lastcam.copy(this.camera.matrixWorld)
 
 			this.needsRetrace = true
 		}
@@ -417,6 +416,7 @@ View3.prototype = {
 			this.needsRetrace = false
 			this.needsRedraw = true
 
+			this.camera.updateProjectionMatrix()
 			this.projector.updateMatrices()
 
 			this.updateLights()
@@ -426,11 +426,13 @@ View3.prototype = {
 		if(this.needsRedraw) {
 			this.needsRedraw = false
 
-			if(this.viewport) {
-				var f = this.viewport
-				this.renderer.setViewport(f.x, f.y, f.w, f.h)
-				this.renderer.setScissor(f.x, f.y, f.w, f.h)
+			var vp = this.viewport
+			if(vp) {
+				this.renderer.setViewport(vp.x, vp.y, vp.w, vp.h)
+				this.renderer.setScissor(vp.x, vp.y, vp.w, vp.h)
 				this.renderer.setScissorTest(true)
+			} else {
+				this.renderer.setScissorTest(false)
 			}
 
 			this.renderer.setClearColor(this.clearColor)
