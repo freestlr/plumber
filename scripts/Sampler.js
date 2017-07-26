@@ -12,9 +12,9 @@ Sampler.prototype = {
 	},
 
 	addSample: function(def) {
-		var sample = new Sample(def, this)
-		if(sample.hide) return
+		if(!def || def.hide) return
 
+		var sample = new Sample(def, this)
 		if(this.samples[sample.id]) {
 			console.warn('Sample with id', sample.id, 'already exists')
 		}
