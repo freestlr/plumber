@@ -111,6 +111,13 @@ TWEEN.Tween.prototype = {
 		return this
 	},
 
+	from: function(object) {
+		for(var name in object) {
+			this.source[name] = object[name]
+		}
+		return this
+	},
+
 	to: function(object, duration) {
 		if(duration != null) {
 			this.durationTime = duration

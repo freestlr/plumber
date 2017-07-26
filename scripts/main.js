@@ -147,6 +147,8 @@ function loadSample(sid) {
 	var sample = main.sampler.samples[sid]
 	if(!sample) return false
 
+	if(sample === main.sample) return false
+
 	if(!sample.object && !sample.src) return false
 
 
@@ -159,7 +161,7 @@ function loadSample(sid) {
 }
 
 function setSample() {
-	// main.sample.describe()
+	main.sample.describe()
 
 	var node = new TNode(main.sample)
 
@@ -221,6 +223,9 @@ function onhashchange(e) {
 	if(!ok) {
 		main.viewTween.target.position = 1
 		main.viewTween.start()
+
+		main.sample = null
+
 		location.hash = ''
 	}
 }
@@ -285,7 +290,19 @@ function makeViewConnection(master, slave) {
 	main.view2.setTree(null)
 
 	master.node.connect(master.index, slave.node, slave.index)
+
 	main.view.setTree(main.tree)
+
+
+	main.animatedConnection = master
+	master.events.once('connect_start', function() {
+		main.animatedConnection = master
+	})
+	master.events.once('connect_end', function() {
+		delete main.animatedConnection
+	})
+
+	master.playConnection()
 
 	location.hash = ''
 }
@@ -328,6 +345,10 @@ function run() {
 }
 
 function loop(t, dt) {
+	if(main.animatedConnection) {
+		main.view.needsRedraw = true
+	}
+
 	TWEEN.update()
 
 	main.view.onTick(dt)

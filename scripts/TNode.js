@@ -58,6 +58,11 @@ TNode = f.unit({
 		this.connections.push(new TConnection(this, joint, this.connections.length))
 	},
 
+	remConnection: function() {
+
+	},
+
+
 	connect: function(indexA, node, indexB) {
 		if(!node) {
 			return console.warn('TN.connect to undefined node')

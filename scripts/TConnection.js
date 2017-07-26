@@ -16,9 +16,49 @@ TConnection = f.unit({
 
 		this.data = joint
 
+		this.makeTween()
+
 		// this.node.object.add(this.object)
 		this.setPosition(joint.object.matrix)
 	},
+
+	makeTween: function() {
+		this.tween = new TWEEN.Tween()
+			.easing(TWEEN.Easing.Cubic.InOut)
+			.onStart(this.onTweenStart, this)
+			.onUpdate(this.onTweenUpdate, this)
+			.onComplete(this.onTweenComplete, this)
+	},
+
+	onTweenStart: function() {
+		this.events.emit('connect_start', this)
+	},
+
+	onTweenUpdate: function(t) {
+		if(!this.connected || !this.master) return
+
+		var values = this.tween.source
+
+		this.connected.object.position
+			.copy(this.normal)
+			.setLength(values.distance * (1 - t))
+	},
+
+	onTweenComplete: function() {
+		this.events.emit('connect_end', this)
+	},
+
+	playConnection: function() {
+		this.tween
+			.from({ distance: 100 })
+			.to({ distance: 0 })
+			.delay(300)
+			.duration(1000)
+			.start()
+
+		this.onTweenUpdate(0)
+	},
+
 
 	setPosition: function(matrix) {
 		this.matrix.copy(matrix)
@@ -61,6 +101,7 @@ TConnection = f.unit({
 		this.object.position.copy(this.point)
 		this.object.add(slave.object)
 
+		slave.object.position.set(0, 0, 0)
 		slave.object.quaternion.copy(quat)
 		slave.object.add(slave.node.object)
 
@@ -76,8 +117,8 @@ TConnection = f.unit({
 		slave.target = this.node
 		slave.master = false
 
-		this.events.emit('connected', this)
-		slave.events.emit('connected', slave)
+		this.events.emit('connect', [this, slave])
+		slave.events.emit('connect', [slave, this])
 	},
 
 	disconnect: function() {
