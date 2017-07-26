@@ -159,7 +159,7 @@ function loadSample(sid) {
 }
 
 function setSample() {
-	main.sample.describe()
+	// main.sample.describe()
 
 	var node = new TNode(main.sample)
 

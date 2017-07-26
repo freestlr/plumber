@@ -24,7 +24,7 @@ UI.MarkerSystem = f.unit(Block, {
 		// this.updateMarker(marker)
 		this.markers.push(marker)
 
-		console.log('addMarker',
+		0&& console.log('addMarker',
 			con.data.id,
 			marker.point.world,
 			con.connected ? con.master ? 'master' : 'slave' : 'empty')
@@ -63,13 +63,17 @@ UI.MarkerSystem = f.unit(Block, {
 UI.Marker = f.unit(Block.Tip, {
 	unitName: 'UI_Marker',
 	ename: 'marker hand',
+
 	align: 'top',
 	distance: 100,
-	arrowWidth: 0,
+	arrowWidth: 1,
+	arrowPadding: -2,
 
 	create: function() {
 		dom.setclass(this.arrow,   { 'tip-arrow':   false, 'marker-arrow':   true })
 		dom.setclass(this.content, { 'tip-content': false, 'marker-content': true })
+
+		this.arrowLine = dom.div('marker-arrow-line', this.arrow)
 
 		this.elemId   = dom.span('marker-id',   this.content)
 		this.elemKey  = dom.span('marker-key',  this.content)
@@ -135,21 +139,37 @@ UI.Marker = f.unit(Block.Tip, {
 		this.move(x, y, this.align)
 	},
 
-	move: function(x, y, align, distance) {
+	move: function() {
 		Block.Tip.prototype.move.apply(this, arguments)
 
-		var as = this.arrow.style
+		var distance = Math.max(0, this.lastDistance)
+
+		var as  = this.arrowLine.style
+		,   asw = this.arrowWidth +'px'
+		,   asl = distance +'px'
+
+		as.left = as.right = as.top = as.bottom = 'auto'
+		as.width = as.height = asw
+
 		switch(this.lastAlign) {
 			case 'left':
+				as.width = asl
+				as.left = '100%'
+			break
+
 			case 'right':
-				as.width = this.distance +'px'
-				as.height = '1px'
+				as.width = asl
+				as.right = '100%'
 			break
 
 			case 'top':
+				as.height = asl
+				as.top = '100%'
+			break
+
 			case 'bottom':
-				as.width = '1px'
-				as.height = this.distance +'px'
+				as.height = asl
+				as.bottom = '100%'
 			break
 		}
 	}

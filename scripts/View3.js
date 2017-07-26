@@ -81,6 +81,7 @@ View3.prototype = {
 
 	clearColor: 0xAAAAAA,
 
+	focusTheta: 1.0,
 	focusDuration: 300,
 	focusDistance: 1.5,
 
@@ -242,7 +243,7 @@ View3.prototype = {
 			time = this.focusDuration
 		}
 
-		this.orbitTo(target, time, dist * this.focusDistance, 1.3333)
+		this.orbitTo(target, time, dist * this.focusDistance, this.focusTheta)
 	},
 
 

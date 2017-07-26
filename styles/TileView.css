@@ -20,15 +20,15 @@
 	z-index: 3;
 }
 .tile-helper-vertical {
-	border-top: 1px solid transparent;
-	border-bottom: 1px solid transparent;
-	margin-top: -2px;
+	border-top: 2px solid transparent;
+	border-bottom: 2px solid transparent;
+	margin-top: -3px;
 	cursor: row-resize;
 }
 .tile-helper-horizontal {
-	border-left: 1px solid transparent;
-	border-right: 1px solid transparent;
-	margin-left: -2px;
+	border-left: 2px solid transparent;
+	border-right: 2px solid transparent;
+	margin-left: -3px;
 	cursor: col-resize;
 }
 .tile-helper:hover {

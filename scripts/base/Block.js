@@ -364,6 +364,7 @@ Block.Tip = f.unit(Block, {
 	align: null,
 	distance: 8,
 	arrowWidth: 12,
+	arrowPadding: 8,
 	animationTime: 200,
 	tweenDistance: 20,
 
@@ -431,12 +432,15 @@ Block.Tip = f.unit(Block, {
 		var re = this.element.offsetParent
 		if(!re) return
 
-		var aw = this.arrowWidth
+		var aw = this.arrowWidth / 2
+		,   ap = this.arrowPadding
 		,   ao = distance || this.distance
 		,   ew = this.element.offsetWidth
 		,   eh = this.element.offsetHeight
 		,   rw = re.offsetWidth
 		,   rh = re.offsetHeight
+		,   cx = ew / 2
+		,   cy = eh / 2
 
 		var vertical
 		var epl, ept, apl, apt
@@ -444,66 +448,86 @@ Block.Tip = f.unit(Block, {
 			case 'left':
 				vertical = false
 				epl = x - ew - ao
-				ept = y - eh/2
-				// apl = ew -2 -aw
-				apl = ew -2
-				apt = eh/2
+				ept = y - cy
+				apl = ew
+				apt = cy
 			break
 
 			case 'right':
 				vertical = false
 				epl = x + ao
-				ept = y - eh/2
-				// apl = aw
+				ept = y - cy
 				apl = 0
-				apt = eh/2
+				apt = cy
 			break
 
 			case 'top':
 				vertical = true
-				epl = x - ew/2
+				epl = x - cx
 				ept = y - ao - eh
-				apl = ew/2
-				// apt = eh -2 + aw
-				apt = eh -2
+				apl = cx
+				apt = eh
 			break
 
 			case 'bottom':
 				vertical = true
-				epl = x - ew/2
+				epl = x - cx
 				ept = y + ao
-				apl = ew/2
-				// apt = -aw
+				apl = cx
 				apt = 0
 			break
 
 			default: return
 		}
 
-		if(vertical && epl < 0) {
-			apl -= Math.min(ew / 2 - aw, -epl)
-			epl = 0
+		var eol = Math.max(0, -epl)
+		if(eol) {
+			if(vertical) apl -= Math.min(cx - aw - ap, eol)
+			epl += eol
 		}
 
-		if(vertical && (epl + ew) > rw) {
-			apl += Math.min(ew / 2 - aw, (epl + ew) - rw)
-			epl = rw - ew
+		var eor = Math.max(0, epl + ew - rw)
+		if(eor) {
+			if(vertical) apl += Math.min(cx - aw - ap, eor)
+			epl -= eor
 		}
 
-		if(!vertical && ept < 0) {
-			apt -= Math.min(eh / 2 - aw, -ept)
-			ept = 0
+		var eot = Math.max(0, -ept)
+		if(eot) {
+			if(!vertical) apt -= Math.min(cy - aw - ap, eot)
+			ept += eot
 		}
 
-		if(!vertical && (ept + eh) > rh) {
-			apt += Math.min(eh / 2 - aw, (ept + eh) - rh)
-			ept = rh - eh
+		var eob = Math.max(0, ept + eh - rh)
+		if(eob) {
+			if(!vertical) apt += Math.min(cy - aw - ap, eob)
+			ept -= eob
 		}
+
+		switch(align) {
+			case 'left':
+				ao += eor - eol
+			break
+
+			case 'right':
+				ao += eol - eor
+			break
+
+			case 'top':
+				ao += eob - eot
+			break
+
+			case 'bottom':
+				ao += eot - eob
+			break
+		}
+
 
 		if(this.arrowPoint.x === apl
 		&& this.arrowPoint.y === apt
 		&& this.elementPoint.x === epl
 		&& this.elementPoint.y === ept
+		&& this.lastDistance === ao
 		&& this.lastAlign === align) return
 
 		this.arrowPoint.x = apl
@@ -512,7 +536,9 @@ Block.Tip = f.unit(Block, {
 		this.elementPoint.x = epl
 		this.elementPoint.y = ept
 
+		this.lastDistance = ao
 		this.lastAlign = align
+
 
 		this.updateTransform()
 	},
@@ -539,22 +565,25 @@ Block.Tip = f.unit(Block, {
 	},
 
 	getAlign: function(x, y, w, h) {
+		var re = this.element.offsetParent
+		if(!re) return null
+
+		var rw = re.offsetWidth
+		,   rh = re.offsetHeight
+
+		var ew = this.element.offsetWidth
+		,   eh = this.element.offsetHeight
+
+		var ot = y
+		,   or = rw - x - w
+		,   ob = rh - y - h
+		,   ol = x
+
 		var aligns = ['top', 'right', 'bottom', 'left']
-		,   wh     = window.innerHeight
-		,   ww     = window.innerWidth
+		,   spaces = [ot - eh, or - ew, ob - eh, ol - ew]
 
-		var tw = this.element.offsetWidth
-		,   th = this.element.offsetHeight
-
-		var top    = y
-		,   right  = ww - x - w
-		,   bottom = wh - y - h
-		,   left   = x
-
-		var offsets = [top - th, right - tw, bottom - th, left - tw]
-
-		var dMax  = Math.max.apply(null, offsets)
-		,   index = offsets.indexOf(dMax)
+		var maxspace = Math.max.apply(null, spaces)
+		,   index = spaces.indexOf(maxspace)
 
 		return aligns[index]
 	},

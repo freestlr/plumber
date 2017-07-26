@@ -29,9 +29,16 @@
 	position: absolute;
 	width: 0;
 	height: 0;
-	background-color: white;
 	z-index: -1;
 }
+.marker-arrow-line {
+	width: 0;
+	height: 0;
+	position: absolute;
+	background-color: white;
+	box-shadow: 1px 1px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
 .marker-id {
 	display: none;
 	line-height: 36px;
@@ -60,12 +67,12 @@
 
 
 .marker.connected .marker-content,
-.marker.connected .marker-arrow {
+.marker.connected .marker-arrow-line {
 	background-color: rgba(37, 37, 37, 0.37);
 	color: white;
 }
 .marker.connected.master .marker-content,
-.marker.connected.master .marker-arrow {
+.marker.connected.master .marker-arrow-line {
 	background-color: #333;
 	color: white;
 }
@@ -74,17 +81,17 @@
 	z-index: 10000 !important;
 }
 .marker:hover .marker-content,
-.marker:hover .marker-arrow {
+.marker:hover .marker-arrow-line {
 	background-color: yellow;
 }
 
 .marker.selected .marker-content,
-.marker.selected .marker-arrow {
+.marker.selected .marker-arrow-line {
 	background-color: lime;
 }
 
 .marker.inactive .marker-content,
-.marker.inactive .marker-arrow {
+.marker.inactive .marker-arrow-line {
 	opacity: 0.3;
 	cursor: default;
 }
