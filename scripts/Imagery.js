@@ -335,10 +335,13 @@ Imagery.prototype = {
 
 			map.wrapS = THREE.RepeatWrapping
 			map.wrapT = THREE.RepeatWrapping
+			// map.image = this.tileTexture({ image: map.image }).image
 		}
 
 		m.envMap = this.skybox
 		m.needsUpdate = true
+
+
 
 		// if(m.name in this.materials) {
 		// 	mesh.material = this.materials[m.name]
@@ -704,7 +707,7 @@ Imagery.prototype = {
 
 		var source = data.image
 
-		data.loaded.write(true)
+		// data.loaded.write(true)
 		data.width  = source.naturalWidth  || source.width
 		data.height = source.naturalHeight || source.height
 		data.color  = this.textureColor(source, data.width, data.height)
@@ -715,8 +718,8 @@ Imagery.prototype = {
 
 		data.cloneX  = 1
 		data.cloneY  = 1
-		data.repeatX = data.resolution * normal * aspect
-		data.repeatY = data.resolution * normal
+		data.repeatX = (data.resolution || 1) * normal * aspect
+		data.repeatY = (data.resolution || 1) * normal
 
 		var wpot = !(data.width  & (data.width  -1))
 		,   hpot = !(data.height & (data.height -1))
