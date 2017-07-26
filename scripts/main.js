@@ -151,6 +151,7 @@ function displaySample(sid) {
 	var openView2 = main.sampleView2 && (main.sampleView2.object || main.sampleView2.src)
 
 	main.view.markers.markersVisible.set(!!openView2, 'view2')
+	main.view2.markers.markersVisible.set(!!openView2, 'view2')
 
 	var splitPosition = openView2 ? 0.5 : 1
 	if(splitPosition !== main.viewTween.target.position) {
