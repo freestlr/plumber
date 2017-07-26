@@ -99,11 +99,11 @@ Defer.prototype = {
 	},
 
 	resolve: function(value, defer) {
-		this.transition(true, value, defer)
+		return this.transition(true, value, defer)
 	},
 
 	reject: function(value, defer) {
-		this.transition(false, value, defer)
+		return this.transition(false, value, defer)
 	},
 
 	transition: function(success, value, defer) {
@@ -111,7 +111,7 @@ Defer.prototype = {
 			console.log('defer', this.debug, success ? 'resolve' : 'reject', this.pending ? 'ok' : 'no', value)
 		}
 
-		if(!this.pending) return
+		if(!this.pending) return this
 		this.pending = false
 
 		var func = success ? this.onresolve : this.onreject
@@ -135,10 +135,11 @@ Defer.prototype = {
 		}
 
 		this.dispatch()
+		return this
 	},
 
 	dispatch: function() {
-		if(this.pending) return
+		if(this.pending) return this
 
 		var defer = this.head
 		delete this.head
@@ -155,5 +156,7 @@ Defer.prototype = {
 		} else if(!this.success) {
 			throw this.value
 		}
+
+		return this
 	}
 }
