@@ -175,7 +175,7 @@ function setSample() {
 
 	if(main.tree) {
 		main.view2.setTree(node)
-		main.view2.focusOnTree(300)
+		main.view2.focusOnTree()
 
 		main.viewTween.target.position = 0.5
 		main.viewTween.start()
@@ -183,7 +183,7 @@ function setSample() {
 	} else {
 		main.tree = node
 		main.view.setTree(node)
-		main.view.focusOnTree(300)
+		main.view.focusOnTree()
 		location.hash = ''
 	}
 }
@@ -299,7 +299,7 @@ function makeConnection(master, slave) {
 
 	master.node.connect(master.index, slave.node, slave.index)
 	main.view.setTree(main.tree)
-	main.view.focusOnTree(300)
+	main.view.focusOnTree()
 	// main.view.needsRedraw = true
 
 	location.hash = ''

@@ -37,6 +37,15 @@ function View3(options) {
 		dom.append(this.element, this.renderer.domElement)
 	}
 
+
+
+	this.cameraTween = new TWEEN.Tween(this.camera.position)
+		.easing(TWEEN.Easing.Cubic.Out)
+
+	this.orbitTween = new TWEEN.Tween(this.orbit.target)
+		.easing(TWEEN.Easing.Cubic.Out)
+
+
 	this.camera.position.set(1, 1, 1)
 	this.orbit.update()
 
@@ -63,6 +72,7 @@ View3.prototype = {
 
 	clearColor: 0xAAAAAA,
 
+	focusDuration: 300,
 	focusDistance: 1.5,
 
 	makeGrid: function() {
@@ -149,19 +159,83 @@ View3.prototype = {
 		}
 	},
 
-	focusOnTree: function() {
-		if(this.tree) {
-			this.tree.updateBox()
-			this.camera.position.set(1, 1, 1).setLength(this.tree.boxLength * this.focusDistance)
-			this.orbit.target.copy(this.tree.boxCenter)
+	orbitTo: function(nextTarget, time, distance, theta) {
+		var EPS = 1e-9
 
-		} else {
-			this.camera.position.set(1, 1, 1).setLength(this.focusDistance)
-			this.orbit.target.set(0, 0, 0)
+		var camera = this.camera.position
+		,   target = this.orbit.target
+
+		var nextOffset  = new THREE.Vector3
+		,   nextCamera  = new THREE.Vector3
+		,   matrixTheta = new THREE.Matrix4
+
+		var distNow = camera.distanceTo(nextTarget)
+		,   distMin = this.orbit.minDistance
+		,   distMax = this.orbit.maxDistance
+		,   distGot = f.clamp(distance || distNow, distMin, distMax)
+
+		nextOffset.subVectors(camera, target).setLength(distGot)
+
+
+		var thetaNow = Math.acos(nextOffset.y / distGot)
+		,   thetaMin = this.orbit.minPolarAngle
+		,   thetaMax = this.orbit.maxPolarAngle
+		,   thetaGot = f.clamp(theta || thetaNow, thetaMin, thetaMax)
+
+		if(Math.abs(thetaGot - thetaNow) > EPS) {
+			var axis = nextCamera
+			axis.set(-nextOffset.z, 0, nextOffset.x).normalize()
+			matrixTheta.makeRotationAxis(axis, thetaNow - thetaGot)
+			nextOffset.applyMatrix4(matrixTheta)
 		}
 
-		this.orbit.update()
+		nextCamera.addVectors(nextTarget, nextOffset)
+
+
+		this.orbitTween.stop()
+		this.cameraTween.stop()
+
+		if(time) {
+			if(target.distanceToSquared(nextTarget) > EPS) {
+				this.orbitTween.to({
+					x: nextTarget.x,
+					y: nextTarget.y,
+					z: nextTarget.z
+				}, time).start()
+			}
+
+			if(camera.distanceToSquared(nextCamera) > EPS) {
+				this.cameraTween.to({
+					x: nextCamera.x,
+					y: nextCamera.y,
+					z: nextCamera.z
+				}, time).start()
+			}
+
+		} else {
+			camera.copy(nextCamera)
+			target.copy(nextTarget)
+			this.orbit.update()
+		}
 	},
+
+	focusOnTree: function(time) {
+		var target = new THREE.Vector3
+		,   dist = 1
+
+		if(this.tree) {
+			this.tree.updateBox()
+			target.copy(this.tree.boxCenter)
+			dist = this.tree.boxLength
+		}
+
+		if(isNaN(time)) {
+			time = this.focusDuration
+		}
+
+		this.orbitTo(target, time, dist * this.focusDistance, 1.3333)
+	},
+
 
 	lookAt: function() {
 
@@ -326,6 +400,11 @@ View3.prototype = {
 
 	onTick: function(dt) {
 		this.transform.update()
+
+		if(this.orbitTween.playing || this.cameraTween.playing) {
+			this.camera.lookAt(this.orbit.target)
+			this.needsRedraw = true
+		}
 
 		this.camera.updateMatrix()
 		if(!this.lastcam.equals(this.camera.matrix)) {
