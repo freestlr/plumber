@@ -49,7 +49,9 @@ function Sample(def, parent) {
 
 	this.parent = parent
 	this.joints = []
+
 	this.box    = new THREE.Box3
+	this.sphere = new THREE.Sphere
 
 
 	if(this.hide) {
@@ -167,6 +169,7 @@ Sample.prototype = {
 		this.parts = []
 
 		this.box.makeEmpty()
+		this.sphere.radius = -1
 		this.traverse(this.object, this.configureObject)
 	},
 
@@ -205,6 +208,16 @@ Sample.prototype = {
 
 		if(!mesh.geometry.boundingBox) {
 			mesh.geometry.computeBoundingBox()
+		}
+
+		if(!mesh.geometry.boundingSphere) {
+			mesh.geometry.computeBoundingSphere()
+		}
+
+		if(this.sphere.radius > 0) {
+			this.sphere.union(mesh.geometry.boundingSphere)
+		} else {
+			this.sphere.copy(mesh.geometry.boundingSphere)
 		}
 		this.box.union(mesh.geometry.boundingBox)
 

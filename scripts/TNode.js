@@ -8,6 +8,8 @@ TNode = f.unit({
 		this.boxCenter = new THREE.Vector3
 		this.boxSize   = new THREE.Vector3
 
+		this.sphere = new THREE.Sphere
+
 		this.connections = []
 
 		if(sample) this.setSample(sample)
@@ -79,23 +81,36 @@ TNode = f.unit({
 
 	},
 
-	boxUnion: function(node, box) {
-		node.updateBox()
-		if(node.sample) box.union(node.sample.box)
+	sizeUnion: function(node, extra) {
+		if(node.sample) {
+			extra.box.copy(node.sample.box)
+			extra.box.applyMatrix4(node.object.matrixWorld)
+			this.box.union(extra.box)
+
+			extra.sphere.copy(node.sample.sphere)
+			extra.sphere.center.applyMatrix4(node.object.matrixWorld)
+			this.sphere.union(extra.sphere)
+
+		} else {
+			this.box.expandByPoint(node.object.position)
+			this.sphere.expandByPoint(node.object.position)
+		}
 	},
 
-	updateBox: function() {
+	updateSize: function() {
 		this.object.updateMatrixWorld()
 
 		this.box.makeEmpty()
+		this.sphere.radius = -1
 
-		var box = new THREE.Box3
-		this.traverse(function(node) {
-			if(node.sample) box.copy(node.sample.box)
-			box.applyMatrix4(node.object.matrixWorld)
-			this.box.union(box)
 
-		}, this)
+		if(this.sample) {
+			this.sphere.copy(this.sample.sphere)
+		}
+		this.traverse(this.sizeUnion, this, {
+			box: new THREE.Box3,
+			sphere: new THREE.Sphere
+		})
 
 		// console.log('box:',
 		// 	this.box.min.toArray().map(f.hround),

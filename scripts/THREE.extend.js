@@ -79,3 +79,31 @@ THREE.Ray.prototype.intersectPlane = function ( plane, optionalTarget, extend ) 
 
 	return this.at( t, optionalTarget );
 }
+
+THREE.Sphere.prototype.expandByPoint = function ( point ) {
+	this.center.sub( point );
+
+	var l1 = this.center.length() + this.radius;
+
+	this.radius = l1 / 2;
+	this.center.setLength( l1 );
+	this.center.add( point );
+
+	return this;
+
+}
+
+THREE.Sphere.prototype.union = function ( sphere ) {
+	this.center.sub( sphere.center );
+
+	var l1 = this.center.length() + this.radius;
+	var l2 = l1 + sphere.radius;
+
+	this.radius = l2 / 2;
+	this.center.setLength( l1 );
+	this.center.add( sphere.center );
+	this.center.lerp( sphere.center, l2 / l1 );
+
+	return this;
+
+}

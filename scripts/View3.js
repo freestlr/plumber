@@ -61,6 +61,9 @@ function View3(options) {
 	this.dirLight.target.position.set(0, 0, 0)
 
 	this.camera.position.set(1, 1, 1)
+
+	this.treeCenter = new THREE.Vector3
+	this.treeSize = 1
 	this.focusOnTree(0)
 
 
@@ -230,20 +233,16 @@ View3.prototype = {
 	},
 
 	focusOnTree: function(time) {
-		var target = new THREE.Vector3
-		,   dist = 100
-
-		if(this.tree) {
-			this.tree.updateBox()
-			target.copy(this.tree.boxCenter)
-			dist = this.tree.boxLength
-		}
 
 		if(isNaN(time)) {
 			time = this.focusDuration
 		}
 
-		this.orbitTo(target, time, dist * this.focusDistance, this.focusTheta)
+		if(this.tree) {
+			this.tree.updateSize()
+		}
+
+		this.orbitTo(this.treeCenter, time, this.treeSize * this.focusDistance, this.focusTheta)
 	},
 
 
@@ -261,12 +260,24 @@ View3.prototype = {
 		if(this.tree) {
 			this.root.add(this.tree.object)
 			this.root.updateMatrixWorld()
-			this.tree.updateBox()
-			this.updateProjection()
+			this.tree.updateSize()
+
+			// this.treeCenter.copy(this.tree.sphere.center)
+			// this.treeSize = this.tree.sphere.radius * 2
+
+			this.treeCenter.copy(this.tree.boxCenter)
+			this.treeSize = this.tree.boxLength
+
+		} else {
+			this.treeCenter.set(0, 0, 0)
+			this.treeSize = 100
 		}
 
-		this.focusOnTree()
+
+		this.updateProjection()
 		this.updateConnections()
+
+		this.focusOnTree()
 		this.needsRedraw = true
 	},
 
@@ -284,12 +295,10 @@ View3.prototype = {
 	},
 
 	updateProjection: function() {
-		var size = this.tree ? this.tree.boxLength : 1
-
 		this.camera.fov    = 70
 		this.camera.aspect = this.width / this.height
-		this.camera.far    = size * 100
-		this.camera.near   = size * 0.01
+		this.camera.far    = this.treeSize * 100
+		this.camera.near   = this.treeSize * 0.01
 
 		this.needsRetrace = true
 	},
