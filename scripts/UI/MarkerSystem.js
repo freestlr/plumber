@@ -21,7 +21,7 @@ UI.MarkerSystem = f.unit(Block, {
 			marker.point.world.copy(position)
 		}
 
-		this.updateMarker(marker)
+		// this.updateMarker(marker)
 		this.markers.push(marker)
 
 		console.log('addMarker',
@@ -54,7 +54,8 @@ UI.MarkerSystem = f.unit(Block, {
 	},
 
 	updateMarker: function(marker, index) {
-		marker.update(index)
+		marker.element.style.zIndex = index
+		marker.update()
 	}
 })
 
@@ -79,6 +80,7 @@ UI.Marker = f.unit(Block.Tip, {
 			hover: false,
 			selected: false,
 			connected: false,
+			inactive: false,
 			master: false
 		}
 		this.updateState()
@@ -121,17 +123,16 @@ UI.Marker = f.unit(Block.Tip, {
 		this.events.emit('marker_tap', this)
 	},
 
-	update: function(z) {
+	update: function() {
 		this.scale = 0.7 * (1.3 - Math.min(0.7, this.point.distance / 1.5))
 
-		this.visible.set(this.point.visible, 'onScreen')
-		if(!this.visible.value) return
+		// this.visible.set(this.point.visible, 'onScreen')
+		// if(!this.visible.value) return
 
 		var x = Math.round(this.point.screen.x)
 		,   y = Math.round(this.point.screen.y)
 
 		this.move(x, y, this.align)
-		this.element.style.zIndex = z
 	},
 
 	move: function(x, y, align, distance) {

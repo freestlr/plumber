@@ -16,10 +16,10 @@
 	{"hide": 1, "id": "w200b_optimaze", "src": "w200b_optimaze_2.FBX"},
 	{"hide": 1, "id": "w200b_optimaze_dae", "src": "w200b_optimaze.DAE"},
 	{"hide": 1, "id": "scene", "src": "scene.json"},
-	{"hide": 0, "id": "b100", "src": "b100_ok.json"},
-	{"hide": 0, "id": "bsp_fbsporx", "src": "BSP_FBSPORX.json"},
-	{"hide": 0, "id": "efg6k", "src": "EFG6K.json"},
-	{"hide": 0, "id": "b100_new", "src": "b100.json"},
-	{"hide": 0, "id": "b180_new", "src": "b180.json"},
-	{"hide": 0, "id": "efh6k_new", "src": "EFH6K.json"}
+	{"hide": 1, "id": "b100", "src": "b100_ok.json"},
+	{"hide": 1, "id": "bsp_fbsporx", "src": "BSP_FBSPORX.json"},
+	{"hide": 1, "id": "efg6k", "src": "EFG6K.json"},
+	{"hide": 0, "id": "B100", "src": "b100.json"},
+	{"hide": 0, "id": "B180", "src": "b180.json"},
+	{"hide": 0, "id": "EFH6K", "src": "EFH6K.json"}
 ]

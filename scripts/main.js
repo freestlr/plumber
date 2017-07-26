@@ -48,16 +48,6 @@ main.tiles.setClients([main.view, main.view2, { element: main.list }])
 
 
 
-var clear = dom.div('view-clear hand', main.view.element)
-Atlas.set(clear, 'i-cross', 'absmid')
-new EventHandler(onViewClear).listen('tap', clear)
-
-
-var clear2 = dom.div('view-clear hand', main.view2.element)
-Atlas.set(clear2, 'i-cross', 'absmid')
-new EventHandler(onViewClear2).listen('tap', clear2)
-
-
 dom.addclass(document.body, 'ontouchstart' in window ? 'touch' : 'no-touch')
 dom.addclass(main.renderer.domElement, 'canvas-main')
 dom.append(main.tiles.element, main.renderer.domElement)
@@ -169,13 +159,12 @@ function loadSample(sid) {
 }
 
 function setSample() {
-	// main.sample.describe()
+	main.sample.describe()
 
 	var node = new TNode(main.sample)
 
 	if(main.tree) {
 		main.view2.setTree(node)
-		main.view2.focusOnTree()
 
 		main.viewTween.target.position = 0.5
 		main.viewTween.start()
@@ -183,7 +172,7 @@ function setSample() {
 	} else {
 		main.tree = node
 		main.view.setTree(node)
-		main.view.focusOnTree()
+
 		location.hash = ''
 	}
 }
@@ -194,21 +183,18 @@ function connectSample(sid) {
 
 	if(main.tree) {
 		var found = false
-		main.tree.traverseConnections(function(node, con, index) {
+		main.tree.traverseConnections(function(con) {
 			if(found || con.connected) return
 
-			node.connect(index, new TNode(sample), 0)
+			con.node.connect(con.index, new TNode(sample), 0)
 			found = true
 		})
 
 	} else {
 		main.tree = new TNode(sample)
-		main.view.setTree(main.tree)
 	}
 
-	main.view.updateConnections()
-	main.view.focusOnTree()
-	main.view.needsRedraw = true
+	main.view.setTree(main.tree)
 }
 
 
@@ -290,18 +276,16 @@ function onConnectionTap(view, index, con) {
 	var master = main.connectionParts[0]
 	,   slave  = main.connectionParts[1]
 
-	if(master && slave) makeConnection(master, slave)
+	if(master && slave) makeViewConnection(master, slave)
 }
 
-function makeConnection(master, slave) {
+function makeViewConnection(master, slave) {
 	main.view.selectConnection(null)
 	main.view2.selectConnection(null)
 	main.view2.setTree(null)
 
 	master.node.connect(master.index, slave.node, slave.index)
 	main.view.setTree(main.tree)
-	main.view.focusOnTree()
-	// main.view.needsRedraw = true
 
 	location.hash = ''
 }
@@ -332,6 +316,9 @@ function run() {
 
 	main.view.events.on('connection_select', onConnectionTap, null, [main.view, 0])
 	main.view2.events.on('connection_select', onConnectionTap, null, [main.view2, 1])
+
+	main.view.events.on('view_clear', onViewClear)
+	main.view2.events.on('view_clear', onViewClear2)
 
 
 	onresize()

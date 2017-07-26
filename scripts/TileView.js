@@ -16,7 +16,7 @@ TileView.prototype = {
 	width: 0,
 	height: 0,
 
-	helperSize: 3,
+	helperSize: 1,
 
 	makeFrame: function(def, parent) {
 		var frame = {

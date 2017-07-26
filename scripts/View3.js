@@ -12,6 +12,22 @@ function View3(options) {
 	this.root      = new THREE.Object3D
 	this.grid      = new THREE.Object3D
 
+	if(!this.renderer) {
+		this.renderer = new THREE.WebGLRenderer({ antialias: true })
+		this.renderer.autoClear = false
+		this.renderer.clear()
+
+		dom.append(this.element, this.renderer.domElement)
+	}
+
+
+	this.clearButton = dom.div('view-clear hand', this.element)
+	Atlas.set(this.clearButton, 'i-cross', 'absmid')
+	dom.on('tap', this.clearButton, this.events.will('view_clear'))
+
+
+
+
 	this.transform = new THREE.TransformControls(this.camera, this.element)
 	this.transform.addEventListener('change', f.binds(this.onTransformControlsChange, this))
 
@@ -29,14 +45,6 @@ function View3(options) {
 
 	this.lastcam = new THREE.Matrix4
 
-	if(!this.renderer) {
-		this.renderer = new THREE.WebGLRenderer({ antialias: true })
-		this.renderer.autoClear = false
-		this.renderer.clear()
-
-		dom.append(this.element, this.renderer.domElement)
-	}
-
 
 
 	this.cameraTween = new TWEEN.Tween(this.camera.position)
@@ -46,13 +54,14 @@ function View3(options) {
 		.easing(TWEEN.Easing.Cubic.Out)
 
 
-	this.camera.position.set(1, 1, 1)
-	this.orbit.update()
+	this.makeGridSystem()
+
 
 	this.dirLight.position.set(-100, 100, 100)
 	this.dirLight.target.position.set(0, 0, 0)
 
-	this.makeGridSystem()
+	this.camera.position.set(1, 1, 1)
+	this.focusOnTree(0)
 
 
 	this.root.add(this.ambLight)
@@ -221,7 +230,7 @@ View3.prototype = {
 
 	focusOnTree: function(time) {
 		var target = new THREE.Vector3
-		,   dist = 1
+		,   dist = 100
 
 		if(this.tree) {
 			this.tree.updateBox()
@@ -255,6 +264,7 @@ View3.prototype = {
 			this.updateProjection()
 		}
 
+		this.focusOnTree()
 		this.updateConnections()
 		this.needsRedraw = true
 	},
@@ -268,7 +278,7 @@ View3.prototype = {
 		this.tree.traverseConnections(this.addConnectionMarker, this)
 	},
 
-	addConnectionMarker: function(node, con, index) {
+	addConnectionMarker: function(con) {
 		con.marker = this.markers.addMarker(con.getPosition(), con.data.object.name, con)
 	},
 
@@ -329,6 +339,14 @@ View3.prototype = {
 		this.viewport = viewport
 
 		this.onResize()
+	},
+
+	updateConnectionType: function(con, types) {
+		console.log(con.marker)
+	},
+
+	setConnectionTypes: function(types) {
+		if(this.tree) this.tree.traverseConnections(this.updateConnectionType, this, types)
 	},
 
 	selectConnection: function(con) {

@@ -57,6 +57,8 @@
 }
 
 
+
+
 .marker.connected .marker-content,
 .marker.connected .marker-arrow {
 	background-color: rgba(37, 37, 37, 0.37);
@@ -79,4 +81,10 @@
 .marker.selected .marker-content,
 .marker.selected .marker-arrow {
 	background-color: lime;
+}
+
+.marker.inactive .marker-content,
+.marker.inactive .marker-arrow {
+	opacity: 0.3;
+	cursor: default;
 }

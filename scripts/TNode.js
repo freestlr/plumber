@@ -27,7 +27,7 @@ TNode = f.unit({
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
 
-			func.call(scope || this, this, con, i, data)
+			func.call(scope || this, con, data)
 
 			if(con.connected && con.master) con.target.traverseConnections(func, scope, data)
 		}
