@@ -1,6 +1,7 @@
 function Sampler() {
 	this.get = new Loader
 	this.samples = {}
+	this.keyIndex = []
 }
 
 Sampler.prototype = {
@@ -20,6 +21,16 @@ Sampler.prototype = {
 
 		this.samples[sample.id] = sample
 		return sample
+	},
+
+	getJointKey: function(id) {
+		var index = this.keyIndex.indexOf(id)
+		if(index === -1) {
+			index = this.keyIndex.length
+			this.keyIndex.push(id)
+		}
+
+		return String.fromCharCode(index + 65)
 	},
 
 	addSampleList: function(samples) {
@@ -160,12 +171,24 @@ Sample.prototype = {
 	},
 
 	configureJoint: function(object, match) {
-		if(match) this.joints.push({
+		// if(match) this.joints.push({
+		// 	id     : match[1],
+		// 	param  : match[2],
+		// 	extra  : match[3],
+		// 	object : object
+		// })
+
+		if(!match) return
+
+		var joint = {
 			id     : match[1],
 			param  : match[2],
 			extra  : match[3],
 			object : object
-		})
+		}
+
+		joint.key = this.parent.getJointKey(joint.id)
+		this.joints.push(joint)
 	},
 
 	configureObject: function(mesh) {

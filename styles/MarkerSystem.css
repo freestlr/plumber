@@ -13,30 +13,70 @@
 
 .marker {
 	position: absolute;
-	height: 30px;
-	line-height: 30px;
-	margin-left: -21px;
-	margin-top: -115px;
+	z-index: 2;
+}
+.marker-content {
+	//position: absolute;
 	padding: 0 10px;
+
 	background-color: white;
-	border: 1px solid black;
-	font-family: Arial, sans-serif;
-	font-size: 14px;
 	color: black;
-	box-sizing: border-box;
+	box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.3);
+
 	pointer-events: auto;
 }
-.marker:before {
-	content: "";
+.marker-arrow {
 	position: absolute;
-	bottom: 0;
-	left: 21px;
 	width: 0;
-	height: 85px;
-	margin-bottom: -85px;
-	border-right: 1px solid black;
+	height: 0;
+	background-color: white;
+	z-index: -1;
 }
+.marker-id {
+	display: none;
+	line-height: 36px;
+	font-family: Arial, sans-serif;
+	font-size: 24px;
+}
+.marker-key {
+	line-height: 56px;
+	font-family: Arial, sans-serif;
+	font-size: 48px;
+}
+.marker-info {
+	display: none;
+	line-height: 30px;
+	font-family: monospace;
+	font-size: 14px;
+}
+.marker-system.debug .marker-key {
+	display: none;
+}
+.marker-system.debug .marker-info {
+	display: block;
+}
+
+
+.marker.connected .marker-content,
+.marker.connected .marker-arrow {
+	background-color: rgba(37, 37, 37, 0.37);
+	color: white;
+}
+.marker.connected.master .marker-content,
+.marker.connected.master .marker-arrow {
+	background-color: #333;
+	color: white;
+}
+
 .marker:hover {
 	z-index: 10000 !important;
-	background-color: #eee;
+}
+.marker:hover .marker-content,
+.marker:hover .marker-arrow {
+	background-color: yellow;
+}
+
+.marker.selected .marker-content,
+.marker.selected .marker-arrow {
+	background-color: lime;
 }

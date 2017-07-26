@@ -57,6 +57,16 @@ f.amap = function(array, func, scope, a, b, c) {
 	return r
 }
 
+f.atog = function(array, value, enabled) {
+	if(!array) return
+	for(var i = array.length -1; i >= 0; i--) {
+		if(array[i] === value) {
+			if(enabled) return
+			else array.splice(i, 1)
+		}
+	}
+	if(enabled) array.push(value)
+}
 f.apick = function(array, name, value, negate) {
 	if(array) for(var i = 0, l = array.length, item; i < l; i++) {
 		item = array[i]

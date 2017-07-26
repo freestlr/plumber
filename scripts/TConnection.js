@@ -8,6 +8,7 @@ TConnection = f.unit({
 		this.master = null
 		this.connected = null
 
+		this.events = new EventEmitter
 		this.point  = new THREE.Vector3
 		this.normal = new THREE.Vector3
 		this.matrix = new THREE.Matrix4
@@ -66,6 +67,9 @@ TConnection = f.unit({
 		slave.connected = this
 		slave.target = this.node
 		slave.master = false
+
+		this.events.emit('connected', this)
+		slave.events.emit('connected', slave)
 	},
 
 	disconnect: function() {

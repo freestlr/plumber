@@ -159,8 +159,8 @@ dom.respace = /\s+/
 dom.addclass = function(elem, name) {
 	if(!elem || !name) return
 
-	var left = elem.className.split(dom.respace)
-	,   right = name.split(dom.respace)
+	var left = elem.className.split(dom.respace).filter(Boolean)
+	,   right = name.split(dom.respace).filter(Boolean)
 	,   rest = f.sor(left, right)
 
 	if(f.snot(rest, left).length) elem.className = rest.join(' ')
@@ -169,8 +169,8 @@ dom.addclass = function(elem, name) {
 dom.remclass = function(elem, name) {
 	if(!elem || !name) return
 
-	var left = elem.className.split(dom.respace)
-	,   right = name.split(dom.respace)
+	var left = elem.className.split(dom.respace).filter(Boolean)
+	,   right = name.split(dom.respace).filter(Boolean)
 	,   rest = f.snot(left, right)
 
 	if(f.snot(left, rest).length) elem.className = rest.join(' ')
@@ -179,8 +179,8 @@ dom.remclass = function(elem, name) {
 dom.hasclass = function(elem, name, any) {
 	if(!elem || !name) return
 
-	var left = elem.className.split(dom.respace)
-	,   right = name.split(dom.respace)
+	var left = elem.className.split(dom.respace).filter(Boolean)
+	,   right = name.split(dom.respace).filter(Boolean)
 	,   found = f.sand(left, right).length
 
 	return any ? found : found === right.length
@@ -191,6 +191,19 @@ dom.togclass = function(elem, name, state) {
 
 	if(arguments.length <3) state = !dom.hasclass(elem, name)
 	;(state ? dom.addclass : dom.remclass)(elem, name)
+}
+
+dom.setclass = function(elem, enabled) {
+	if(!elem || !enabled) return
+
+	var prev = elem.className.split(dom.respace).filter(Boolean)
+	,   next = prev.slice()
+
+	for(var key in enabled) {
+		f.atog(next, key, !!enabled[key])
+	}
+
+	if(f.sxor(prev, next).length) elem.className = next.join(' ')
 }
 
 dom.offset = function(elem, root, scroll) {

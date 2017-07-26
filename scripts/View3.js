@@ -194,9 +194,7 @@ View3.prototype = {
 	},
 
 	addConnectionMarker: function(node, con, index) {
-		var color = con.connected ? con.master ? 'tomato' : 'yellow' : 'white'
-
-		con.marker = this.markers.addMarker(con.getPosition(), con.data.object.name, color, con)
+		con.marker = this.markers.addMarker(con.getPosition(), con.data.object.name, con)
 	},
 
 	updateProjection: function() {
@@ -235,6 +233,9 @@ View3.prototype = {
 			case 'x':
 				this.enableWireframe = !this.enableWireframe
 				this.needsRedraw = true
+
+				dom.togclass(this.markers.element, 'debug', this.enableWireframe)
+				this.markers.update()
 			return
 
 			case 'z':
@@ -257,19 +258,22 @@ View3.prototype = {
 	},
 
 	selectConnection: function(con) {
-		if(this.selectedConnection === con) return
+		var old = this.selectedConnection
+		if(old === con) return
 
-		if(this.selectedConnection) {
-			this.selectedConnection.marker.setColor(null)
+		if(old) {
+			old.selected = false
+			old.marker.updateState()
 		}
 
 		this.selectedConnection = con
 
-		if(this.selectedConnection) {
-			this.selectedConnection.marker.setColor('lime')
+		if(con) {
+			con.selected = true
+			con.marker.updateState()
 		}
 
-		this.events.emit('connection_select', this.selectedConnection)
+		this.events.emit('connection_select', con)
 	},
 
 	onTap: function(e) {
@@ -289,7 +293,7 @@ View3.prototype = {
 	},
 
 	onMarkerTap: function(marker) {
-		var con = marker.data
+		var con = marker.connection
 
 		if(kbd.state.CTRL) {
 			this.transformConnection = con

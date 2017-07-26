@@ -1,20 +1,19 @@
 UI.MarkerSystem = f.unit(Block, {
+	unitName: 'UI_MarkerSystem',
 	ename: 'marker-system noselect',
 
 	create: function() {
 		this.markers = []
 	},
 
-	addMarker: function(position, text, color, data) {
+	addMarker: function(position, text, connection) {
 		if(!this.projector) return
 
 		var marker = new UI.Marker({
 			eroot: this.element,
 			events: this.events,
 			point: this.projector.addPoint(),
-			color: color,
-			data: data,
-			text: text
+			connection: connection
 		})
 
 		if(position) {
@@ -31,8 +30,7 @@ UI.MarkerSystem = f.unit(Block, {
 		if(index !== -1) {
 			this.markers.splice(index, 1)
 
-			dom.remove(marker.element)
-			marker.unbind()
+			marker.destroy()
 		}
 	},
 
@@ -51,67 +49,94 @@ UI.MarkerSystem = f.unit(Block, {
 
 	updateMarker: function(marker, index) {
 		marker.scale = 0.7 * (1.3 - Math.min(0.7, marker.point.distance / 1.5))
+
 		marker.visible.set(marker.point.visible, 'onScreen')
 
 		if(marker.visible.value) {
-			marker.update(marker.point.screen.x, marker.point.screen.y, 1, index)
+			marker.update(marker.point.screen, index)
+			// marker.updateState()
 		}
 	}
 })
 
 
-UI.Marker = f.unit(Block, {
+UI.Marker = f.unit(Block.Tip, {
+	unitName: 'UI_Marker',
 	ename: 'marker hand',
+	align: 'top',
+	distance: 100,
+	arrowWidth: 0,
 
 	create: function() {
-		this.bind()
-		this.setColor(this.color)
+		dom.setclass(this.arrow,   { 'tip-arrow':   false, 'marker-arrow':   true })
+		dom.setclass(this.content, { 'tip-content': false, 'marker-content': true })
+
+		this.elemId   = dom.span('marker-id',   this.content)
+		this.elemKey  = dom.span('marker-key',  this.content)
+		this.elemInfo = dom.span('marker-info', this.content)
+
+
+		this.state = {
+			hover: false,
+			selected: false,
+			connected: false,
+			master: false
+		}
+		this.updateState()
+
+		if(this.connection) {
+			dom.text(this.elemId,   this.connection.data.id)
+			dom.text(this.elemKey,  this.connection.data.key)
+			dom.text(this.elemInfo, this.connection.data.object.name)
+
+			this.connection.events.when({
+				'connect': this.updateState,
+				// 'select': this.updateState
+			}, this)
+
+		}
+
+		this.watchEvents.push(
+			new EventHandler(this.onTap, this).listen('tap', this.element))
 	},
 
-	setColor: function(color) {
-		this.element.style.backgroundColor = color || 'white'
-	},
+	updateState: function() {
+		for(var key in this.state) {
+			this.state[key] = this.connection[key]
+		}
 
-	visibleMethod: function(element, visible) {
-		if(visible) dom.append(this.eroot, element)
-		else dom.remove(element)
-	},
-
-	bind: function() {
-		this.hTap = new EventHandler(this.onTap, this).listen('tap', this.element)
-	},
-
-	unbind: function() {
-		this.hTap.release()
+		dom.setclass(this.element, this.state)
+		this.visible.set(!this.state.connected, 'connected')
 	},
 
 	onTap: function() {
 		this.events.emit('marker_tap', this)
 	},
 
-	update: function(x, y, s, z) {
-		if( this._x !== x
-		||  this._y !== y
-		||  this._s !== s) {
+	update: function(point, z) {
+		var x = Math.round(point.x)
+		,   y = Math.round(point.y)
 
-			this._x = Math.round(x)
-			this._y = Math.round(y)
-			this._s = s
-			this._transform(this.element, this._x, this._y, this._s)
-		}
-
+		this.move(x, y, this.align)
 		this.element.style.zIndex = z
 	},
 
-	_transform: function(element, x, y, s) {
-		var style = ' translateX('+ f.hround(x) +'px)'
-		          + ' translateY('+ f.hround(y) +'px)'
-		          + '      scale('+ f.hround(s) +')'
+	move: function(x, y, align, distance) {
+		Block.Tip.prototype.move.apply(this, arguments)
 
-		element.style.webkitTransform = style
-		element.style.   mozTransform = style
-		element.style.    msTransform = style
-		element.style.     OTransform = style
-		element.style.      transform = style
+		var as = this.arrow.style
+		switch(this.lastAlign) {
+			case 'left':
+			case 'right':
+				as.width = this.distance +'px'
+				as.height = '1px'
+			break
+
+			case 'top':
+			case 'bottom':
+				as.width = '1px'
+				as.height = this.distance +'px'
+			break
+		}
 	}
 })

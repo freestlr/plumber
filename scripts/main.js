@@ -284,25 +284,25 @@ function onSampleImport(item) {
 
 main.connectionParts = []
 function onConnectionTap(view, index, con) {
-	var parts = main.connectionParts
+	main.connectionParts[index] = con
 
-	parts[index] = con
+	var master = main.connectionParts[0]
+	,   slave  = main.connectionParts[1]
 
-	var master = parts[0]
-	,   slave = parts[1]
+	if(master && slave) makeConnection(master, slave)
+}
 
-	if(master && slave) {
-		main.view.selectConnection(null)
-		main.view2.selectConnection(null)
+function makeConnection(master, slave) {
+	main.view.selectConnection(null)
+	main.view2.selectConnection(null)
+	main.view2.setTree(null)
 
-		main.view2.setTree(null)
+	master.node.connect(master.index, slave.node, slave.index)
+	main.view.setTree(main.tree)
+	main.view.focusOnTree(300)
+	// main.view.needsRedraw = true
 
-		master.node.connect(master.index, slave.node, slave.index)
-		main.view.focusOnTree(300)
-		main.view.needsRedraw = true
-
-		location.hash = ''
-	}
+	location.hash = ''
 }
 
 function removeSample(block) {

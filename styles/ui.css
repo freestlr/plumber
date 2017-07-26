@@ -2,6 +2,10 @@ body {
 	background-color: white;
 }
 
+.hand:hover {
+	background-color: #aaa;
+}
+
 .ui {
 	position: absolute;
 	left: 0;
@@ -216,10 +220,10 @@ body .dg .close-button {
 .sample-item {
 	position: relative;
 	height: 42px;
+	line-height: 42px;
 	font-size: 12px;
 	font-family: monospace;
 	text-align: center;
-	line-height: 48px;
 	border-bottom: 1px solid black;
 }
 .sample-item:hover {

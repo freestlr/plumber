@@ -14,6 +14,7 @@ Block = f.unit({
 
 		this.watchAtlas  = []
 		this.watchLocale = []
+		this.watchEvents = []
 
 		for(var i = 0; i < this.protochain.length; i++) {
 			this.invoke(this.protochain[i], 'create')
@@ -70,6 +71,11 @@ Block = f.unit({
 
 		this.watchLocale.forEach(Locale.unwatch)
 		this.watchLocale = []
+
+		this.watchEvents.forEach(f.func('release'))
+		this.watchEvents = []
+
+		dom.remove(this.element)
 	},
 
 	resize: function(w, h) {
@@ -118,8 +124,8 @@ Block.Toggle = f.unit(Block, {
 	auto: true,
 
 	create: function() {
-		this.htap  = new EventHandler(this.ontap,  this).listen('tap',        this.element)
-		this.hover = new EventHandler(this.onover, this).listen('mouseenter', this.element)
+		this.watchEvents.push(new EventHandler(this.ontap, this).listen('tap', this.element))
+		this.watchEvents.push(new EventHandler(this.onover, this).listen('mouseenter', this.element))
 	},
 
 	createPost: function() {
@@ -355,7 +361,9 @@ Block.Tip = f.unit(Block, {
 	unitName: 'Block_Tip',
 	ename: 'tip',
 
-	align: 'bottom',
+	align: null,
+	distance: 8,
+	arrowWidth: 12,
 	animationTime: 200,
 	tweenDistance: 20,
 
@@ -363,7 +371,10 @@ Block.Tip = f.unit(Block, {
 		this.arrow   = dom.div('tip-arrow', this.element)
 		this.content = dom.div('tip-content', this.element)
 
-		this.transitionTween = new TWEEN.Tween({})
+		this.arrowPoint   = { x: 0, y: 0 }
+		this.elementPoint = { x: 0, y: 0 }
+
+		this.transitionTween = new TWEEN.Tween({ o: 1, x: 0, y: 0 })
 			.easing(TWEEN.Easing.Cubic.Out)
 			.to({}, this.animationTime)
 			.onUpdate(this.updateTween, this)
@@ -372,8 +383,8 @@ Block.Tip = f.unit(Block, {
 
 	updateTween: function() {
 		var s = this.transitionTween.source
-		this.element.style.opacity   = s.o
-		this.element.style.transform = ['translateX(', s.x, 'px) translateY(', s.y, 'px)'].join('')
+		this.element.style.opacity = s.o
+		this.updateTransform()
 	},
 
 	moveToElement: function(element, align, distance) {
@@ -384,7 +395,7 @@ Block.Tip = f.unit(Block, {
 		,   offset = dom.offset(element, this.element.offsetParent)
 
 		if(align == null) {
-			align = this.getAlign(offset.x, offset.y, width, height)
+			align = this.align || this.getAlign(offset.x, offset.y, width, height)
 		}
 
 		var x = offset.x
@@ -413,13 +424,15 @@ Block.Tip = f.unit(Block, {
 	},
 
 	move: function(x, y, align, distance) {
-		this.align = align == null ? this.getAlign(x, y, 0, 0) : align
+		if(align == null) {
+			align = this.align || this.getAlign(x, y, 0, 0)
+		}
 
 		var re = this.element.offsetParent
 		if(!re) return
 
-		var aw = 12
-		,   ao = distance || 8
+		var aw = this.arrowWidth
+		,   ao = distance || this.distance
 		,   ew = this.element.offsetWidth
 		,   eh = this.element.offsetHeight
 		,   rw = re.offsetWidth
@@ -487,10 +500,42 @@ Block.Tip = f.unit(Block, {
 			ept = rh - eh
 		}
 
-		this.element.style.left = epl +'px'
-		this.element.style.top  = ept +'px'
-		this.arrow.style.left = apl +'px'
-		this.arrow.style.top  = apt +'px'
+		if(this.arrowPoint.x === apl
+		&& this.arrowPoint.y === apt
+		&& this.elementPoint.x === epl
+		&& this.elementPoint.y === ept
+		&& this.lastAlign === align) return
+
+		this.arrowPoint.x = apl
+		this.arrowPoint.y = apt
+
+		this.elementPoint.x = epl
+		this.elementPoint.y = ept
+
+		this.lastAlign = align
+
+		this.updateTransform()
+	},
+
+	updateTransform: function() {
+		var s = this.transitionTween.source
+		,   a = this.arrowPoint
+		,   e = this.elementPoint
+
+		this.transform(this.element, e.x + s.x, e.y + s.y)
+		this.transform(this.arrow, a.x, a.y)
+	},
+
+	transform: function(element, x, y, s) {
+		var style = ' translateX('+ f.hround(x || 0) +'px)'
+		          + ' translateY('+ f.hround(y || 0) +'px)'
+		          + '      scale('+ f.hround(s || 1) +')'
+
+		element.style.webkitTransform = style
+		element.style.   mozTransform = style
+		element.style.    msTransform = style
+		element.style.     OTransform = style
+		element.style.      transform = style
 	},
 
 	getAlign: function(x, y, w, h) {
@@ -524,8 +569,8 @@ Block.Tip = f.unit(Block, {
 		,   t = this.transitionTween.target
 		,   d = this.tweenDistance
 
-		var ox = { left: d, right: -d } [this.align] || 0
-		,   oy = { top: d, bottom: -d } [this.align] || 0
+		var ox = { left: d, right: -d } [this.lastAlign] || 0
+		,   oy = { top: d, bottom: -d } [this.lastAlign] || 0
 
 		s.x = v ? ox : 0
 		s.y = v ? oy : 0
