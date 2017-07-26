@@ -68,7 +68,6 @@ function Sample(def, parent) {
 }
 
 Sample.prototype = {
-	jointRE: /^:([^_]*)_([^_]*)_([^_]*)/,
 
 	traverse: function(object, func, scope, data, inc, level) {
 		if(!object) return
@@ -171,22 +170,18 @@ Sample.prototype = {
 		this.box.makeEmpty()
 		this.sphere.radius = -1
 		this.traverse(this.object, this.configureObject)
+
+		return this
 	},
 
-	configureJoint: function(object, match) {
-		// if(match) this.joints.push({
-		// 	id     : match[1],
-		// 	param  : match[2],
-		// 	extra  : match[3],
-		// 	object : object
-		// })
-
-		if(!match) return
+	configureJoint: function(object) {
+		var parts = object.name.slice(1).split('_')
 
 		var joint = {
-			id     : match[1],
-			param  : match[2],
-			extra  : match[3],
+			id     : parts[0],
+			param  : parts[1],
+			extra  : parts[2],
+			parts  : parts,
 			object : object
 		}
 
@@ -199,7 +194,7 @@ Sample.prototype = {
 			this.parent.imagery.configureSampleMaterial(mesh)
 		}
 
-		this.configureJoint(mesh, mesh.name.match(this.jointRE))
+		if(/^:/.test(mesh.name)) this.configureJoint(mesh)
 
 
 		if(!mesh.geometry) return
