@@ -23,16 +23,6 @@ Sampler.prototype = {
 		return sample
 	},
 
-	getJointKey: function(id) {
-		var index = this.keyIndex.indexOf(id)
-		if(index === -1) {
-			index = this.keyIndex.length
-			this.keyIndex.push(id)
-		}
-
-		return String.fromCharCode(index + 65)
-	},
-
 	addSampleList: function(samples) {
 		samples.forEach(this.addSample, this)
 	},
@@ -183,7 +173,6 @@ Sample.prototype = {
 			object : object
 		}
 
-		joint.key = this.parent.getJointKey(joint.id)
 		this.joints.push(joint)
 	},
 

@@ -91,7 +91,7 @@ UI.Marker = f.unit(Block.Tip, {
 
 		this.arrowLine = dom.div('marker-arrow-line out-03', this.arrow)
 
-		this.elemId   = dom.span('marker-id',   this.content)
+		// this.elemId   = dom.span('marker-id',   this.content)
 		this.elemKey  = dom.span('marker-key',  this.content)
 		this.elemInfo = dom.span('marker-info', this.content)
 
@@ -105,8 +105,8 @@ UI.Marker = f.unit(Block.Tip, {
 		}
 
 		if(this.connection) {
-			dom.text(this.elemId,   this.connection.data.id)
-			dom.text(this.elemKey,  this.connection.data.key)
+			// dom.text(this.elemId,   this.connection.data.id)
+			// dom.text(this.elemKey,  this.connection.data.key)
 			dom.text(this.elemInfo, this.connection.data.object.name)
 
 			this.connection.events.when({
@@ -135,6 +135,9 @@ UI.Marker = f.unit(Block.Tip, {
 
 			this.state[key] = val instanceof Gate ? val.value : val
 		}
+
+		var g = this.connection.group
+		dom.text(this.elemKey, g === -1 ? 'X' : String.fromCharCode(g + 65))
 
 		dom.setclass(this.element, this.state)
 		this.visible.set(!this.state.connected, 'available')
