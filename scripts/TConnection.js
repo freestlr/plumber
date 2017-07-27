@@ -19,6 +19,9 @@ TConnection = f.unit({
 
 		this.data = joint
 
+		this.depth = parseFloat(this.data.depth) || 0
+		this.screw = this.data.extra === 'screw'
+
 		this.makeTween()
 
 		// this.node.object.add(this.object)
@@ -37,31 +40,77 @@ TConnection = f.unit({
 		this.events.emit('connect_start', this)
 	},
 
-	onTweenUpdate: function(t) {
+	onTweenUpdate: function() {
 		if(!this.connected || !this.master) return
 
 		var values = this.tween.source
 
-		this.connected.object.position
-			.copy(this.normal)
-			.setLength(values.distance * (1 - t))
+		if('distance' in values) {
+			this.connected.object.position
+				.copy(this.normal)
+				.setLength(values.distance)
+		}
+
+		if('screw' in values) {
+			this.connected.object.rotateOnAxis(this.connected.normal, this.tween.delta.screw)
+		}
 	},
 
 	onTweenComplete: function() {
-		this.events.emit('connect_end', this)
+		if(!this.playNextStage()) {
+			this.events.emit('connect_end', this)
+		}
+	},
+
+	playNextStage: function() {
+		if(!this.connected || !this.master) return false
+
+		this.stage++
+
+		var depth = this.depth + this.connected.depth
+		,   screw = this.screw || this.connected.screw ? Math.PI * 2 : 0
+		,   distance = this.connected.node.boxLength / 2
+
+		var more = true
+		switch(this.stage) {
+			case 0:
+				this.tween
+					.from({ distance: depth + distance })
+					.to({ distance: depth })
+					.delay(400)
+					.duration(1200)
+
+				this.onTweenUpdate()
+			break
+
+			case 1:
+				if(!depth) {
+					more = false
+					break
+				}
+
+				this.tween
+					.from({ distance: depth, screw: -screw })
+					.to({ distance: 0, screw: 0 })
+					.delay(200)
+					.duration(1200)
+			break
+
+			default:
+				more = false
+			break
+		}
+
+		if(more) {
+			setTimeout(f.binds(this.tween.start, this.tween), 0)
+		}
+
+		return more
 	},
 
 	playConnection: function() {
-		if(!this.connected || !this.master) return
-
-		this.tween
-			.from({ distance: this.connected.node.boxLength * 1 })
-			.to({ distance: 0 })
-			.delay(400)
-			.duration(1200)
-			.start()
-
-		this.onTweenUpdate(0)
+		this.stage = -1
+		this.playNextStage()
 	},
 
 

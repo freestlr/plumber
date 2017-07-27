@@ -177,6 +177,7 @@ Sample.prototype = {
 			id     : parts[0],
 			param  : parts[1],
 			extra  : parts[2],
+			depth  : parts[3],
 			parts  : parts,
 			object : object
 		}
