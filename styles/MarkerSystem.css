@@ -39,13 +39,7 @@
 	box-shadow: 1px 1px 2px 0 rgba(0, 0, 0, 0.5);
 }
 
-.marker-id {
-	display: none;
-	line-height: 36px;
-	font-family: Arial, sans-serif;
-	font-size: 24px;
-}
-.marker-key {
+.marker-group {
 	line-height: 56px;
 	font-family: Arial, sans-serif;
 	font-size: 48px;
@@ -56,7 +50,7 @@
 	font-family: monospace;
 	font-size: 14px;
 }
-.marker-system.debug .marker-key {
+.marker-system.debug .marker-group {
 	display: none;
 }
 .marker-system.debug .marker-info {

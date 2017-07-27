@@ -179,7 +179,7 @@ function setSample(sample) {
 
 	if(main.tree) {
 		main.view2.setTree(node)
-		updateViewConnections(main.tree, node)
+		updateConnectionGroups(main.tree, node)
 
 		main.view.markers.markersVisible.on('view2')
 		main.view2.markers.markersVisible.on('view2')
@@ -190,18 +190,19 @@ function setSample(sample) {
 	}
 }
 
-function updateViewConnections(tree, tree2) {
-	var cons = tree.retrieveConnections({ connected: false }, true)
-	,   cons2 = tree2.retrieveConnections({ connected: false }, true)
-	,   groups2 = []
+function updateConnectionGroups(tree, tree2) {
+	main.cons = tree.retrieveConnections({ connected: false }, true)
+	main.cons2 = tree2.retrieveConnections({ connected: false }, true)
 
-	for(var i = 0; i < cons2.length; i++) {
-		cons2[i].group = -1
+	var groups2 = []
+
+	for(var i = 0; i < main.cons2.length; i++) {
+		main.cons2[i].group = -1
 	}
 
-	for(var i = 0; i < cons.length; i++) {
-		var con = cons[i]
-		var list = con.canConnectList(cons2)
+	for(var i = 0; i < main.cons.length; i++) {
+		var con = main.cons[i]
+		var list = con.canConnectList(main.cons2)
 
 		con.group = -1
 
@@ -227,17 +228,25 @@ function updateViewConnections(tree, tree2) {
 				groups2.push(list)
 			}
 		}
-
-		con.inactive.set(con.group === -1, 'view2')
-		con.marker.updateState()
 	}
 
-	for(var i = 0; i < cons2.length; i++) {
-		var con = cons2[i]
+	updateConnectionVisibilitySets()
+}
 
-		con.inactive.set(con.group === -1, 'view2')
-		con.marker.updateState()
+function updateConnectionVisibilitySets() {
+	if(main.cons) for(var i = 0; i < main.cons.length; i++) {
+		updateConnectionVisibility(main.cons[i], main.connectionParts[1])
 	}
+	if(main.cons2) for(var i = 0; i < main.cons2.length; i++) {
+		updateConnectionVisibility(main.cons2[i], main.connectionParts[0])
+	}
+}
+function updateConnectionVisibility(con, match) {
+	var visible = con.group !== -1
+	if(visible && match) visible = con.canConnect(match)
+
+	con.inactive.set(!visible, 'view2')
+	con.marker.updateState()
 }
 
 function connectSample(sid) {
@@ -328,8 +337,10 @@ function onSampleImport(item) {
 
 
 main.connectionParts = []
-function onConnectionTap(view, index, con) {
+function onConnectionSelect(view, index, con) {
 	main.connectionParts[index] = con
+
+	updateConnectionVisibilitySets()
 
 	var master = main.connectionParts[0]
 	,   slave  = main.connectionParts[1]
@@ -384,8 +395,8 @@ function run() {
 	main.sampleMenu.events.on('change', onSubChange)
 	main.file.events.on('import', onSampleImport)
 
-	main.view.events.on('connection_select', onConnectionTap, null, [main.view, 0])
-	main.view2.events.on('connection_select', onConnectionTap, null, [main.view2, 1])
+	main.view.events.on('connection_select', onConnectionSelect, null, [main.view, 0])
+	main.view2.events.on('connection_select', onConnectionSelect, null, [main.view2, 1])
 
 	main.view.events.on('view_clear', onViewClear)
 	main.view2.events.on('view_clear', onViewClear2)
