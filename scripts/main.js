@@ -167,7 +167,7 @@ function displaySample(sid) {
 	}
 	if(sample) {
 		main.deferSample = sample.load().detach(setSample)
-		sample.describe()
+		// sample.describe()
 	}
 }
 

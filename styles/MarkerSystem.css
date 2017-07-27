@@ -65,12 +65,12 @@
 
 .marker.connected .marker-content,
 .marker.connected .marker-arrow-line {
-	background-color: rgba(37, 37, 37, 0.37);
+	background-color: skyblue;
 	color: white;
 }
 .marker.connected.master .marker-content,
 .marker.connected.master .marker-arrow-line {
-	background-color: #333;
+	background-color: tomato;
 	color: white;
 }
 
@@ -87,6 +87,8 @@
 	background-color: lime;
 }
 
+.marker.connected .marker-content,
+.marker.connected .marker-arrow-line,
 .marker.inactive .marker-content,
 .marker.inactive .marker-arrow-line {
 	opacity: 0.3;

@@ -360,7 +360,7 @@ View3.prototype = {
 	},
 
 	selectConnection: function(con) {
-		if(!con || con.inactive.value) {
+		if(!con || con.inactive.value || con.connected) {
 			con = null
 		}
 

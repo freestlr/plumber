@@ -79,16 +79,10 @@ TConnection = f.unit({
 		if(!target) target = new THREE.Vector3
 
 		if(this.connected) {
-			if(this.master) {
-				target.setFromMatrixPosition(this.object.matrixWorld)
-
-			} else {
-				target.setFromMatrixPosition(this.node.object.matrixWorld)
-			}
+			target.setFromMatrixPosition(this.object.matrixWorld)
 
 		} else {
-			// target.setFromMatrixPosition(this.object.matrixWorld)
-			target.setFromMatrixPosition(this.node.object.matrixWorld).add(this.point)
+			target.copy(this.point).applyMatrix4(this.node.object.matrixWorld)
 		}
 
 		return target
@@ -120,6 +114,14 @@ TConnection = f.unit({
 		return list.filter(this.canConnect, this)
 	},
 
+	/**
+	 *
+	 * node --- master --||-- slave
+	 *                           \
+	 *                            \
+	 *                           node
+	 *
+	 */
 	connect: function(slave) {
 		var normal = new THREE.Vector3
 		,   quat   = new THREE.Quaternion
