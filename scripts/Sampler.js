@@ -142,11 +142,15 @@ Sample.prototype = {
 	},
 
 	loadError: function(err) {
-		console.warn('Sample load error', this.id, err)
+		console.warn('Sample load error', this.src || this.id, err)
 	},
 
 	configure: function(object) {
 		if(!object) return
+
+		if(object.position.length()) {
+			console.error('sample', this.src || this.id, 'not zero position:', object.position)
+		}
 
 		this.object = object
 		this.object.updateMatrixWorld()
@@ -180,12 +184,34 @@ Sample.prototype = {
 		this.joints.push(joint)
 	},
 
+	configureSubtract: function(mesh) {
+		if(!mesh.geometry) {
+			console.error('sample', this.src || this.id, 'subtract mesh without geometry')
+			return
+		}
+
+		if(this.subtractMesh) {
+			console.warn('sample', this.src || this.id, 'has multiple subtract meshes')
+		}
+
+		this.subtractMesh = mesh
+		mesh.visible = true
+	},
+
 	configureObject: function(mesh) {
 		if(this.parent.imagery) {
 			this.parent.imagery.configureSampleMaterial(mesh)
 		}
 
-		if(/^:/.test(mesh.name)) this.configureJoint(mesh)
+		if(/^:/.test(mesh.name)) {
+			this.configureJoint(mesh)
+			return
+		}
+
+		if(mesh.name === 'subtract') {
+			this.configureSubtract(mesh)
+			return
+		}
 
 
 		if(!mesh.geometry) return

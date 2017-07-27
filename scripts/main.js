@@ -91,8 +91,8 @@ function makeMenu() {
 
 
 
-	var mat = main.imagery.materials.gold
-	var col = mat && mat.specular
+	var mat = main.imagery.materials.subtract
+	var col = mat && mat.color
 
 	main.gui = new dat.GUI({
 		// autoPlace: false,

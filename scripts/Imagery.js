@@ -38,22 +38,24 @@ function Imagery() {
 		// blue  : { color: 0x0a2689 },
 		// white : { color: 0xFFFFFF },
 
-		wall    : { texture: baseImages.stripe   },
-		floor   : { texture: baseImages.noise    },
-		roof    : { texture: baseImages.checker  },
-		plinth  : { texture: baseImages.checker2 },
-		soffit  : { texture: baseImages.stripe2  },
+		// wall    : { texture: baseImages.stripe   },
+		// floor   : { texture: baseImages.noise    },
+		// roof    : { texture: baseImages.checker  },
+		// plinth  : { texture: baseImages.checker2 },
+		// soffit  : { texture: baseImages.stripe2  },
 
-		cut     : { color: 0xF5F053 },
-		join    : { color: 0xDDDDDD, height: 100 },
-		drain   : { color: 0x555555 },
-		window  : { color: 0xA0A0A0 },
-		glass   : { color: 0x86a8e6 },
-		framing : { color: 0xEEEEEE },
-		decor   : { color: 0xEEEEEE },
-		door    : { color: 0x888888 },
-		corner  : { color: 0x444444 },
-		pcorner : { color: 0x777777 },
+		// cut     : { color: 0xF5F053 },
+		// join    : { color: 0xDDDDDD, height: 100 },
+		// drain   : { color: 0x555555 },
+		// window  : { color: 0xA0A0A0 },
+		// glass   : { color: 0x86a8e6 },
+		// framing : { color: 0xEEEEEE },
+		// decor   : { color: 0xEEEEEE },
+		// door    : { color: 0x888888 },
+		// corner  : { color: 0x444444 },
+		// pcorner : { color: 0x777777 },
+
+		subtract  : { color: 0xff3977 },
 
 		wireframe : {},
 		normal    : {},
@@ -104,6 +106,11 @@ Imagery.prototype = {
 			factory: THREE.MeshPhongMaterial,
 			makeMap: true,
 			side: THREE.DoubleSide
+		},
+
+		subtract: {
+			transparent: true,
+			opacity: 0.5
 		},
 
 		blue: {
