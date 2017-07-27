@@ -64,7 +64,10 @@
 }
 
 
-
+.marker .marker-content,
+.marker .marker-arrow-line {
+	transition-property: background-color, opacity;
+}
 
 .marker.connected .marker-content,
 .marker.connected .marker-arrow-line {
@@ -93,5 +96,5 @@
 .marker.inactive .marker-content,
 .marker.inactive .marker-arrow-line {
 	opacity: 0.3;
-	cursor: default;
+	pointer-events: none;
 }

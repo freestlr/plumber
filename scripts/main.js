@@ -150,8 +150,10 @@ function displaySample(sid) {
 
 	var openView2 = main.sampleView2 && (main.sampleView2.object || main.sampleView2.src)
 
-	main.view.markers.markersVisible.set(!!openView2, 'view2')
-	main.view2.markers.markersVisible.set(!!openView2, 'view2')
+	if(!openView2) {
+		main.view.markers.markersVisible.off('view2')
+		main.view2.markers.markersVisible.off('view2')
+	}
 
 	var splitPosition = openView2 ? 0.5 : 1
 	if(splitPosition !== main.viewTween.target.position) {
@@ -177,10 +179,64 @@ function setSample(sample) {
 
 	if(main.tree) {
 		main.view2.setTree(node)
+		updateViewConnections(main.tree, node)
+
+		main.view.markers.markersVisible.on('view2')
+		main.view2.markers.markersVisible.on('view2')
 
 	} else {
 		main.tree = node
 		main.view.setTree(node)
+	}
+}
+
+function updateViewConnections(tree, tree2) {
+	var cons = tree.retrieveConnections({ connected: false }, true)
+	,   cons2 = tree2.retrieveConnections({ connected: false }, true)
+	,   groups2 = []
+
+	for(var i = 0; i < cons2.length; i++) {
+		cons2[i].group = -1
+	}
+
+	for(var i = 0; i < cons.length; i++) {
+		var con = cons[i]
+		var list = con.canConnectList(cons2)
+
+		con.group = -1
+
+		if(list.length) {
+			var found = false
+			for(var j = 0; j < groups2.length; j++) {
+
+				if(!f.seq(list, groups2[j])) continue
+
+				con.group = j
+				found = true
+				break
+			}
+
+			if(!found) {
+				var gi = groups2.length
+
+				con.group = gi
+				for(var j = 0; j < list.length; j++) {
+					list[j].group = gi
+				}
+
+				groups2.push(list)
+			}
+		}
+
+		con.inactive.set(con.group === -1, 'view2')
+		con.marker.updateState()
+	}
+
+	for(var i = 0; i < cons2.length; i++) {
+		var con = cons2[i]
+
+		con.inactive.set(con.group === -1, 'view2')
+		con.marker.updateState()
 	}
 }
 

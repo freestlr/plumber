@@ -142,6 +142,9 @@ f.aflat = function(array) {
 	return [].concat.apply([], array)
 }
 
+f.seq = function(a, b) {
+	return a.length === b.length && f.snot(a, b).length === 0
+}
 f.sor = function() {
 	var c = []
 	for(var i = 0; i < arguments.length; i++) {

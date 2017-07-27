@@ -7,6 +7,7 @@ TNode = f.unit({
 		this.box       = new THREE.Box3
 		this.boxCenter = new THREE.Vector3
 		this.boxSize   = new THREE.Vector3
+		this.boxLength = 1
 
 		this.sphere = new THREE.Sphere
 
@@ -33,6 +34,29 @@ TNode = f.unit({
 
 			if(con.connected && con.master) con.target.traverseConnections(func, scope, data)
 		}
+	},
+
+	includeConnection: function(con, extra) {
+		if(!extra || !extra.list) return
+
+		for(var name in extra.test) {
+			var test = extra.test[name]
+			,   val = con[name]
+
+			if(extra.binary ? !val !== !test : val !== test) return
+		}
+
+		extra.list.push(con)
+	},
+
+	retrieveConnections: function(test, binary) {
+		var cons = []
+		this.traverseConnections(this.includeConnection, this, {
+			test: test,
+			binary: binary,
+			list: cons
+		})
+		return cons
 	},
 
 	setSample: function(sample) {

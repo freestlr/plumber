@@ -8,6 +8,9 @@ TConnection = f.unit({
 		this.master = null
 		this.connected = null
 
+		this.selected = false
+		this.inactive = new Gate(Gate.AND, false)
+
 		this.events = new EventEmitter
 		this.point  = new THREE.Vector3
 		this.normal = new THREE.Vector3
@@ -49,11 +52,13 @@ TConnection = f.unit({
 	},
 
 	playConnection: function() {
+		if(!this.connected || !this.master) return
+
 		this.tween
-			.from({ distance: 100 })
+			.from({ distance: this.connected.node.boxLength * 1 })
 			.to({ distance: 0 })
-			.delay(300)
-			.duration(1000)
+			.delay(400)
+			.duration(1200)
 			.start()
 
 		this.onTweenUpdate(0)
@@ -87,6 +92,32 @@ TConnection = f.unit({
 		}
 
 		return target
+	},
+
+
+	paramPairsAllow: [
+		['f', 'm'],
+		['u', 'u'],
+		['FP', 'MP'],
+		['female', 'male'],
+		['uniform', 'uniform'],
+		['in', 'out'],
+		['inner', 'outer'],
+		['internal', 'external']
+	],
+
+	paramPairsEqual: function(pair) {
+		return f.seq(pair, this)
+	},
+
+	canConnect: function(con) {
+		if(this.data.id !== con.data.id) return false
+
+		return this.paramPairsAllow.some(this.paramPairsEqual, [this.data.param, con.data.param])
+	},
+
+	canConnectList: function(list) {
+		return list.filter(this.canConnect, this)
 	},
 
 	connect: function(slave) {

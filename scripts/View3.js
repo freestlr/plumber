@@ -360,6 +360,10 @@ View3.prototype = {
 	},
 
 	selectConnection: function(con) {
+		if(!con || con.inactive.value) {
+			con = null
+		}
+
 		var old = this.selectedConnection
 		if(old === con) return
 
@@ -396,7 +400,6 @@ View3.prototype = {
 
 	onMarkerTap: function(marker) {
 		var con = marker.connection
-		console.log(marker.point.world, con.connected ? con.master ? 'master' : 'slave' : 'empty')
 
 		if(kbd.state.CTRL) {
 			this.transformConnection = con

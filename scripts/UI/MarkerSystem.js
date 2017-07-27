@@ -83,10 +83,13 @@ UI.Marker = f.unit(Block.Tip, {
 	arrowPadding: -2,
 
 	create: function() {
-		dom.setclass(this.arrow,   { 'tip-arrow':   false, 'marker-arrow':   true })
-		dom.setclass(this.content, { 'tip-content': false, 'marker-content': true })
+		dom.remclass(this.arrow,   'tip-arrow')
+		dom.remclass(this.content, 'tip-content')
 
-		this.arrowLine = dom.div('marker-arrow-line', this.arrow)
+		dom.addclass(this.arrow,   'marker-arrow')
+		dom.addclass(this.content, 'marker-content out-03')
+
+		this.arrowLine = dom.div('marker-arrow-line out-03', this.arrow)
 
 		this.elemId   = dom.span('marker-id',   this.content)
 		this.elemKey  = dom.span('marker-key',  this.content)
@@ -128,7 +131,9 @@ UI.Marker = f.unit(Block.Tip, {
 
 	updateState: function() {
 		for(var key in this.state) {
-			this.state[key] = this.connection[key]
+			var val = this.connection[key]
+
+			this.state[key] = val instanceof Gate ? val.value : val
 		}
 
 		dom.setclass(this.element, this.state)
