@@ -109,6 +109,7 @@ Imagery.prototype = {
 		},
 
 		subtract: {
+			visible: false,
 			transparent: true,
 			opacity: 0.5
 		},
@@ -329,6 +330,12 @@ Imagery.prototype = {
 
 	configureSampleMaterial: function(mesh) {
 		if(!mesh || !mesh.material) return
+
+		if(mesh.name === 'subtract') {
+			mesh.material = this.materials.subtract
+			return
+		}
+
 		var m = mesh.material
 
 		var maps = [

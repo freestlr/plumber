@@ -280,6 +280,11 @@ function onkey(e) {
 			main.view2.focusOnTree()
 		return
 
+		case 'x':
+			var m = main.imagery.materials.subtract
+			m.visible = !m.visible
+		break
+
 		case 'v':
 			main.gui.closed ? main.gui.open() : main.gui.close()
 		return
