@@ -71,7 +71,7 @@ main.get.json('configs/samples.json').defer
 
 function makeMenu() {
 	var samples = main.sampler.getList()
-	,   names = samples.map(function(sid) { return main.sampler.samples[sid].src })
+	,   names = samples.map(function(sid) { return main.sampler.samples[sid].name })
 
 
 	main.sampleMenu = new Block.Menu({
@@ -167,7 +167,7 @@ function displaySample(sid) {
 	}
 	if(sample) {
 		main.deferSample = sample.load().detach(setSample)
-		// sample.describe()
+		sample.describe()
 	}
 }
 
@@ -340,7 +340,7 @@ function onSampleImport(item) {
 
 	var block = menu.addItem({
 		data: sample.id,
-		text: sample.src
+		text: sample.name
 	})
 
 	block.remove = dom.div('sample-remove absmid hand', block.element)

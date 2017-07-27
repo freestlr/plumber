@@ -48,6 +48,10 @@ function Sample(def, parent) {
 		return
 	}
 
+	if(this.src) {
+		this.name = this.src.replace(/\.[^\.]*$/, '')
+	}
+
 	if(this.object) {
 		this.configure(this.object)
 
@@ -345,66 +349,41 @@ Sample.prototype = {
 	},
 
 	describeObject: function(object, data, level) {
-		// if(object.material) console.log(object.material)
-		console.log(Array(level +1).join('\t'), object.type,
-			'name: {'+ object.name + '}',
-			(object.material ? 'mat: {'+ object.material.name +'}' : '[no mat]'),
+		var fields = []
+		if(level) {
+			fields.push(Array(level +1).join('\t'))
+		}
 
-		// 'pos: {',
-		// 	'x:', f.mround(object.position.x, 3),
-		// 	'y:', f.mround(object.position.y, 3),
-		// 	'z:', f.mround(object.position.z, 3),
-		// '}',
+		fields.push(object.type)
+		fields.push('name: {'+ object.name +'}')
 
-		// 'rot: {',
-		// 	'x:', f.hround(f.xdeg * object.rotation.x),
-		// 	'y:', f.hround(f.xdeg * object.rotation.y),
-		// 	'z:', f.hround(f.xdeg * object.rotation.z),
-		// '}',
+		if(object.material) {
+			fields.push('mat: {'+ object.material.name +'}')
+		}
 
-		'pos: ['+ [
+		if(object.geometry) {
+			fields.push('v:', object.geometry instanceof THREE.BufferGeometry
+				? object.geometry.attributes.position.count
+				: object.geometry.vertices.length)
+		}
+
+		fields.push('pos: ['+ [
 			f.mround(object.position.x, 3),
 			f.mround(object.position.y, 3),
 			f.mround(object.position.z, 3),
-		].join(', ') +']',
+		].join(', ') +']')
 
-		'rot: ['+ [
+		fields.push('rot: ['+ [
 			f.hround(f.xdeg * object.rotation.x),
 			f.hround(f.xdeg * object.rotation.y),
 			f.hround(f.xdeg * object.rotation.z),
 		].join(', ') +']')
+
+		console.log.apply(console, fields)
 	},
 
 	describe: function() {
 		console.log('sample id: {'+ this.id +'} src: {'+ (this.src || '') +'}')
-		this.traverse(this.object, this.describeObject, null, true)
-	},
-
-	dump: function() {
-		function alen(a) { return a ? a.length : 0 }
-
-		var oname = f.max(this.object.children.map(f.prop('name')).map(f.prop('length')))
-		,   aname = f.max(this.meshes.map(f.prop('name')).map(f.prop('length')))
-		,   nsize = f.max([8, oname, aname])
-
-		return 'sample: '+ this.id
-			+['', 'obj:        '+ this.obj].concat(this.parts.map(function(p) {
-				var g = p.mesh.geometry
-				,   n = p.mesh.name || '[empty]'
-				,   vl = g.vertices.length
-				,   fl = g.faces.length
-				,   fi = Array(nsize - n.length +1).join(' ')
-
-				return n +': '+ fi + f.nformat(vl, 5) +'v '+ f.nformat(fl, 5) +'f'
-
-			}), ['', 'awg:        '+ this.awg], this.meshes.map(function(m) {
-				var fi = Array(nsize - m.name.length +1).join(' ')
-
-				return m.name + [':'+ fi,
-					f.nformat(alen(m.anchorX), 5) +'x',
-					f.nformat(alen(m.anchorY), 5) +'y',
-					f.nformat(alen(m.anchorZ), 5) +'z' ].join(' ')
-
-			})).join('\n\t')
+		this.traverse(this.object, this.describeObject, this, null, true)
 	}
 }
