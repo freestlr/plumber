@@ -50,7 +50,7 @@ main.tiles.setClients([main.view, main.view2, { element: main.list }])
 
 dom.addclass(document.body, 'ontouchstart' in window ? 'touch' : 'no-touch')
 dom.addclass(main.renderer.domElement, 'canvas-main')
-dom.append(main.tiles.element, main.renderer.domElement)
+dom.prepend(main.tiles.element, main.renderer.domElement)
 dom.append(document.body, main.tiles.element)
 dom.append(main.list, main.file.element)
 
@@ -230,6 +230,7 @@ function updateConnectionGroups(tree, tree2) {
 		}
 	}
 
+	// console.log(groups2.length)
 	updateConnectionVisibilitySets()
 }
 
@@ -298,6 +299,21 @@ function onresize() {
 
 	main.tiles.autoresize()
 	// main.view.onResize()
+}
+
+function onTilesUpdate() {
+	return
+
+	var canvas = main.renderer.domElement
+	,   frame  = main.splitView
+
+	if(canvas.width  !== frame.w
+	|| canvas.height !== frame.h) {
+		main.renderer.setSize(frame.w, frame.h)
+	}
+
+	canvas.style.left = frame.x +'px'
+	canvas.style.top  = frame.y +'px'
 }
 
 function onDragOver(e) {
@@ -394,6 +410,8 @@ function run() {
 
 	main.sampleMenu.events.on('change', onSubChange)
 	main.file.events.on('import', onSampleImport)
+
+	main.tiles.events.on('update', onTilesUpdate)
 
 	main.view.events.on('connection_select', onConnectionSelect, null, [main.view, 0])
 	main.view2.events.on('connection_select', onConnectionSelect, null, [main.view2, 1])

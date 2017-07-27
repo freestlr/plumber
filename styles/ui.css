@@ -25,6 +25,13 @@ body {
 }
 
 
+.canvas-main {
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+
 body .dg.ac {
 }
 body .dg.main {
@@ -184,8 +191,8 @@ body .dg .close-button {
 	border: 1px solid black;
 }
 .file-import svg {
-	width: 40px;
-	height: 40px;
+	width: 95%;
+	height: 95%;
 }
 .file-import:hover {
 	background-color: #eee;
@@ -225,6 +232,7 @@ body .dg .close-button {
 	font-family: monospace;
 	text-align: center;
 	border-bottom: 1px solid black;
+	white-space: nowrap;
 }
 .sample-item:hover {
 	background-color: #eee;
