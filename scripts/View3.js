@@ -12,6 +12,16 @@ function View3(options) {
 	this.root      = new THREE.Object3D
 	this.grid      = new THREE.Object3D
 
+	this.scene.autoUpdate = false
+
+	this.ray    = new THREE.Ray
+	this.mouse  = new THREE.Vector2
+	this.mouse2 = new THREE.Vector3
+	this.mouse3 = new THREE.Vector3
+
+	this.mouse.set(Infinity, Infinity)
+
+
 	if(!this.renderer) {
 		this.renderer = new THREE.WebGLRenderer({ antialias: true })
 		this.renderer.autoClear = false
@@ -19,6 +29,23 @@ function View3(options) {
 
 		dom.append(this.element, this.renderer.domElement)
 	}
+
+
+	this.srScene  = new THREE.Scene
+	this.srPlane  = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2))
+	this.srCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1)
+	this.srCamera.updateProjectionMatrix()
+	this.srScene.add(this.srPlane)
+
+	this.smFill = new THREE.ShaderMaterial({
+		vertexShader: THREE.OverlayShader.vertexShader,
+		fragmentShader: THREE.OverlayShader.fillShader,
+		uniforms: THREE.UniformsUtils.clone(THREE.OverlayShader.fillUniforms)
+	})
+	this.smFill.uniforms.color.value.set(0x2f83fc)
+	this.smFill.uniforms.alpha.value = 0.6
+
+	this.srPlane.material = this.smFill
 
 
 	this.clearButton = dom.div('view-clear hand', this.element)
@@ -73,7 +100,9 @@ function View3(options) {
 	this.scene.add(this.grid)
 	this.scene.add(this.transform)
 
-	dom.on('tap', this.element, this)
+	dom.on('tap',       this.element, this)
+	dom.on('mousemove', this.element, this)
+	dom.on('mouseout',  this.element, this)
 }
 
 View3.prototype = {
@@ -81,12 +110,24 @@ View3.prototype = {
 	enableGrid: false,
 	enableRender: true,
 	enableWireframe: false,
+	enableRaycast: true,
+	enableStencil: true,
 
 	clearColor: 0xAAAAAA,
+	hoverColor: 0xFFFE5C,
+	selectColor: 0x26D970,
 
 	focusTheta: 1.0,
 	focusDuration: 300,
 	focusDistance: 1.5,
+
+	handleEvent: function(e) {
+		switch(e.type) {
+			case 'mousemove':  return this.onMouseMove(e)
+			case 'mouseout':   return this.onMouseOut(e)
+			case 'tap':        return this.onTap(e)
+		}
+	},
 
 	makeGrid: function() {
 		var size = 10
@@ -162,14 +203,6 @@ View3.prototype = {
 		// this.gridXZ.position.y = 0.4 * projXZ + this.camera.position.y
 		// this.gridXY.position.z = 0.4 * projXY + this.camera.position.z
 		// this.gridYZ.position.x = 0.4 * projYZ + this.camera.position.x
-	},
-
-	handleEvent: function(e) {
-		switch(e.type) {
-			case 'tap':
-				this.onTap(e)
-			return
-		}
 	},
 
 	orbitTo: function(nextTarget, time, distance, theta) {
@@ -299,6 +332,7 @@ View3.prototype = {
 		this.camera.aspect = this.width / this.height
 		this.camera.far    = this.treeSize * 100
 		this.camera.near   = this.treeSize * 0.01
+		this.camera.updateProjectionMatrix()
 
 		this.needsRetrace = true
 	},
@@ -359,6 +393,20 @@ View3.prototype = {
 		if(this.tree) this.tree.traverseConnections(this.updateConnectionType, this, types)
 	},
 
+	updateMeshStencil: function(mesh, value) {
+		if(!mesh.userData.stencilWrite) return
+
+		mesh.stencilValue = value
+	},
+
+	updateNodeStencil: function(node) {
+		var value = node.selected ? 2
+		          : node.hovered  ? 1
+		          :                 0
+
+		node.sample.traverse(node.sampleObject, this.updateMeshStencil, this, value)
+	},
+
 	selectConnection: function(con) {
 		if(!con || con.inactive.value || con.connected) {
 			con = null
@@ -382,6 +430,98 @@ View3.prototype = {
 		this.events.emit('connection_select', con)
 	},
 
+	selectNode: function(node) {
+		var prev = this.nodeSelected
+		if(node === prev) return
+
+		if(prev) {
+			prev.selected = false
+			this.updateNodeStencil(prev)
+		}
+
+		this.nodeSelected = node
+
+		if(node) {
+			node.selected = true
+			this.updateNodeStencil(node)
+		}
+
+		this.events.emit('node_select', [node, prev])
+		this.needsRedraw = true
+	},
+
+	hoverNode: function(node) {
+		var prev = this.nodeHovered
+		if(node === prev) return
+
+		if(prev) {
+			prev.hovered = false
+			this.updateNodeStencil(prev)
+		}
+
+		this.nodeHovered = node
+
+		if(node) {
+			node.hovered = true
+			this.updateNodeStencil(node)
+		}
+
+		// dom.togclass(this.element, 'hand', !!node)
+		this.events.emit('node_hover', [node, prev])
+		this.needsRedraw = true
+	},
+
+	updatePointer: function(point) {
+		if(this.fpvEnabled) {
+			this.mouse.x = this.width  / 2
+			this.mouse.y = this.height / 2
+
+			this.mouse2.x = 0
+			this.mouse2.y = 0
+
+		} else {
+			if(point) {
+				this.mouse.x = point.pageX - this.elementOffset.x
+				this.mouse.y = point.pageY - this.elementOffset.y
+			}
+
+			this.mouse2.x =  (this.mouse.x / this.width ) * 2 -1
+			this.mouse2.y = -(this.mouse.y / this.height) * 2 +1
+		}
+
+		this.mouse2.z = -1
+	},
+
+	intersectNode: function(node) {
+		if(this.ray.intersectsBox(node.localBox)) {
+			this.hoverNode(node)
+
+			return TNode.TRSTOP
+		}
+	},
+
+	retrace: function() {
+		if(!this.enableRaycast || !this.tree) return
+
+		this.projector.viewportToWorld(this.mouse2, this.mouse3, true)
+		this.ray.set(this.camera.position, this.mouse3)
+
+		var sig = this.tree.traverse(this.intersectNode, this)
+		if(sig !== TNode.TRSTOP) this.hoverNode(null)
+	},
+
+	onMouseMove: function(e) {
+		this.updatePointer(e)
+
+		this.needsRetrace = true
+	},
+
+	onMouseOut: function(e) {
+		this.updatePointer(e)
+
+		this.needsRetrace = true
+	},
+
 	onTap: function(e) {
 		if(e.target === this.element) {
 
@@ -396,6 +536,8 @@ View3.prototype = {
 				this.selectConnection(null)
 			}
 		}
+
+		this.selectNode(this.nodeHovered)
 	},
 
 	onMarkerTap: function(marker) {
@@ -418,15 +560,14 @@ View3.prototype = {
 		this.height = this.element.offsetHeight
 
 		this.elementOffset = dom.offset(this.element)
-
 		this.projector.resize(this.width, this.height)
 
 
 		if(!this.viewport) {
 			this.renderer.setSize(this.width, this.height)
 		}
-		this.updateProjection()
 
+		this.updateProjection()
 		this.needsRedraw = true
 	},
 
@@ -442,6 +583,7 @@ View3.prototype = {
 		if(!this.lastcam.equals(this.camera.matrixWorld)) {
 			this.lastcam.copy(this.camera.matrixWorld)
 
+			this.projector.updateMatrices()
 			this.needsRetrace = true
 		}
 
@@ -449,11 +591,9 @@ View3.prototype = {
 			this.needsRetrace = false
 			this.needsRedraw = true
 
-			this.camera.updateProjectionMatrix()
-			this.projector.updateMatrices()
-
 			this.updateLights()
 			this.updateGrid()
+			this.retrace()
 		}
 
 		if(this.needsRedraw) {
@@ -471,6 +611,8 @@ View3.prototype = {
 			this.renderer.setClearColor(this.clearColor)
 			this.renderer.clear()
 
+			this.scene.updateMatrixWorld(true)
+
 			if(this.enableRender) {
 				this.grid.visible = false
 				this.root.visible = true
@@ -487,6 +629,27 @@ View3.prototype = {
 				this.scene.overrideMaterial = this.wireMaterial
 				this.renderer.render(this.scene, this.camera)
 				this.scene.overrideMaterial = null
+			}
+
+			if(this.enableStencil) {
+				var gl = this.renderer.context
+				gl.enable(gl.BLEND)
+				gl.disable(gl.DEPTH_TEST)
+				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+				gl.enable(gl.STENCIL_TEST)
+
+				gl.stencilFunc(gl.EQUAL, 1, 0xFF)
+				this.smFill.uniforms.color.value.set(this.hoverColor)
+				this.renderer.render(this.srScene, this.srCamera)
+
+				gl.stencilFunc(gl.EQUAL, 2, 0xFF)
+				this.smFill.uniforms.color.value.set(this.selectColor)
+				this.renderer.render(this.srScene, this.srCamera)
+
+				gl.disable(gl.BLEND)
+				gl.disable(gl.STENCIL_TEST)
+				gl.enable(gl.DEPTH_TEST)
 			}
 
 			this.projector.update()

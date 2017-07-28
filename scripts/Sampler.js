@@ -217,6 +217,8 @@ Sample.prototype = {
 
 		if(!mesh.geometry) return
 
+		mesh.userData.stencilWrite = true
+
 		mesh.geometry.persistent = true
 
 		if(!mesh.geometry.boundingBox) {
@@ -413,4 +415,23 @@ Sample.prototype = {
 		console.log('sample id: {'+ this.id +'} src: {'+ (this.src || '') +'}')
 		this.traverse(this.object, this.describeObject, this, null, true)
 	}
+}
+
+
+THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geometry, material, group) {
+	if(!this.userData.stencilWrite) return
+
+	var gl = renderer.context
+
+	gl.enable(gl.STENCIL_TEST)
+	gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
+	gl.stencilFunc(gl.ALWAYS, +this.stencilValue || 0, 0xff)
+}
+
+THREE.Object3D.prototype.onAfterRender = function(renderer, scene, camera, geometry, material, group) {
+	if(!this.userData.stencilWrite) return
+
+	var gl = renderer.context
+
+	gl.disable(gl.STENCIL_TEST)
 }

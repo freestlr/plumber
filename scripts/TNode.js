@@ -11,18 +11,24 @@ TNode = f.unit({
 
 		this.sphere = new THREE.Sphere
 
+		this.localBox = new THREE.Box3
+		this.localSphere = new THREE.Sphere
+
 		this.connections = []
 
 		if(sample) this.setSample(sample)
 	},
 
 	traverse: function(func, scope, data) {
-		func.call(scope || this, this, data)
+		var sig = func.call(scope || this, this, data)
+		if(sig === TNode.TRSTOP) return sig
 
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
+			if(!con.connected || !con.master) continue
 
-			if(con.connected && con.master) con.target.traverse(func, scope, data)
+			var sig = con.target.traverse(func, scope, data)
+			if(sig === TNode.TRSTOP) return sig
 		}
 	},
 
@@ -110,15 +116,15 @@ TNode = f.unit({
 
 	},
 
-	sizeUnion: function(node, extra) {
+	sizeUnion: function(node) {
 		if(node.sample) {
-			extra.box.copy(node.sample.box)
-			extra.box.applyMatrix4(node.object.matrixWorld)
-			this.box.union(extra.box)
+			node.localBox.copy(node.sample.box)
+			node.localBox.applyMatrix4(node.object.matrixWorld)
+			this.box.union(node.localBox)
 
-			extra.sphere.copy(node.sample.sphere)
-			extra.sphere.center.applyMatrix4(node.object.matrixWorld)
-			this.sphere.union(extra.sphere)
+			node.localSphere.copy(node.sample.sphere)
+			node.localSphere.center.applyMatrix4(node.object.matrixWorld)
+			this.sphere.union(node.localSphere)
 
 		} else {
 			this.box.expandByPoint(node.object.position)
@@ -136,10 +142,7 @@ TNode = f.unit({
 		if(this.sample) {
 			this.sphere.copy(this.sample.sphere)
 		}
-		this.traverse(this.sizeUnion, this, {
-			box: new THREE.Box3,
-			sphere: new THREE.Sphere
-		})
+		this.traverse(this.sizeUnion, this)
 
 		// console.log('box:',
 		// 	this.box.min.toArray().map(f.hround),
@@ -157,3 +160,5 @@ TNode = f.unit({
 		}
 	}
 })
+
+TNode.TRSTOP = {}

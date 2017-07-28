@@ -38,6 +38,8 @@ main.view = new View3({
 main.view2 = new View3({
 	// eroot: document.body,
 	renderer: main.renderer,
+	enableStencil: false,
+	enableRaycast: false
 	// clearColor: 0x00FF00
 })
 
@@ -92,7 +94,7 @@ function makeMenu() {
 
 
 	var mat = main.imagery.materials.subtract
-	var col = mat && mat.color
+	var col = main.view.smFill.uniforms.color.value
 
 	main.gui = new dat.GUI({
 		// autoPlace: false,
@@ -103,7 +105,7 @@ function makeMenu() {
 	var props = {}
 
 	props.number = 3
-	main.gui.add(props, 'number').name('Number')
+	main.gui.add(main.view.smFill.uniforms.alpha, 'value').min(0).max(1).name('Alpha').onChange(function() { main.view.needsRedraw = true })
 
 	if(col) {
 		props.color = '#'+ col.getHexString()
@@ -153,6 +155,12 @@ function displaySample(sid) {
 	if(!openView2) {
 		main.view.markers.markersVisible.off('view2')
 		main.view2.markers.markersVisible.off('view2')
+	}
+
+	main.view.enableRaycast = !openView2
+	if(openView2) {
+		main.view.hoverNode(null)
+		main.view.selectNode(null)
 	}
 
 	var splitPosition = openView2 ? 0.5 : 1
@@ -333,7 +341,8 @@ function onDrop(e) {
 	if(file) {
 		main.file.importJSON(file)
 	} else {
-		connectSample(dt.getData('text/sample'))
+		// connectSample(dt.getData('text/sample'))
+		displaySample(dt.getData('text/sample'))
 	}
 
 	e.preventDefault()
@@ -354,6 +363,11 @@ function onSampleImport(item) {
 	block.hRemove = new EventHandler(removeSample, null, block).listen('tap', block.remove)
 
 	menu.set(menu.blocks.indexOf(block), true)
+}
+
+
+function onNodeSelect(node, prev) {
+	console.log('onNodeSelect', node, prev)
 }
 
 
@@ -424,6 +438,7 @@ function run() {
 	main.view.events.on('view_clear', onViewClear)
 	main.view2.events.on('view_clear', onViewClear2)
 
+	main.view.events.on('node_select', onNodeSelect)
 
 	onresize()
 	// onhashchange()
