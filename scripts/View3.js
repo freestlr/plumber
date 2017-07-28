@@ -533,6 +533,10 @@ View3.prototype = {
 
 	onMarkerTap: function(marker) {
 		var con = marker.connection
+		if(!con) {
+			this.events.emit('marker_tap', marker)
+			return
+		}
 
 		if(kbd.state.CTRL) {
 			this.transformConnection = con

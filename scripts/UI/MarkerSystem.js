@@ -11,11 +11,12 @@ UI.MarkerSystem = f.unit(Block, {
 
 	onMarkersVisible: function(visible) {
 		for(var i = 0; i < this.markers.length; i++) {
-			this.markers[i].visible.set(visible, 'system')
+			var m = this.markers[i]
+			if(!m.undisposable) m.visible.set(visible, 'system')
 		}
 	},
 
-	addMarker: function(position, text, con) {
+	addMarker: function(position, text, con, undisposable) {
 		if(!this.projector) return
 
 		var marker = new UI.Marker({
@@ -30,7 +31,12 @@ UI.MarkerSystem = f.unit(Block, {
 			marker.point.world.copy(position)
 		}
 
-		marker.visible.set(this.markersVisible.value, 'system')
+		if(undisposable) {
+			marker.undisposable = true
+		} else {
+			marker.visible.set(this.markersVisible.value, 'system')
+		}
+
 		marker.updateState()
 		// this.updateMarker(marker)
 
@@ -122,11 +128,15 @@ UI.Marker = f.unit(Block.Tip, {
 	destroy: function() {
 		Block.Tip.prototype.destroy.call(this)
 
-		this.connection.events.off('connect', null, this)
+		if(this.connection) {
+			this.connection.events.off('connect', null, this)
+		}
 		this.projector.remPoint(this.point)
 	},
 
 	updateState: function() {
+		if(!this.connection) return
+
 		for(var key in this.state) {
 			var val = this.connection[key]
 

@@ -398,7 +398,25 @@ function onSampleImport(item) {
 
 
 function onNodeSelect(node, prev) {
-	console.log('onNodeSelect', node, prev)
+	var system = main.view.markers
+	if(prev && prev.deleteMarker) {
+		system.removeMarker(prev.deleteMarker)
+		prev.deleteMarker = null
+	}
+	if(node) {
+		var m = main.view.markers.addMarker(node.localBox.getCenter(), 'remove', null, true)
+		m.node = node
+		m.align = 'bottom'
+		m.visible.on()
+
+		m.watchAtlas.push(Atlas.set(dom.div('marker-delete', m.content), 'i-delete'))
+
+		node.deleteMarker = m
+	}
+}
+
+function onMarkerTap(marker) {
+	if(marker && marker.node) deleteNode(marker.node)
 }
 
 
@@ -470,6 +488,7 @@ function run() {
 	main.view2.events.on('view_clear', onViewClear2)
 
 	main.view.events.on('node_select', onNodeSelect)
+	main.view.events.on('marker_tap', onMarkerTap)
 
 	onresize()
 	// onhashchange()

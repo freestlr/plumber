@@ -57,6 +57,15 @@
 	display: block;
 }
 
+.marker-delete {
+	padding: 12px 0 8px;
+}
+.marker-delete svg {
+	width: 32px;
+	height: 32px;
+	fill: black;
+}
+
 
 .marker .marker-content,
 .marker .marker-arrow-line {
@@ -76,6 +85,9 @@
 
 .marker:hover {
 	z-index: 10000 !important;
+}
+.marker:hover .marker-delete svg {
+	fill: tomato;
 }
 .marker:hover .marker-content,
 .marker:hover .marker-arrow-line {
