@@ -186,6 +186,8 @@ Sample.prototype = {
 	},
 
 	configureSubtract: function(mesh) {
+		mesh.parent.remove(mesh)
+
 		if(!mesh.geometry) {
 			console.error('sample', this.src || this.id, 'subtract mesh without geometry')
 			return

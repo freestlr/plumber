@@ -77,11 +77,16 @@ TNode = f.unit({
 
 		this.sample = sample
 		this.sampleObject = object
+		this.sample.traverse(this.sampleObject, this.setObjectParent, this)
 
 		this.object.add(this.sampleObject)
 
 		this.connections = []
 		sample.joints.forEach(this.addConnection, this)
+	},
+
+	setObjectParent: function(object) {
+		object.node = this
 	},
 
 	addConnection: function(joint) {
@@ -109,11 +114,14 @@ TNode = f.unit({
 			return console.warn('TN.connect to used joint')
 		}
 
+		node.upcon = conB
 		conA.connect(conB)
 	},
 
-	disconnect: function(indexA) {
+	disconnect: function() {
+		if(!this.upcon) return
 
+		this.upcon.disconnect()
 	},
 
 	sizeUnion: function(node) {

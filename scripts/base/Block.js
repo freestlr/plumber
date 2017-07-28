@@ -599,7 +599,7 @@ Block.Tip = f.unit(Block, {
 
 		if(!this.initVisible) {
 			this.initVisible = true
-			dom.visible(elem, v)
+			dom.display(elem, v)
 
 			s.x = v ? ox : 0
 			s.y = v ? oy : 0
@@ -610,12 +610,12 @@ Block.Tip = f.unit(Block, {
 		t.y = v ? 0 : oy
 		t.o = +v
 
-		if(v) dom.visible(elem, true)
+		if(v) dom.display(elem, true)
 
 		this.transitionTween.start()
 	},
 
 	onAnimationEnd: function() {
-		if(!this.visible.value) dom.visible(this.element, false)
+		if(!this.visible.value) dom.display(this.element, false)
 	}
 })

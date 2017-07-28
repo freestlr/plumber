@@ -111,9 +111,15 @@ function makeMenu() {
 		props.color = '#'+ col.getHexString()
 		main.gui.addColor(props, 'color').name('Color').onChange(function(color) {
 			col.set(color)
-			main.view.needsRedraw = true
-			main.view2.needsRedraw = true
+			redraw()
 		})
+	}
+	main.gui.addColor(main.view, 'hoverColor').name('Hover').onChange(redraw)
+	main.gui.addColor(main.view, 'selectColor').name('Hover').onChange(redraw)
+
+	function redraw() {
+		main.view.needsRedraw = true
+		main.view2.needsRedraw = true
 	}
 }
 
@@ -262,20 +268,27 @@ function connectSample(sid) {
 	var sample = main.sampler.samples[sid]
 	if(!sample) return
 
-	if(main.tree) {
-		var found = false
-		main.tree.traverseConnections(function(con) {
-			if(found || con.connected) return
-
-			con.node.connect(con.index, new TNode(sample), 0)
-			found = true
-		})
-
-	} else {
-		main.tree = new TNode(sample)
+	var node = new TNode(sample)
+	if(!main.tree) {
+		main.tree = node
+		main.view.setTree(main.tree)
+		return
 	}
 
-	main.view.setTree(main.tree)
+	var cons = main.tree.retrieveConnections({ connected: false }, true)
+	for(var i = 0; i < cons.length; i++) {
+		var conA = cons[i]
+
+		for(var j = 0; j < node.connections.length; j++) {
+			var conB = node.connections[j]
+
+			if(conA.canConnect(conB)) {
+				conA.node.connect(conA.index, node, conB.index)
+				main.view.setTree(main.tree)
+				return
+			}
+		}
+	}
 }
 
 
@@ -283,6 +296,10 @@ function onkey(e) {
 	if(e.ctrlKey || e.shiftKey || e.altKey) {
 
 	} else if(kbd.down && kbd.changed) switch(kbd.key) {
+		case 'DEL':
+			deleteNode(main.view.nodeSelected)
+		return
+
 		case 'c':
 			main.view.focusOnTree()
 			main.view2.focusOnTree()
@@ -300,6 +317,20 @@ function onkey(e) {
 
 	main.view.onKey(e)
 	main.view2.onKey(e)
+}
+
+function deleteNode(node) {
+	if(!node) return
+
+	if(node === main.tree) {
+		main.tree = null
+
+	} else {
+		node.disconnect()
+	}
+
+	main.view.selectNode(null)
+	main.view.setTree(main.tree)
 }
 
 // function onhashchange(e) {
@@ -341,8 +372,8 @@ function onDrop(e) {
 	if(file) {
 		main.file.importJSON(file)
 	} else {
-		// connectSample(dt.getData('text/sample'))
-		displaySample(dt.getData('text/sample'))
+		connectSample(dt.getData('text/sample'))
+		// displaySample(dt.getData('text/sample'))
 	}
 
 	e.preventDefault()
@@ -449,6 +480,7 @@ function run() {
 function loop(t, dt) {
 	if(main.animatedConnection) {
 		main.view.needsRedraw = true
+		main.view.needsRetrace = true
 	}
 
 	TWEEN.update()

@@ -204,7 +204,23 @@ TConnection = f.unit({
 	},
 
 	disconnect: function() {
+		if(!this.connected) return
 
+		var master = this.master ? this : this.connected
+		,   slave = this.master ? this.connected : this
+
+		master.object.remove(slave.object)
+
+		master.connected = null
+		master.target = null
+		master.master = null
+
+		slave.connected = null
+		slave.target = null
+		slave.master = null
+
+		master.events.emit('disconnect', [master, slave])
+		slave.events.emit('disconnect', [slave, master])
 	},
 
 

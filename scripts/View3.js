@@ -14,7 +14,6 @@ function View3(options) {
 
 	this.scene.autoUpdate = false
 
-	this.ray    = new THREE.Ray
 	this.mouse  = new THREE.Vector2
 	this.mouse2 = new THREE.Vector3
 	this.mouse3 = new THREE.Vector3
@@ -42,8 +41,6 @@ function View3(options) {
 		fragmentShader: THREE.OverlayShader.fillShader,
 		uniforms: THREE.UniformsUtils.clone(THREE.OverlayShader.fillUniforms)
 	})
-	this.smFill.uniforms.color.value.set(0x2f83fc)
-	this.smFill.uniforms.alpha.value = 0.6
 
 	this.srPlane.material = this.smFill
 
@@ -114,8 +111,10 @@ View3.prototype = {
 	enableStencil: true,
 
 	clearColor: 0xAAAAAA,
-	hoverColor: 0xFFFE5C,
-	selectColor: 0x26D970,
+	// hoverColor: 0xFFFE5C,
+	// selectColor: 0x26D970,
+	hoverColor: '#0096ff',
+	selectColor: '#f5f46c',
 
 	focusTheta: 1.0,
 	focusDuration: 300,
@@ -466,7 +465,7 @@ View3.prototype = {
 			this.updateNodeStencil(node)
 		}
 
-		// dom.togclass(this.element, 'hand', !!node)
+		dom.togclass(this.element, 'hand', !!node)
 		this.events.emit('node_hover', [node, prev])
 		this.needsRedraw = true
 	},
@@ -492,22 +491,14 @@ View3.prototype = {
 		this.mouse2.z = -1
 	},
 
-	intersectNode: function(node) {
-		if(this.ray.intersectsBox(node.localBox)) {
-			this.hoverNode(node)
-
-			return TNode.TRSTOP
-		}
-	},
-
 	retrace: function() {
 		if(!this.enableRaycast || !this.tree) return
 
 		this.projector.viewportToWorld(this.mouse2, this.mouse3, true)
-		this.ray.set(this.camera.position, this.mouse3)
+		this.raycaster.setFromCamera(this.mouse2, this.camera)
 
-		var sig = this.tree.traverse(this.intersectNode, this)
-		if(sig !== TNode.TRSTOP) this.hoverNode(null)
+		var inter = this.raycaster.intersectObject(this.scene, true)
+		this.hoverNode(inter.length && inter[0].object.node)
 	},
 
 	onMouseMove: function(e) {
@@ -568,7 +559,7 @@ View3.prototype = {
 		}
 
 		this.updateProjection()
-		this.needsRedraw = true
+		this.needsRetrace = true
 	},
 
 	onTick: function(dt) {
@@ -583,7 +574,6 @@ View3.prototype = {
 		if(!this.lastcam.equals(this.camera.matrixWorld)) {
 			this.lastcam.copy(this.camera.matrixWorld)
 
-			this.projector.updateMatrices()
 			this.needsRetrace = true
 		}
 
@@ -591,6 +581,7 @@ View3.prototype = {
 			this.needsRetrace = false
 			this.needsRedraw = true
 
+			this.projector.updateMatrices()
 			this.updateLights()
 			this.updateGrid()
 			this.retrace()
