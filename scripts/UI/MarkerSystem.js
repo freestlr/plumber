@@ -131,7 +131,7 @@ UI.Marker = f.unit(Block.Tip, {
 		Block.Tip.prototype.destroy.call(this)
 
 		if(this.connection) {
-			this.connection.events.off('connect', null, this)
+			this.connection.events.off(null, null, this)
 		}
 		this.projector.remPoint(this.point)
 	},

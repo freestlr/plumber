@@ -125,7 +125,9 @@ function makeMenu() {
 
 function onSubAdd(block) {
 	block.element.setAttribute('draggable', true)
-	block.hDragStart = new EventHandler(onSubDrag, null, block).listen('dragstart', block.element)
+
+	block.watchEvents.push(
+		new EventHandler(onSubDrag, null, block).listen('dragstart', block.element))
 }
 
 function onSubDrag(block, e) {

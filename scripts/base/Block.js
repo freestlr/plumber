@@ -33,8 +33,8 @@ Block = f.unit({
 
 	create: function() {
 		if(!this.events)  this.events  = new EventEmitter
-		if(!this.element) this.element = dom.elem(this.etag, null, this.eroot)
 		if(!this.visible) this.visible = new Gate(Gate.AND, !this.hidden)
+		if(!this.element) this.element = dom.elem(this.etag, null, this.eroot)
 	},
 
 	createPost: function() {
@@ -59,9 +59,9 @@ Block = f.unit({
 				Locale.setTitle(this.element, this.etitle))
 		}
 		if(this.eicon) {
-			Atlas.set(this.element, this.eicon, 'absmid')
 			dom.addclass(this.element, 'eicon')
-			this.watchAtlas.push(this.element)
+			this.watchAtlas.push(
+				Atlas.set(this.element, this.eicon, 'absmid'))
 		}
 	},
 
@@ -288,14 +288,15 @@ Block.Menu = f.unit(Block.List, {
 	addBlock: function(block) {
 		Block.List.prototype.addBlock.call(this, block)
 
-		block.events.on('change', this.onitemchange, this, block)
-		block.events.on('hover',  this.onitemhover,  this, block)
+		block.events.when({
+			change: this.onitemchange,
+			hover: this.onitemhover
+		}, this, block)
 	},
 
 	removeBlock: function(block, destroy) {
 		if(Block.List.prototype.removeBlock.call(this, block, destroy)) {
-			block.events.off('change', this.onitemchange, this, block)
-			block.events.off('hover',  this.onitemhover,  this, block)
+			block.events.off(null, null, this)
 		}
 	},
 
