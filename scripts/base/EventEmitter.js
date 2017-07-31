@@ -115,6 +115,7 @@ EventEmitter.prototype = {
 							this._rem(list, item)
 						}
 					}
+				}
 			break
 
 			default:
