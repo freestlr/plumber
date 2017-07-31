@@ -105,13 +105,16 @@ EventEmitter.prototype = {
 			break
 
 			case EventEmitter.DEL:
-				var list = this.lists[data.type]
-				if(list) for(var item = list.head; item; item = item.next) {
-					if((data.func  == null || data.func  === item.func)
-					&& (data.scope == null || data.scope === item.scope)) {
-						this._rem(list, item)
+				for(var type in this.lists) {
+					var list = this.lists[type]
+
+					for(var item = list.head; item; item = item.next) {
+						if((data.type  == null || data.type  === type)
+						&& (data.func  == null || data.func  === item.func)
+						&& (data.scope == null || data.scope === item.scope)) {
+							this._rem(list, item)
+						}
 					}
-				}
 			break
 
 			default:
