@@ -10,11 +10,11 @@ EventQueueLinked.DEL = {}
 EventQueueLinked.prototype = {
 
 	_add: function(list, item) {
-		if(list.next) {
-			item.prev = list.last
-			list.last = list.last.next = item
+		if(list.tail) {
+			item.prev = list.tail
+			list.tail = list.tail.next = item
 		} else {
-			list.next = list.last = item
+			list.head = list.tail = item
 		}
 	},
 
@@ -22,13 +22,13 @@ EventQueueLinked.prototype = {
 		if(item.prev) {
 			item.prev.next = item.next
 		} else {
-			list.next = item.next
+			list.head = item.next
 		}
 
 		if(item.next) {
 			item.next.prev = item.prev
 		} else {
-			list.last = item.prev
+			list.tail = item.prev
 		}
 	},
 
@@ -87,9 +87,9 @@ EventQueueLinked.prototype = {
 		if(!this.processing) {
 			this.processing = true
 
-			while(this.queue.next) {
-				this.dispatch(this.queue.next)
-				this.queue.next = this.queue.next.next
+			while(this.queue.head) {
+				this.dispatch(this.queue.head)
+				this._rem(this.queue, this.queue.head)
 			}
 			this.processing = false
 		}
@@ -105,8 +105,8 @@ EventQueueLinked.prototype = {
 			break
 
 			case EventQueueLinked.DEL:
-				var item = this.lists[data.type]
-				while(item = item && item.next) {
+				var list = this.lists[data.type]
+				if(list) for(var item = list.head; item; item = item.next) {
 					if((data.func  == null || data.func  === item.func)
 					&& (data.scope == null || data.scope === item.scope)) {
 						this._rem(list, item)
@@ -115,14 +115,13 @@ EventQueueLinked.prototype = {
 			break
 
 			default:
-				var item = this.lists[type]
-				while(item = item && item.next) {
+				var list = this.lists[type]
+				if(list) for(var item = list.head; item; item = item.next) {
 					item.func.apply(item.scope, item.data.concat(data))
 					if(item.once) this._rem(list, item)
 				}
 
-				var link = this.links
-				while(link = link && link.next) {
+				for(var link = this.links.head; link; link = link.next) {
 					link.emitter.emit(
 						link.prefix ? link.prefix + type : type,
 						link.data.concat(data))
@@ -140,9 +139,7 @@ EventQueueLinked.prototype = {
 	},
 
 	unlink: function(emitter, prefix) {
-		var link = this.links
-
-		while(link = link && link.next) {
+		for(var link = this.links.head; link; link = link.next) {
 			if((emitter == null || emitter === link.emitter)
 			&& (prefix  == null || prefix  === link.prefix )) this._rem(this.links, link)
 		}
