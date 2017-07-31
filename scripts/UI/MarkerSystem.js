@@ -156,6 +156,8 @@ UI.Marker = f.unit(Block.Tip, {
 	},
 
 	update: function() {
+		if(!this.visible.value && !this.inTransition) return
+
 		this.scale = 0.7 * (1.3 - Math.min(0.7, this.point.distance / 1.5))
 
 		// this.visible.set(this.point.visible, 'onScreen')

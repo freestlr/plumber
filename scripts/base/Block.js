@@ -378,14 +378,9 @@ Block.Tip = f.unit(Block, {
 		this.transitionTween = new TWEEN.Tween({ o: 0, x: 0, y: 0 })
 			.easing(TWEEN.Easing.Cubic.Out)
 			.to({}, this.animationTime)
-			.onUpdate(this.updateTween, this)
-			.onComplete(this.onAnimationEnd, this)
-	},
-
-	updateTween: function() {
-		var s = this.transitionTween.source
-		this.element.style.opacity = s.o
-		this.updateTransform()
+			.onStart(this.onTransitionStart, this)
+			.onUpdate(this.onTransitionUpdate, this)
+			.onComplete(this.onTransitionEnd, this)
 	},
 
 	moveToElement: function(element, align, distance) {
@@ -599,23 +594,40 @@ Block.Tip = f.unit(Block, {
 
 		if(!this.initVisible) {
 			this.initVisible = true
-			dom.display(elem, v)
 
 			s.x = v ? ox : 0
 			s.y = v ? oy : 0
 			s.o = +!v
+
+			this.onTransitionUpdate()
+			this.onTransitionEnd()
+			return
 		}
 
 		t.x = v ? 0 : ox
 		t.y = v ? 0 : oy
 		t.o = +v
 
-		if(v) dom.display(elem, true)
-
 		this.transitionTween.start()
 	},
 
-	onAnimationEnd: function() {
-		if(!this.visible.value) dom.display(this.element, false)
+	onTransitionStart: function() {
+		if(this.visible.value) {
+			this.inTransition = true
+			dom.append(this.eroot, this.element)
+		}
+	},
+
+	onTransitionUpdate: function() {
+		var s = this.transitionTween.source
+		this.element.style.opacity = s.o
+		this.updateTransform()
+	},
+
+	onTransitionEnd: function() {
+		if(!this.visible.value) {
+			this.inTransition = false
+			dom.remove(this.element)
+		}
 	}
 })
