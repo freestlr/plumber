@@ -113,8 +113,8 @@ View3.prototype = {
 	clearColor: 0xAAAAAA,
 	// hoverColor: 0xFFFE5C,
 	// selectColor: 0x26D970,
-	hoverColor: '#0096ff',
-	selectColor: '#f5f46c',
+	hoverColor: '#f5f46c',
+	selectColor: '#0096ff',
 
 	focusTheta: 1.0,
 	focusDuration: 300,
@@ -634,9 +634,9 @@ View3.prototype = {
 
 				gl.enable(gl.STENCIL_TEST)
 
-				gl.stencilFunc(gl.EQUAL, 1, 0xFF)
-				this.smFill.uniforms.color.value.set(this.hoverColor)
-				this.renderer.render(this.srScene, this.srCamera)
+				// gl.stencilFunc(gl.EQUAL, 1, 0xFF)
+				// this.smFill.uniforms.color.value.set(this.hoverColor)
+				// this.renderer.render(this.srScene, this.srCamera)
 
 				gl.stencilFunc(gl.EQUAL, 2, 0xFF)
 				this.smFill.uniforms.color.value.set(this.selectColor)
