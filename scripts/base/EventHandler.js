@@ -1,51 +1,46 @@
-function EventHandler(func, item, data, once) {
+function EventHandler(func, scope, data, once) {
 	if(typeof func !== 'function') {
 		throw Error('EventHandler expects function as 1st argument')
 	}
 
-	this.item = item
-	this.func = func
-	this.data = data
-	this.once = once
+	this.func  = func
+	this.scope = scope
+	this.data  = data == null ? [] : [].concat(data)
+	this.once  = once
 
 	this.listens = []
 }
 
 EventHandler.prototype = {
 	handleEvent: function(e) {
-		if(this.data) this.func.call(this.item, this.data, e)
-		else this.func.call(this.item, e)
+		return this.apply(e)
 	},
 
-	call: function(item, data) {
-		return this.func.call(this.item, this.data, data)
-	},
-
-	apply: function(item, data) {
-		return this.func.apply(this.item, [].concat(this.data, data))
+	apply: function(data) {
+		if(this.once) this.release()
+		return this.func.apply(this.scope, [].concat(this.data, data || []))
 	},
 
 	listen: function(type, element, capture) {
 		if(this.element) this.release()
 
 		this.type    = type
-		this.capture = !!capture
 		this.element = element
+		this.capture = !!capture
 
-		if(this.element) {
+		if(this.element && this.element.addEventListener) {
 			this.element.addEventListener(this.type, this, this.capture)
 		}
+
 		return this
 	},
 
 	release: function() {
-		if(this.element) {
+		if(this.element && this.element.removeEventListener) {
 			this.element.removeEventListener(this.type, this, this.capture)
-			delete this.element
 		}
-		if(this.events) {
-			this.events.off(this.type, this)
-		}
+
+		delete this.element
 		return this
 	}
 }
