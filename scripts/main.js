@@ -72,18 +72,18 @@ main.get.json('configs/samples.json').defer
 
 
 function makeMenu() {
-	var samples = main.sampler.getList()
-	,   names = samples.map(function(sid) { return main.sampler.samples[sid].name })
-
-
 	main.sampleMenu = new Block.Menu({
 		ename: 'sample-menu',
 		cname: 'sample-item',
 		eroot: main.list,
 		deselect: true,
 
-		texts: names,
-		items: samples
+		items: main.sampler.getList().map(function(sid) {
+			return {
+				text: main.sampler.samples[sid].name,
+				data: sid
+			}
+		})
 	})
 
 	main.sampleMenu.events.on('add-block', onSubAdd)

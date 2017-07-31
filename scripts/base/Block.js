@@ -179,9 +179,7 @@ Block.List = f.unit(Block, {
 
 	blocks: null,
 	items: null,
-
 	factory: Block,
-	options: {},
 
 	create: function() {
 		this.blocks = []
@@ -192,74 +190,53 @@ Block.List = f.unit(Block, {
 		this.addItemList(this.items)
 	},
 
-	collectOptions: function(data, index) {
-		var options = {
-			data   : data,
-			index  : index,
-			active : index === this.active,
-			ename  : this.cname,
-			eroot  : this.container
-		}
-
-		for(var name in this.options) {
-			options[name] = this.options[name]
-		}
-
-		if(this.disabled) {
-			options.disabled = !!this.disabled[index]
-			if(options.disabled) options.ename += ' disabled'
-		}
-		if(this.labels) {
-			options.elabel = this.labels[index]
-			if(options.elabel) options.ename += ' labeled'
-		}
-		if(this.titles) {
-			options.etitle = this.titles[index]
-		}
-		if(this.icons) {
-			options.eicon = this.icons[index]
-		}
-		if(this.texts) {
-			options.text = this.texts[index]
-		}
-
-		if(typeof data === 'string') {
-			options.ename += ' '+ data
-
-		} else if(data && typeof data === 'object') {
-			for(var name in data) options[name] = data[name]
-		}
-
-		return options
-	},
-
 	addItemList: function(items) {
 		if(items) items.forEach(this.addItem, this)
 	},
 
 	addItem: function(item) {
-		var options = this.collectOptions(item, this.blocks.length)
-		,   block   = new this.factory(options/* , this.blocks.length */)
+		var options = {
+			eroot: this.container,
+			ename: this.cname,
+			factory: this.factory
+		}
 
-		this.addBlock(block)
+		if(item && typeof item === 'string') {
+			item = { data: item }
+		}
 
-		return block
+		if(item && typeof item.data === 'string') {
+			options.ename += ' '+ item.data
+		}
+
+		if(item && item.ename) {
+			options.ename += ' '+ item.ename
+			delete options.ename
+		}
+
+		for(var name in item) {
+			options[name] = item[name]
+		}
+
+		return this.addBlock(new options.factory(options))
 	},
 
 	addBlock: function(block) {
 		this.blocks.push(block)
 		this.events.emit('add-block', block)
+		return block
 	},
 
 	removeBlock: function(block, destroy) {
 		var index = this.blocks.indexOf(block)
-		if(~index) {
-			this.blocks.splice(index, 1)
-			if(block.events) block.events.unlink(this.events)
-			dom.remove(block.element)
-			if(destroy) block.destroy()
-			return true
-		}
+		if(index === -1) return false
+
+		this.blocks.splice(index, 1)
+
+		if(destroy) block.destroy()
+		else dom.remove(block.element)
+
+		return true
 	},
 
 	destroy: function() {
@@ -286,18 +263,19 @@ Block.Menu = f.unit(Block.List, {
 	factory: Block.Toggle,
 
 	addBlock: function(block) {
-		Block.List.prototype.addBlock.call(this, block)
-
 		block.events.when({
 			change: this.onitemchange,
 			hover: this.onitemhover
 		}, this, block)
+
+		return Block.List.prototype.addBlock.call(this, block)
 	},
 
 	removeBlock: function(block, destroy) {
-		if(Block.List.prototype.removeBlock.call(this, block, destroy)) {
-			block.events.off(null, null, this)
-		}
+		var ok = Block.List.prototype.removeBlock.call(this, block, destroy)
+		if(ok) block.events.off(null, null, this)
+
+		return ok
 	},
 
 	update: function() {
@@ -351,10 +329,10 @@ Block.Menu = f.unit(Block.List, {
 	},
 
 	unsetBlock: function(block, emitEvent) {
-		if(block) {
-			if(!this.deselect) block.disabled = false
-			block.set(0, emitEvent)
-		}
+		if(!block) return
+
+		if(!this.deselect) block.disabled = false
+		block.set(0, emitEvent)
 	}
 })
 
