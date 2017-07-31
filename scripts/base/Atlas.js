@@ -4,6 +4,7 @@ Atlas = {
 
 	setSource: function(svg) {
 		if(!svg) return
+
 		Atlas.svg = svg.documentElement || svg
         Atlas.svg.removeAttribute('width')
         Atlas.svg.removeAttribute('height')
@@ -22,25 +23,34 @@ Atlas = {
 		}
 		item.id = id
 		item.name = name
+
 		if(Atlas.svg) Atlas.updateItem(item)
+
+		return element
 	},
 
 	free: function(element) {
-		var item = f.apick(Atlas.items, 'element', element)
-		if(!item) return
+		for(var i = Atlas.items.length -1; i >= 0; i--) {
+			var item = Atlas.items[i]
 
-		dom.remove(item.icon)
-		f.adrop(Atlas.items, item)
+			if(item.element === element) {
+				dom.remove(item.icon)
+				Atlas.items.splice(i, 1)
+				return
+			}
+		}
 	},
 
 	updateItem: function(item) {
 		var icon = Atlas.get(item.id)
-		if(!icon) {
+
+		if(icon) {
+			if(item.name) icon.className.baseVal += ' '+ item.name
+
+		} else {
 			icon = dom.div(item.name)
 			dom.text(icon, item.id)
 		}
-
-		icon.className.baseVal = item.name ? item.name +' '+ item.id : item.id
 
 		if(item.icon) {
 			dom.insert(item.element, icon, item.icon)
@@ -61,6 +71,7 @@ Atlas = {
 
 		var svg = Atlas.svg.cloneNode(false)
 		svg.appendChild(icon.cloneNode(true))
+		svg.className.baseVal = id
 		return svg
 	}
 }
