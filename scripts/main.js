@@ -389,9 +389,12 @@ function onSampleImport(item) {
 	})
 
 	block.remove = dom.div('sample-remove absmid hand', block.element)
-	Atlas.set(block.remove, 'i-cross', 'absmid')
 
-	block.hRemove = new EventHandler(removeSample, null, block).listen('tap', block.remove)
+	block.watchAtlas.push(
+		Atlas.set(block.remove, 'i-cross', 'absmid'))
+
+	block.watchEvents.push(
+		new EventHandler(removeSample, null, block).listen('tap', block.remove))
 
 	menu.set(menu.blocks.indexOf(block), true)
 }
@@ -405,7 +408,7 @@ function onNodeSelect(node, prev) {
 	}
 	if(node) {
 		var m = main.view.markers.addMarker(node.localBox.getCenter(), 'remove', null, true)
-		m.node = node
+		m.deleteNode = node
 		m.align = 'bottom'
 		m.visible.on()
 
@@ -416,7 +419,7 @@ function onNodeSelect(node, prev) {
 }
 
 function onMarkerTap(marker) {
-	if(marker && marker.node) deleteNode(marker.node)
+	if(marker && marker.deleteNode) deleteNode(marker.deleteNode)
 }
 
 
@@ -456,10 +459,7 @@ function makeViewConnection(master, slave) {
 }
 
 function removeSample(block) {
-	main.sampleMenu.removeBlock(block)
-
-	Atlas.free(block.remove)
-	block.hRemove.release()
+	main.sampleMenu.removeBlock(block, true)
 
 	var sample = main.sampler.samples[block.data]
 	if(sample) {

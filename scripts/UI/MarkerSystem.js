@@ -122,7 +122,9 @@ UI.Marker = f.unit(Block.Tip, {
 		this.point = this.projector.addPoint()
 
 		this.watchEvents.push(
-			new EventHandler(this.onTap, this).listen('tap', this.element))
+			new EventHandler(this.onTap, this).listen('tap', this.element),
+			new EventHandler(this.onEnter, this).listen('mouseenter', this.element),
+			new EventHandler(this.onLeave, this).listen('mouseleave', this.element))
 	},
 
 	destroy: function() {
@@ -149,6 +151,14 @@ UI.Marker = f.unit(Block.Tip, {
 
 		dom.setclass(this.element, this.state)
 		this.visible.set(!this.state.connected, 'available')
+	},
+
+	onEnter: function() {
+		this.events.emit('marker_enter', this)
+	},
+
+	onLeave: function() {
+		this.events.emit('marker_leave', this)
 	},
 
 	onTap: function() {

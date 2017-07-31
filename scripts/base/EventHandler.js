@@ -1,4 +1,4 @@
-function EventHandler(func, item, data) {
+function EventHandler(func, item, data, once) {
 	if(typeof func !== 'function') {
 		throw Error('EventHandler expects function as 1st argument')
 	}
@@ -6,14 +6,15 @@ function EventHandler(func, item, data) {
 	this.item = item
 	this.func = func
 	this.data = data
+	this.once = once
 
 	this.listens = []
 }
 
 EventHandler.prototype = {
 	handleEvent: function(e) {
-        if(this.data) this.func.call(this.item, this.data, e)
-        else this.func.call(this.item, e)
+		if(this.data) this.func.call(this.item, this.data, e)
+		else this.func.call(this.item, e)
 	},
 
 	call: function(item, data) {
@@ -31,15 +32,20 @@ EventHandler.prototype = {
 		this.capture = !!capture
 		this.element = element
 
-		this.element.addEventListener(this.type, this, this.capture)
+		if(this.element) {
+			this.element.addEventListener(this.type, this, this.capture)
+		}
 		return this
 	},
 
 	release: function() {
-		if(!this.element) return
-
-		this.element.removeEventListener(this.type, this, this.capture)
-		delete this.element
+		if(this.element) {
+			this.element.removeEventListener(this.type, this, this.capture)
+			delete this.element
+		}
+		if(this.events) {
+			this.events.off(this.type, this)
+		}
 		return this
 	}
 }

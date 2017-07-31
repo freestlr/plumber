@@ -124,8 +124,9 @@ Block.Toggle = f.unit(Block, {
 	auto: true,
 
 	create: function() {
-		this.watchEvents.push(new EventHandler(this.ontap, this).listen('tap', this.element))
-		this.watchEvents.push(new EventHandler(this.onover, this).listen('mouseenter', this.element))
+		this.watchEvents.push(
+			new EventHandler(this.ontap, this).listen('tap', this.element),
+			new EventHandler(this.onover, this).listen('mouseenter', this.element))
 	},
 
 	createPost: function() {
@@ -250,12 +251,13 @@ Block.List = f.unit(Block, {
 		this.events.emit('add-block', block)
 	},
 
-	removeBlock: function(block) {
+	removeBlock: function(block, destroy) {
 		var index = this.blocks.indexOf(block)
 		if(~index) {
 			this.blocks.splice(index, 1)
 			if(block.events) block.events.unlink(this.events)
 			dom.remove(block.element)
+			if(destroy) block.destroy()
 			return true
 		}
 	},
@@ -268,8 +270,7 @@ Block.List = f.unit(Block, {
 
 	clearBlocks: function(destroy) {
 		for(var i = this.blocks.length -1; i >= 0; i--) {
-			if(destroy) this.blocks[i].destroy()
-			this.removeBlock(this.blocks[i])
+			this.removeBlock(this.blocks[i], destroy)
 		}
 	}
 })
@@ -291,8 +292,8 @@ Block.Menu = f.unit(Block.List, {
 		block.events.on('hover',  this.onitemhover,  this, block)
 	},
 
-	removeBlock: function(block) {
-		if(Block.List.prototype.removeBlock.call(this, block)) {
+	removeBlock: function(block, destroy) {
+		if(Block.List.prototype.removeBlock.call(this, block, destroy)) {
 			block.events.off('change', this.onitemchange, this, block)
 			block.events.off('hover',  this.onitemhover,  this, block)
 		}
