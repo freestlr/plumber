@@ -181,12 +181,16 @@ function displaySample(sid) {
 		main.viewTween.start()
 	}
 
+	preloadSample(sample, setSample)
+}
+
+function preloadSample(sample, onComplete) {
 	if(main.deferSample) {
 		main.deferSample.set(null)
 		main.deferSample = null
 	}
 	if(sample) {
-		main.deferSample = sample.load().detach(setSample)
+		main.deferSample = sample.load().detach(onComplete)
 		// sample.describe()
 	}
 }
@@ -270,8 +274,7 @@ function updateConnectionVisibility(con, match) {
 	con.marker.updateState()
 }
 
-function connectSample(sid) {
-	var sample = main.sampler.samples[sid]
+function connectSample(sample) {
 	if(!sample) return
 
 	var node = new TNode(sample)
@@ -377,9 +380,12 @@ function onDrop(e) {
 	var file = dt.files[0]
 	if(file) {
 		main.file.importJSON(file)
+
 	} else {
-		connectSample(dt.getData('text/sample'))
-		// displaySample(dt.getData('text/sample'))
+		var sid = dt.getData('text/sample')
+		,   sample = main.sampler.samples[sid]
+
+		preloadSample(sample, connectSample)
 	}
 
 	e.preventDefault()

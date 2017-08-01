@@ -57,7 +57,7 @@ function Sample(def, parent) {
 
 	} else if(this.src) {
 		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
-		this.load()
+		// this.load()
 	}
 }
 
