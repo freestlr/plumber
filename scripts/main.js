@@ -74,9 +74,13 @@ main.get.json('configs/samples.json').defer
 function makeMenu() {
 	main.sampleMenu = new Block.Menu({
 		ename: 'sample-menu',
-		cname: 'sample-item',
 		eroot: main.list,
 		deselect: true,
+
+		options: {
+			factory: Block.Toggle,
+			ename: 'sample-item'
+		},
 
 		items: main.sampler.getList().map(function(sid) {
 			return {

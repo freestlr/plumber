@@ -179,7 +179,11 @@ Block.List = f.unit(Block, {
 
 	blocks: null,
 	items: null,
-	factory: Block,
+
+	options: {
+		ename: 'list-item',
+		factory: Block
+	},
 
 	create: function() {
 		this.blocks = []
@@ -195,28 +199,9 @@ Block.List = f.unit(Block, {
 	},
 
 	addItem: function(item) {
-		var options = {
-			eroot: this.container,
-			ename: this.cname,
-			factory: this.factory
-		}
+		if(typeof item === 'string') item = { data: item }
 
-		if(item && typeof item === 'string') {
-			item = { data: item }
-		}
-
-		if(item && typeof item.data === 'string') {
-			options.ename += ' '+ item.data
-		}
-
-		if(item && item.ename) {
-			options.ename += ' '+ item.ename
-			delete options.ename
-		}
-
-		for(var name in item) {
-			options[name] = item[name]
-		}
+		var options = f.merge({ eroot: this.container }, this.options, item)
 
 		return this.addBlock(new options.factory(options))
 	},
@@ -258,15 +243,19 @@ Block.Menu = f.unit(Block.List, {
 	ename: 'menu',
 	active: -1,
 	deselect: false,
-	disabled: [],
 
-	factory: Block.Toggle,
+	options: {
+		ename: 'menu-item',
+		factory: Block.Toggle
+	},
 
 	addBlock: function(block) {
 		block.events.when({
 			change: this.onitemchange,
 			hover: this.onitemhover
 		}, this, block)
+
+		block.set(0)
 
 		return Block.List.prototype.addBlock.call(this, block)
 	},
@@ -299,7 +288,7 @@ Block.Menu = f.unit(Block.List, {
 	},
 
 	onitemchange: function(block, active) {
-		this.unsetBlock(this.activeBlock)
+		this.unsetBlocks(block)
 		this.update()
 		this.events.emit('change', this.activeItem)
 	},
@@ -312,7 +301,7 @@ Block.Menu = f.unit(Block.List, {
 		var block = this.blocks[index]
 		if(block === this.activeBlock) return
 
-		this.unsetBlock(this.activeBlock, emitEvent)
+		this.unsetBlocks(block, emitEvent)
 		if(block) block.set(1, emitEvent)
 
 		this.update()
@@ -328,11 +317,15 @@ Block.Menu = f.unit(Block.List, {
 		return this.set(-1, emitEvent)
 	},
 
-	unsetBlock: function(block, emitEvent) {
-		if(!block) return
+	unsetBlocks: function(except, emitEvent) {
+		for(var i = 0; i < this.blocks.length; i++) {
+			var block = this.blocks[i]
+			if(block === except) continue
 
-		if(!this.deselect) block.disabled = false
-		block.set(0, emitEvent)
+			if(block.set(0, emitEvent)) {
+				if(!this.deselect) block.disabled = false
+			}
+		}
 	}
 })
 
