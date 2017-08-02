@@ -255,6 +255,7 @@ function updateConnectionGroups(tree, tree2) {
 	}
 
 	// console.log(groups2.length)
+	main.hasAvailableConnections = groups2.length
 	updateConnectionVisibilitySets()
 }
 
@@ -267,10 +268,11 @@ function updateConnectionVisibilitySets() {
 	}
 }
 function updateConnectionVisibility(con, match) {
-	var visible = con.group !== -1
-	if(visible && match) visible = con.canConnect(match)
+	var available = con.group !== -1
+	,   compatible = match ? con.canConnect(match) : true
 
-	con.inactive.set(!visible, 'view2')
+	con.marker.visible.set(!main.hasAvailableConnections || available, 'active')
+	con.inactive.set(!available || !compatible, 'view2')
 	con.marker.updateState()
 }
 
