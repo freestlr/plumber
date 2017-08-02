@@ -44,6 +44,11 @@
 	font-family: Arial, sans-serif;
 	font-size: 48px;
 }
+.marker-group svg {
+	width: 42px;
+	height: 42px;
+	padding-top: 10px;
+}
 .marker-info {
 	display: none;
 	line-height: 30px;

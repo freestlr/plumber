@@ -134,6 +134,8 @@ UI.Marker = f.unit(Block.Tip, {
 			this.connection.events.off(null, null, this)
 		}
 		this.projector.remPoint(this.point)
+
+		Atlas.free(this.elemGroup)
 	},
 
 	updateState: function() {
@@ -145,8 +147,16 @@ UI.Marker = f.unit(Block.Tip, {
 			this.state[key] = val instanceof Gate ? val.value : val
 		}
 
+		Atlas.free(this.elemGroup)
+		dom.text(this.elemGroup, '')
+
 		var g = this.connection.group
-		dom.text(this.elemGroup, g === -1 ? 'X' : String.fromCharCode(g + 65))
+		if(g === -1) {
+			Atlas.set(this.elemGroup, 'i-deny')
+
+		} else {
+			dom.text(this.elemGroup, String.fromCharCode(g + 65))
+		}
 
 
 		dom.setclass(this.element, this.state)
