@@ -138,6 +138,13 @@ TConnection = f.unit({
 		return target
 	},
 
+	getInnerPosition: function(target) {
+		if(!target) target = new THREE.Vector3
+
+		target.copy(this.point).applyMatrix4(this.node.object.matrixWorld)
+		return target
+	},
+
 
 	paramPairsAllow: [
 		['f', 'm'],

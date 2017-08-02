@@ -31,6 +31,10 @@ UI.MarkerSystem = f.unit(Block, {
 			marker.point.world.copy(position)
 		}
 
+		if(con) {
+			con.getInnerPosition(marker.inner.world)
+		}
+
 		if(undisposable) {
 			marker.undisposable = true
 		} else {
@@ -93,12 +97,23 @@ UI.Marker = f.unit(Block.Tip, {
 		dom.remclass(this.content, 'tip-content')
 
 		dom.addclass(this.arrow,   'marker-arrow')
-		dom.addclass(this.content, 'marker-content out-03')
+		dom.addclass(this.content, 'marker-content marker-interactive out-03')
 
-		this.arrowLine = dom.div('marker-arrow-line out-03', this.arrow)
+		this.arrowLine = dom.div('marker-arrow-line marker-interactive out-03', this.arrow)
 
 		this.elemGroup = dom.span('marker-group', this.content)
 		this.elemInfo = dom.span('marker-info', this.content)
+
+
+		this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+		this.svg.className.baseVal = 'marker-depth-line marker-interactive out-03'
+
+		this.svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+		this.svgLine.setAttribute('x1', 0)
+		this.svgLine.setAttribute('y1', 0)
+
+		dom.append(this.svg, this.svgLine)
+		dom.append(this.element, this.svg)
 
 
 		this.state = {
@@ -120,6 +135,7 @@ UI.Marker = f.unit(Block.Tip, {
 		}
 
 		this.point = this.projector.addPoint()
+		this.inner = this.projector.addPoint()
 
 		this.watchEvents.push(
 			new EventHandler(this.onTap, this).listen('tap', this.element),
@@ -176,7 +192,12 @@ UI.Marker = f.unit(Block.Tip, {
 	},
 
 	update: function() {
-		if(!this.visible.value && !this.inTransition) return
+		var visible = this.visible.value || this.inTransition
+
+		var vdepth = visible && this.connection && this.connection.depth
+
+		dom.display(this.svg, vdepth)
+		if(!visible) return
 
 		this.scale = 0.7 * (1.3 - Math.min(0.7, this.point.distance / 1.5))
 
@@ -187,6 +208,29 @@ UI.Marker = f.unit(Block.Tip, {
 		,   y = Math.round(this.point.screen.y)
 
 		this.move(x, y, this.align)
+
+		if(vdepth) {
+			var ix = this.inner.screen.x
+			,   iy = this.inner.screen.y
+
+			var dx = ix - x
+			,   dy = iy - y
+
+			var sw = Math.ceil(Math.abs(dx))
+			,   sh = Math.ceil(Math.abs(dy))
+			,   ss = Math.max(sw, sh)
+
+			this.svg.setAttribute('width',  ss *2 +2)
+			this.svg.setAttribute('height', ss *2 +2)
+			this.svg.setAttribute('viewBox', [-ss -1, -ss -1, ss *2 +2, ss *2 +2].join(' '))
+			this.svg.style.marginLeft = -ss -1 +'px'
+			this.svg.style.marginTop  = -ss -1 +'px'
+			this.svg.style.left = x - this.elementPoint.x +'px'
+			this.svg.style.top  = y - this.elementPoint.y +'px'
+
+			this.svgLine.setAttribute('x2', dx)
+			this.svgLine.setAttribute('y2', dy)
+		}
 	},
 
 	move: function() {

@@ -19,7 +19,6 @@
 	//position: absolute;
 	padding: 0 10px;
 
-	background-color: white;
 	color: black;
 	box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.3);
 
@@ -35,8 +34,10 @@
 	width: 0;
 	height: 0;
 	position: absolute;
-	background-color: white;
 	box-shadow: 1px 1px 2px 0 rgba(0, 0, 0, 0.5);
+}
+.marker-depth-line {
+	position: absolute;
 }
 
 .marker-group {
@@ -72,20 +73,22 @@
 }
 
 
-.marker .marker-content,
-.marker .marker-arrow-line {
-	transition-property: background-color, opacity;
+.marker .marker-interactive {
+	opacity: 1;
+	background-color: white;
+	stroke: white;
+	transition-property: background-color, opacity, stroke;
 }
 
-.marker.connected .marker-content,
-.marker.connected .marker-arrow-line {
+.marker.connected .marker-interactive {
 	background-color: skyblue;
 	color: white;
+	stroke: skyblue;
 }
-.marker.connected.master .marker-content,
-.marker.connected.master .marker-arrow-line {
+.marker.connected.master .marker-interactive {
 	background-color: tomato;
 	color: white;
+	stroke: tomato;
 }
 
 .marker:hover {
@@ -94,20 +97,22 @@
 .marker:hover .marker-delete svg {
 	fill: tomato;
 }
-.marker:hover .marker-content,
-.marker:hover .marker-arrow-line {
+
+.marker:hover .marker-interactive {
+	stroke: yellow;
 	background-color: yellow;
 }
 
-.marker.selected .marker-content,
-.marker.selected .marker-arrow-line {
+.marker.selected .marker-interactive {
+	stroke: lime;
 	background-color: lime;
 }
 
-.marker.connected .marker-content,
-.marker.connected .marker-arrow-line,
-.marker.inactive .marker-content,
-.marker.inactive .marker-arrow-line {
+.marker.connected .marker-interactive,
+.marker.inactive  .marker-interactive {
 	opacity: 0.3;
 	pointer-events: none;
+}
+.marker svg.marker-interactive {
+	background-color: transparent !important;
 }
