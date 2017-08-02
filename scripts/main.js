@@ -49,10 +49,16 @@ main.list = dom.div('samples-list')
 main.tiles.setClients([main.view, main.view2, { element: main.list }])
 
 
+main.splitViewMessage = dom.div('split-view-message')
+dom.text(main.splitViewMessage, 'no compatible connections')
+dom.display(main.splitViewMessage, false)
+
+
 
 dom.addclass(document.body, 'ontouchstart' in window ? 'touch' : 'no-touch')
 dom.addclass(main.renderer.domElement, 'canvas-main')
 dom.prepend(main.tiles.element, main.renderer.domElement)
+dom.append(main.tiles.element, main.splitViewMessage)
 dom.append(document.body, main.tiles.element)
 dom.append(main.list, main.file.element)
 
@@ -167,6 +173,8 @@ function displaySample(sid) {
 	if(!openView2) {
 		main.view.markers.markersVisible.off('view2')
 		main.view2.markers.markersVisible.off('view2')
+
+		dom.display(main.splitViewMessage, false)
 	}
 
 	main.view.enableRaycast = !openView2
@@ -256,6 +264,8 @@ function updateConnectionGroups(tree, tree2) {
 
 	// console.log(groups2.length)
 	main.hasAvailableConnections = groups2.length
+	dom.display(main.splitViewMessage, !main.hasAvailableConnections)
+	updateSplitViewMessagePosition()
 	updateConnectionVisibilitySets()
 }
 
@@ -356,7 +366,26 @@ function onresize() {
 	// main.view.onResize()
 }
 
+function updateSplitViewMessagePosition() {
+	var elem = main.splitViewMessage
+	,   vp   = main.splitView
+	,   svw  = elem.offsetWidth
+	,   svh  = elem.offsetHeight
+	,   sx   = vp.split === TileView.VERTICAL_SPLIT   ? 0.5 : vp.position
+	,   sy   = vp.split === TileView.HORIZONTAL_SPLIT ? 0.5 : vp.position
+	,   cx   = vp.x + vp.w * sx - svw / 2
+	,   cy   = vp.y + vp.h * sy - svh / 2
+
+	elem.style.left = cx +'px'
+	elem.style.top  = cy + 0.3 * vp.h +'px'
+}
+
 function onTilesUpdate() {
+
+	if(!main.hasAvailableConnections) {
+		updateSplitViewMessagePosition()
+	}
+
 	return
 
 	var canvas = main.renderer.domElement

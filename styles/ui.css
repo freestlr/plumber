@@ -259,3 +259,15 @@ body .dg .close-button {
 	width: 10px;
 	height: 10px;
 }
+
+
+
+.split-view-message {
+	position: absolute;
+	padding: 8px 12px;
+	font: 14px Arial, sans-serif;
+	color: black;
+	background-color: white;
+	border: 1px solid black;
+	z-index: 4;
+}
