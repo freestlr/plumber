@@ -131,7 +131,8 @@ TConnection = f.unit({
 			target.setFromMatrixPosition(this.object.matrixWorld)
 
 		} else {
-			target.copy(this.point).applyMatrix4(this.node.object.matrixWorld)
+			target.copy(this.normal).setLength(this.depth).add(this.point)
+				.applyMatrix4(this.node.object.matrixWorld)
 		}
 
 		return target
