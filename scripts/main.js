@@ -17,7 +17,7 @@ main.splitView = main.tiles.splits[0]
 
 
 main.viewTween = new TWEEN.Tween(main.splitView)
-	.to({ position: 0.5 }, 400)
+	.to({ position: main.splitView.position }, 400)
 	.easing(TWEEN.Easing.Cubic.Out)
 	.onUpdate(main.tiles.update, main.tiles)
 
@@ -172,22 +172,22 @@ function displaySample(sid) {
 	main.sampleView2 = main.tree ? sample : null
 	main.sampleMenu.setItem(main.sampleView2 && main.sampleView2.id)
 
-	var openView2 = main.sampleView2 && (main.sampleView2.object || main.sampleView2.src)
+	main.splitScreen = main.sampleView2 && (main.sampleView2.object || main.sampleView2.src)
 
-	if(!openView2) {
+	if(!main.splitScreen) {
 		main.view.markers.markersVisible.off('view2')
 		main.view2.markers.markersVisible.off('view2')
 
 		dom.display(main.splitViewMessage, false)
 	}
 
-	main.view.enableRaycast = !openView2
-	if(openView2) {
-		main.view.hoverNode(null)
-		main.view.selectNode(null)
-	}
+	main.view.enableRaycast = !main.splitScreen
 
-	var splitPosition = openView2 ? 0.5 : 1
+	main.view.hoverNode(null)
+	main.view.selectNode(null)
+	main.view.selectConnection(null)
+
+	var splitPosition = main.splitScreen ? 0.5 : 1
 	if(splitPosition !== main.viewTween.target.position) {
 		main.viewTween.target.position = splitPosition
 		main.viewTween.start()
@@ -227,8 +227,8 @@ function setSample(sample) {
 }
 
 function updateConnectionGroups(tree, tree2) {
-	main.cons = tree.retrieveConnections({ connected: false }, true)
-	main.cons2 = tree2.retrieveConnections({ connected: false }, true)
+	main.cons  = tree && tree.retrieveConnections({ connected: false }, true) || []
+	main.cons2 = tree2 && tree2.retrieveConnections({ connected: false }, true) || []
 
 	var groups2 = []
 
@@ -271,6 +271,8 @@ function updateConnectionGroups(tree, tree2) {
 	dom.display(main.splitViewMessage, !main.hasAvailableConnections)
 	updateSplitViewMessagePosition()
 	updateConnectionVisibilitySets()
+
+	main.view.needsRetrace = true
 }
 
 function updateConnectionVisibilitySets() {
@@ -294,25 +296,33 @@ function connectSample(sample) {
 	if(!sample) return
 
 	var node = new TNode(sample)
-	if(!main.tree) {
-		main.tree = node
-		main.view.setTree(main.tree)
-		return
-	}
 
-	var cons = main.tree.retrieveConnections({ connected: false }, true)
-	for(var i = 0; i < cons.length; i++) {
-		var conA = cons[i]
+	if(main.tree) {
+		var cons = main.tree.retrieveConnections({ connected: false }, true)
 
-		for(var j = 0; j < node.connections.length; j++) {
-			var conB = node.connections[j]
+		loop_cons:
+		for(var i = 0; i < cons.length; i++) {
+			var conA = cons[i]
 
-			if(conA.canConnect(conB)) {
-				conA.node.connect(conA.index, node, conB.index)
-				main.view.setTree(main.tree)
-				return
+			for(var j = 0; j < node.connections.length; j++) {
+				var conB = node.connections[j]
+
+				if(conA.canConnect(conB)) {
+					conA.node.connect(conA.index, node, conB.index)
+					main.view.setTree(main.tree)
+					break loop_cons
+				}
 			}
 		}
+
+
+	} else {
+		main.tree = node
+		main.view.setTree(main.tree)
+	}
+
+	if(main.splitScreen) {
+		updateConnectionGroups(main.tree, main.view2.tree)
 	}
 }
 
@@ -526,7 +536,9 @@ function run() {
 	dom.on('keyup',   window, onkey)
 
 	dom.on('dragover', main.view.element, onDragOver)
+	dom.on('dragover', main.view2.element, onDragOver)
 	dom.on('drop', main.view.element, onDrop)
+	dom.on('drop', main.view2.element, onDrop)
 
 	main.sampleMenu.events.on('change', onSubChange)
 	main.file.events.on('import', onSampleImport)

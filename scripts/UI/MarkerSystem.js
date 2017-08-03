@@ -5,7 +5,7 @@ UI.MarkerSystem = f.unit(Block, {
 	create: function() {
 		this.markers = []
 
-		this.markersVisible = new Gate(Gate.AND, true)
+		this.markersVisible = new Gate(Gate.AND, false)
 		this.markersVisible.events.on('change', this.onMarkersVisible, this)
 	},
 
@@ -194,43 +194,45 @@ UI.Marker = f.unit(Block.Tip, {
 	update: function() {
 		var visible = this.visible.value || this.inTransition
 
-		var vdepth = visible && this.connection && this.connection.depth
+		var px = Math.round(this.point.screen.x)
+		,   py = Math.round(this.point.screen.y)
+
+		var ix = this.inner.screen.x
+		,   iy = this.inner.screen.y
+
+		var dx = ix - px
+		,   dy = iy - py
+
+		var vdepth = visible && this.connection && this.connection.depth && !isNaN(dx) && !isNaN(dy)
 
 		dom.display(this.svg, vdepth)
 		if(!visible) return
+
 
 		this.scale = 0.7 * (1.3 - Math.min(0.7, this.point.distance / 1.5))
 
 		// this.visible.set(this.point.visible, 'onScreen')
 		// if(!this.visible.value) return
 
-		var x = Math.round(this.point.screen.x)
-		,   y = Math.round(this.point.screen.y)
 
-		this.move(x, y, this.align)
+		this.move(px, py, this.align)
 
-		if(vdepth) {
-			var ix = this.inner.screen.x
-			,   iy = this.inner.screen.y
+		if(!vdepth) return
 
-			var dx = ix - x
-			,   dy = iy - y
+		var sw = Math.ceil(Math.abs(dx))
+		,   sh = Math.ceil(Math.abs(dy))
+		,   ss = Math.max(sw, sh)
 
-			var sw = Math.ceil(Math.abs(dx))
-			,   sh = Math.ceil(Math.abs(dy))
-			,   ss = Math.max(sw, sh)
+		this.svg.setAttribute('width',  ss *2 +2)
+		this.svg.setAttribute('height', ss *2 +2)
+		this.svg.setAttribute('viewBox', [-ss -1, -ss -1, ss *2 +2, ss *2 +2].join(' '))
+		this.svg.style.marginLeft = -ss -1 +'px'
+		this.svg.style.marginTop  = -ss -1 +'px'
+		this.svg.style.left = px - this.elementPoint.x +'px'
+		this.svg.style.top  = py - this.elementPoint.y +'px'
 
-			this.svg.setAttribute('width',  ss *2 +2)
-			this.svg.setAttribute('height', ss *2 +2)
-			this.svg.setAttribute('viewBox', [-ss -1, -ss -1, ss *2 +2, ss *2 +2].join(' '))
-			this.svg.style.marginLeft = -ss -1 +'px'
-			this.svg.style.marginTop  = -ss -1 +'px'
-			this.svg.style.left = x - this.elementPoint.x +'px'
-			this.svg.style.top  = y - this.elementPoint.y +'px'
-
-			this.svgLine.setAttribute('x2', dx)
-			this.svgLine.setAttribute('y2', dy)
-		}
+		this.svgLine.setAttribute('x2', dx)
+		this.svgLine.setAttribute('y2', dy)
 	},
 
 	move: function() {
