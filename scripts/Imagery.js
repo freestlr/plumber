@@ -848,7 +848,8 @@ Imagery.prototype = {
 		var images = []
 		for(var y = 0; y < 2; y++)
 		for(var x = 0; x < 3; x++) {
-			var c = main.imagery.makeCanvas(s, s)
+			var c = this.makeCanvas(s, s)
+
 			c.drawImage(image, x * s, y * s, s, s, 0, 0, s, s)
 			images.push(c.canvas)
 		}

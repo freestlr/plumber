@@ -63,7 +63,7 @@
 			'scripts/UI/Submenu.js',
 			'scripts/UI/MarkerSystem.js',
 
-			'scripts/main.js'
+			'scripts/Plumber.js'
 		]
 		var html5_styles = [
 			'styles/main.css',
@@ -89,17 +89,22 @@
 		}
 
 		window.loadScripts = function(scripts) {
-			var scripts_progress = 0.8
+			var scripts_progress = 0.7
 			,   scripts_total = scripts.length
 			!function run_scripts() {
 				if(typeof bootProgress === 'function') {
 					bootProgress(scripts_progress * (1 - scripts.length / scripts_total))
 				}
 				if(scripts.length) add_script(scripts.shift(), run_scripts)
+				else window.loadComplete()
 			}()
 		}
 		window.loadStyles = function(styles) {
 			while(styles.length) add_style(styles.shift())
+		}
+
+		window.loadComplete = function() {
+			var plumber = new Plumber
 		}
 
 
