@@ -363,10 +363,15 @@ function deleteNode(node) {
 // }
 
 function onresize() {
-	var element = main.tiles.element
-	main.renderer.setSize(element.offsetWidth, element.offsetHeight)
+	var e = main.tiles.element
+	,   w = e.offsetWidth
+	,   h = e.offsetHeight
 
+	main.renderer.setSize(w, h)
 	main.tiles.autoresize()
+
+	main.view.resizeRenderTargets(w, h)
+	main.view.resizeShaders(w, h)
 	// main.view.onResize()
 }
 

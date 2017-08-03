@@ -583,19 +583,8 @@ View3.prototype = {
 		}
 	},
 
-	onResize: function() {
-		this.width  = this.element.offsetWidth
-		this.height = this.element.offsetHeight
-
-		this.elementOffset = dom.offset(this.element)
-		this.projector.resize(this.width, this.height)
-
-
-		if(!this.viewport) {
-			this.renderer.setSize(this.width, this.height)
-		}
-
-		this.rtStencil = new THREE.WebGLRenderTarget(this.width, this.height, {
+	resizeRenderTargets: function(w, h) {
+		this.rtStencil = new THREE.WebGLRenderTarget(w, h, {
 			minFilter: THREE.LinearFilter,
 			magFilter: THREE.LinearFilter,
 			format: THREE.RGBAFormat
@@ -603,9 +592,11 @@ View3.prototype = {
 
 		this.rt1 = this.rtStencil.clone()
 		this.rt2 = this.rtStencil.clone()
+	},
 
-		var rx = 1/ this.width
-		,   ry = 1/ this.height
+	resizeShaders: function(w, h) {
+		var rx = 1 / w
+		,   ry = 1 / h
 
 		if(this.smOverlay) {
 			this.smOverlay.uniforms['resolution'].value.set(rx, ry)
@@ -621,6 +612,21 @@ View3.prototype = {
 
 		if(this.smHBlur) {
 			this.smHBlur.uniforms['h'].value = rx
+		}
+	},
+
+	onResize: function() {
+		this.width  = this.element.offsetWidth
+		this.height = this.element.offsetHeight
+
+		this.elementOffset = dom.offset(this.element)
+		this.projector.resize(this.width, this.height)
+
+
+		if(!this.viewport) {
+			this.renderer.setSize(this.width, this.height)
+			this.resizeRenderTargets(this.width, this.height)
+			this.resizeShaders(this.width, this.height)
 		}
 
 		this.updateProjection()
@@ -644,7 +650,7 @@ View3.prototype = {
 			rb = wb
 			wb = tb
 		}
-		function setViewport() {
+		function updateViewport() {
 			if(vp) {
 				renderer.setViewport(vp.x, vp.y, vp.w, vp.h)
 				renderer.setScissor(vp.x, vp.y, vp.w, vp.h)
@@ -657,11 +663,11 @@ View3.prototype = {
 			if(!scene ) scene  = srScene
 			if(!camera) camera = srCamera
 
-			setViewport()
+			updateViewport()
 			renderer.render(scene, camera, buffer)
 		}
 		function clear(buffer, color, depth, stencil) {
-			setViewport()
+			updateViewport()
 			if(buffer) {
 				renderer.clearTarget(buffer, color, depth, stencil)
 			} else {
@@ -715,7 +721,7 @@ View3.prototype = {
 			this.scene.overrideMaterial = null
 		}
 
-		if(this.enableStencil) {
+		if(this.enableStencil && this.smFill && this.smCopy && this.smOverlay) {
 			gl.enable(gl.STENCIL_TEST)
 			gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
 
@@ -754,13 +760,13 @@ View3.prototype = {
 				gl.disable(gl.BLEND)
 			}
 
-			if(this.enableFXAA) {
+			if(this.enableFXAA && this.smFXAA) {
 				shader(this.smFXAA, wb)
 				draw(rb)
 				swap()
 			}
 
-			if(this.enableBloom) {
+			if(this.enableBloom && this.smVBlur && this.smHBlur) {
 				shader(this.smVBlur, wb)
 				draw(rb)
 
