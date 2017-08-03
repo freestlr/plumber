@@ -36,14 +36,12 @@ function View3(options) {
 	this.srCamera.updateProjectionMatrix()
 	this.srScene.add(this.srPlane)
 
-	this.smFill = new THREE.ShaderMaterial({
-		vertexShader: THREE.OverlayShader.vertexShader,
-		fragmentShader: THREE.OverlayShader.fillShader,
-		uniforms: THREE.UniformsUtils.clone(THREE.OverlayShader.fillUniforms)
-	})
-
-	this.srPlane.material = this.smFill
-
+	this.smCopy    = this.makeShader(THREE.CopyShader)
+	this.smFill    = this.makeShader(THREE.FillShader)
+	this.smOverlay = this.makeShader(THREE.OverlayShader)
+	this.smHBlur   = this.makeShader(THREE.HorizontalBlurShader)
+	this.smVBlur   = this.makeShader(THREE.VerticalBlurShader)
+	this.smFXAA    = this.makeShader(THREE.FXAAShader)
 
 	this.clearButton = dom.div('view-clear hand', this.element)
 	Atlas.set(this.clearButton, 'i-cross', 'absmid')
@@ -109,16 +107,44 @@ View3.prototype = {
 	enableWireframe: false,
 	enableRaycast: true,
 	enableStencil: true,
+	enableFXAA: true,
+	enableBloom: true,
+
+	renderTarget: null,
 
 	clearColor: 0xAAAAAA,
-	// hoverColor: 0xFFFE5C,
-	// selectColor: 0x26D970,
-	hoverColor: '#f5f46c',
-	selectColor: '#0096ff',
 
 	focusTheta: 1.0,
 	focusDuration: 300,
 	focusDistance: 1.5,
+
+	stencilNone: {
+		value: 0,
+		params: {}
+	},
+
+	stencilHover: {
+		value: 1,
+		params: {
+			drawColor: '#00FF77',
+			drawAlpha: 1.0,
+			lineAlpha: 0.0,
+			edgeAlpha: 1.0,
+			fillAlpha: 0.03
+		}
+	},
+
+	stencilSelect: {
+		value: 2,
+		params: {
+			drawColor: '#00FF77',
+			drawAlpha: 1.0,
+			lineAlpha: 0.4,
+			edgeAlpha: 0.9,
+			fillAlpha: 0.1
+		}
+	},
+
 
 	handleEvent: function(e) {
 		switch(e.type) {
@@ -126,6 +152,14 @@ View3.prototype = {
 			case 'mouseout':   return this.onMouseOut(e)
 			case 'tap':        return this.onTap(e)
 		}
+	},
+
+	makeShader: function(source) {
+		if(source) return new THREE.ShaderMaterial({
+			vertexShader: source.vertexShader,
+			fragmentShader: source.fragmentShader,
+			uniforms: THREE.UniformsUtils.clone(source.uniforms)
+		})
 	},
 
 	makeGrid: function() {
@@ -265,7 +299,6 @@ View3.prototype = {
 	},
 
 	focusOnTree: function(time) {
-
 		if(isNaN(time)) {
 			time = this.focusDuration
 		}
@@ -399,9 +432,9 @@ View3.prototype = {
 	},
 
 	updateNodeStencil: function(node) {
-		var value = node.selected ? 2
-		          : node.hovered  ? 1
-		          :                 0
+		var value = node.selected ? this.stencilSelect.value
+		          : node.hovered  ? this.stencilHover .value
+		          :                 this.stencilNone  .value
 
 		node.sample.traverse(node.sampleObject, this.updateMeshStencil, this, value)
 	},
@@ -562,8 +595,195 @@ View3.prototype = {
 			this.renderer.setSize(this.width, this.height)
 		}
 
+		this.rtStencil = new THREE.WebGLRenderTarget(this.width, this.height, {
+			minFilter: THREE.LinearFilter,
+			magFilter: THREE.LinearFilter,
+			format: THREE.RGBAFormat
+		})
+
+		this.rt1 = this.rtStencil.clone()
+		this.rt2 = this.rtStencil.clone()
+
+		var rx = 1/ this.width
+		,   ry = 1/ this.height
+
+		if(this.smOverlay) {
+			this.smOverlay.uniforms['resolution'].value.set(rx, ry)
+		}
+
+		if(this.smFXAA) {
+			this.smFXAA.uniforms['resolution'].value.set(rx, ry)
+		}
+
+		if(this.smVBlur) {
+			this.smVBlur.uniforms['v'].value = ry
+		}
+
+		if(this.smHBlur) {
+			this.smHBlur.uniforms['h'].value = rx
+		}
+
 		this.updateProjection()
 		this.needsRetrace = true
+	},
+
+	draw: function() {
+		var gl = this.renderer.context
+		,   vp = this.viewport
+
+		var renderer = this.renderer
+		,   srPlane  = this.srPlane
+		,   srScene  = this.srScene
+		,   srCamera = this.srCamera
+
+		var wb = this.rt1
+		,   rb = this.rt2
+
+		function swap() {
+			var tb = rb
+			rb = wb
+			wb = tb
+		}
+		function setViewport() {
+			if(vp) {
+				renderer.setViewport(vp.x, vp.y, vp.w, vp.h)
+				renderer.setScissor(vp.x, vp.y, vp.w, vp.h)
+				renderer.setScissorTest(true)
+			} else {
+				renderer.setScissorTest(false)
+			}
+		}
+		function draw(buffer, scene, camera) {
+			if(!scene ) scene  = srScene
+			if(!camera) camera = srCamera
+
+			setViewport()
+			renderer.render(scene, camera, buffer)
+		}
+		function clear(buffer, color, depth, stencil) {
+			setViewport()
+			if(buffer) {
+				renderer.clearTarget(buffer, color, depth, stencil)
+			} else {
+				renderer.clear(color, depth, stencil)
+			}
+		}
+		function shader(material, input, uniforms) {
+			for(var name in uniforms) {
+				var item = material.uniforms[name]
+				if(!item) continue
+
+				var data = uniforms[name]
+				if(item.value instanceof THREE.Color) {
+					item.value.set(data)
+				} else {
+					item.value = data
+				}
+			}
+			if(input) {
+				material.uniforms.tDiffuse.value = input.texture
+			}
+			srPlane.material = material
+		}
+
+
+
+		this.renderer.setClearColor(this.clearColor)
+		clear(this.renderTarget)
+
+
+		this.scene.updateMatrixWorld(true)
+
+		if(this.enableRender) {
+			this.grid.visible = false
+			this.root.visible = true
+
+			this.renderer.render(this.scene, this.camera, this.renderTarget)
+			draw(this.renderTarget, this.scene, this.camera)
+		}
+
+		if(this.enableGrid) {
+			this.grid.visible = true
+			this.root.visible = false
+
+			draw(this.renderTarget, this.scene, this.camera)
+		}
+
+		if(this.enableWireframe) {
+			this.scene.overrideMaterial = this.wireMaterial
+			draw(this.renderTarget, this.scene, this.camera)
+			this.scene.overrideMaterial = null
+		}
+
+		if(this.enableStencil) {
+			gl.enable(gl.STENCIL_TEST)
+			gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
+
+
+			this.scene.overrideMaterial = this.smFill
+			clear(this.rtStencil)
+			draw(this.rtStencil, this.scene, this.camera)
+			this.scene.overrideMaterial = null
+
+
+
+			this.renderer.setClearColor(0, 0)
+			clear(rb)
+			clear(wb)
+
+
+			gl.disable(gl.DEPTH_TEST)
+			gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP)
+
+
+			var stencilPasses = [this.stencilHover, this.stencilSelect]
+			for(var i = 0; i < stencilPasses.length; i++) {
+				var pass = stencilPasses[i]
+
+				gl.stencilFunc(gl.EQUAL, pass.value, 0xFF)
+				shader(this.smFill)
+				this.renderer.setClearColor(0, 1)
+				clear(this.rtStencil, true, true, false)
+				draw(this.rtStencil)
+				gl.stencilFunc(gl.ALWAYS, 0, 0xFF)
+
+				shader(this.smOverlay, this.rtStencil, pass.params)
+				gl.enable(gl.BLEND)
+				gl.blendFunc(gl.ONE, gl.ONE)
+				draw(wb)
+				gl.disable(gl.BLEND)
+			}
+
+			if(this.enableFXAA) {
+				shader(this.smFXAA, wb)
+				draw(rb)
+				swap()
+			}
+
+			if(this.enableBloom) {
+				shader(this.smVBlur, wb)
+				draw(rb)
+
+				shader(this.smHBlur, rb)
+
+				gl.enable(gl.BLEND)
+				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+				draw()
+				gl.disable(gl.BLEND)
+			}
+
+			gl.enable(gl.BLEND)
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+			shader(this.smCopy, wb)
+			draw()
+
+
+
+			gl.disable(gl.BLEND)
+			gl.disable(gl.STENCIL_TEST)
+			gl.enable(gl.DEPTH_TEST)
+		}
+
 	},
 
 	onTick: function(dt) {
@@ -594,61 +814,24 @@ View3.prototype = {
 		if(this.needsRedraw) {
 			this.needsRedraw = false
 
-			var vp = this.viewport
-			if(vp) {
-				this.renderer.setViewport(vp.x, vp.y, vp.w, vp.h)
-				this.renderer.setScissor(vp.x, vp.y, vp.w, vp.h)
-				this.renderer.setScissorTest(true)
-			} else {
-				this.renderer.setScissorTest(false)
-			}
-
-			this.renderer.setClearColor(this.clearColor)
-			this.renderer.clear()
-
-			this.scene.updateMatrixWorld(true)
-
-			if(this.enableRender) {
-				this.grid.visible = false
-				this.root.visible = true
-				this.renderer.render(this.scene, this.camera)
-			}
-
-			if(this.enableGrid) {
-				this.grid.visible = true
-				this.root.visible = false
-				this.renderer.render(this.scene, this.camera)
-			}
-
-			if(this.enableWireframe) {
-				this.scene.overrideMaterial = this.wireMaterial
-				this.renderer.render(this.scene, this.camera)
-				this.scene.overrideMaterial = null
-			}
-
-			if(this.enableStencil) {
-				var gl = this.renderer.context
-				gl.enable(gl.BLEND)
-				gl.disable(gl.DEPTH_TEST)
-				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-
-				gl.enable(gl.STENCIL_TEST)
-
-				// gl.stencilFunc(gl.EQUAL, 1, 0xFF)
-				// this.smFill.uniforms.color.value.set(this.hoverColor)
-				// this.renderer.render(this.srScene, this.srCamera)
-
-				gl.stencilFunc(gl.EQUAL, 2, 0xFF)
-				this.smFill.uniforms.color.value.set(this.selectColor)
-				this.renderer.render(this.srScene, this.srCamera)
-
-				gl.disable(gl.BLEND)
-				gl.disable(gl.STENCIL_TEST)
-				gl.enable(gl.DEPTH_TEST)
-			}
-
+			this.draw()
 			this.projector.update()
 			this.markers.update()
 		}
 	}
+}
+
+
+THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geometry, material, group) {
+	if(!this.userData.stencilWrite) return
+
+	var gl = renderer.context
+
+	gl.stencilFunc(gl.ALWAYS, +this.stencilValue || 0, 0xff)
+}
+
+THREE.Object3D.prototype.onAfterRender = function(renderer, scene, camera, geometry, material, group) {
+	if(!this.userData.stencilWrite) return
+
+	var gl = renderer.context
 }

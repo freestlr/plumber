@@ -23,6 +23,9 @@ main.viewTween = new TWEEN.Tween(main.splitView)
 
 
 main.renderer = new THREE.WebGLRenderer({
+	alpha: false,
+	depth: true,
+	stencil: true,
 	antialias: true,
 	preserveDrawingBuffer: true
 })
@@ -61,6 +64,7 @@ dom.prepend(main.tiles.element, main.renderer.domElement)
 dom.append(main.tiles.element, main.splitViewMessage)
 dom.append(document.body, main.tiles.element)
 dom.append(main.list, main.file.element)
+
 
 
 
@@ -124,8 +128,8 @@ function makeMenu() {
 			redraw()
 		})
 	}
-	main.gui.addColor(main.view, 'hoverColor').name('Hover').onChange(redraw)
-	main.gui.addColor(main.view, 'selectColor').name('Hover').onChange(redraw)
+	main.gui.addColor(main.view.stencilHover.params, 'drawColor').name('Hover').onChange(redraw)
+	main.gui.addColor(main.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
 
 	function redraw() {
 		main.view.needsRedraw = true
