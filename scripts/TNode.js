@@ -97,6 +97,64 @@ TNode = f.unit({
 
 	},
 
+	pinch: function() {
+		var list   = []
+		,   roots  = []
+		,   counts = []
+		,   maxCount = 0
+		,   maxIndex = -1
+		,   maxNode  = null
+		,   maxRoot  = null
+
+		var root = f.follow(this, 'upnode').pop()
+		,   tcount = 0
+		,   rcount = 0
+
+		root.traverse(function() { rcount++ })
+		this.traverse(function() { tcount++ })
+
+		for(var i = 0; i < this.connections.length; i++) {
+			var con = this.connections[i]
+			if(!con.connected) continue
+
+			var node = con.connected.node
+			,   count = 0
+
+			var nroot = node
+			while(nroot.upnode && nroot.upnode !== this) {
+				nroot = nroot.upnode
+			}
+
+
+			nroot.traverse(function() { count++ })
+			if(nroot === root) count -= tcount
+
+			if(count > maxCount) {
+				maxCount = count
+				maxIndex = list.length
+				maxNode  = node
+				maxRoot  = nroot
+			}
+
+			list.push(node)
+			roots.push(nroot)
+			counts.push(count)
+		}
+
+		// if(maxIndex !== -1) {
+		// 	if(root !== nroot) {
+
+		// 	}
+		// }
+
+		// console.log(rcount - maxCount, maxRoot)
+		return {
+			removeNode: this,
+			removeCount: rcount - maxCount,
+			maxRoot: maxRoot
+		}
+	},
+
 
 	connect: function(indexA, node, indexB) {
 		if(!node) {
@@ -115,13 +173,16 @@ TNode = f.unit({
 		}
 
 		node.upcon = conB
+		node.upnode = this
 		conA.connect(conB)
 	},
 
 	disconnect: function() {
-		if(!this.upcon) return
+		for(var i = 0; i < this.connections.length; i++) {
+			var con = this.connections[i]
 
-		this.upcon.disconnect()
+			if(con.connected) con.disconnect()
+		}
 	},
 
 	sizeUnion: function(node) {

@@ -331,7 +331,7 @@ function onkey(e) {
 
 	} else if(kbd.down && kbd.changed) switch(kbd.key) {
 		case 'DEL':
-			deleteNode(main.view.nodeSelected)
+			promptDeleteNode(main.view.nodeSelected)
 		return
 
 		case 'c':
@@ -355,19 +355,21 @@ function onkey(e) {
 	main.view2.onKey(e)
 }
 
-function deleteNode(node) {
+function promptDeleteNode(node) {
 	if(!node) return
 
-	if(node === main.tree) {
-		main.tree = null
+	var stats = node.pinch()
+	if(stats.removeCount < 2) {
+		node.disconnect()
+		main.tree = stats.maxRoot
+		main.view.setTree(main.tree)
+		main.view.selectNode(null)
 
 	} else {
-		node.disconnect()
+		console.log('do you want to delete', stats.removeCount, 'nodes?')
 	}
-
-	main.view.selectNode(null)
-	main.view.setTree(main.tree)
 }
+
 
 // function onhashchange(e) {
 // 	displaySample(location.hash.slice(1))
@@ -482,7 +484,7 @@ function onNodeSelect(node, prev) {
 }
 
 function onMarkerTap(marker) {
-	if(marker && marker.deleteNode) deleteNode(marker.deleteNode)
+	if(marker && marker.deleteNode) promptDeleteNode(marker.deleteNode)
 }
 
 
