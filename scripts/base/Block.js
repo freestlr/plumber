@@ -517,7 +517,8 @@ Block.Tip = f.unit(Block, {
 		,   e = this.elementPoint
 
 		this.transform(this.element, e.x + s.x, e.y + s.y)
-		this.transform(this.arrow, a.x, a.y)
+		this.arrow.style.left = a.x +'px'
+		this.arrow.style.top  = a.y +'px'
 	},
 
 	transform: function(element, x, y, s) {
@@ -581,14 +582,15 @@ Block.Tip = f.unit(Block, {
 		t.y = v ? 0 : oy
 		t.o = +v
 
+		if(this.visible.value) {
+			dom.append(this.eroot, this.element)
+		}
+
 		this.transitionTween.start()
 	},
 
 	onTransitionStart: function() {
-		if(this.visible.value) {
-			this.inTransition = true
-			dom.append(this.eroot, this.element)
-		}
+		this.inTransition = true
 	},
 
 	onTransitionUpdate: function() {
@@ -599,8 +601,8 @@ Block.Tip = f.unit(Block, {
 
 	onTransitionEnd: function() {
 		if(!this.visible.value) {
-			this.inTransition = false
 			dom.remove(this.element)
 		}
+		this.inTransition = false
 	}
 })

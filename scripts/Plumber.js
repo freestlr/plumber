@@ -15,6 +15,8 @@ Plumber = f.unit({
 
 		this.imagery = new Imagery
 
+		this.events = new EventEmitter
+
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
 		this.sampler.folder = this.srcSamples
@@ -76,6 +78,8 @@ Plumber = f.unit({
 		this.element = this.tiles.element
 
 
+		this.makeDeletePrompt()
+
 
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
 		dom.addclass(this.renderer.domElement, 'canvas-main')
@@ -99,6 +103,29 @@ Plumber = f.unit({
 			.then(this.sampler.addSampleList, this.sampler)
 			.then(this.makeMenu, this)
 			.detach(this.run, this)
+	},
+
+	makeDeletePrompt: function() {
+		var tip = new Block.Tip({
+			eroot: this.element,
+			align: 'top',
+			hidden: true
+		})
+
+		dom.addclass(tip.element, 'prompt')
+
+		var text = dom.div('prompt-text', tip.content)
+		,   ok   = dom.div('prompt-button hand prompt-button-ok', tip.content)
+		,   no   = dom.div('prompt-button hand prompt-button-cancel', tip.content)
+
+		dom.text(ok, 'OK')
+		dom.text(no, 'Cancel')
+
+		new EventHandler(this.deleteNode, this).listen('tap', ok)
+		new EventHandler(this.closeDeletePrompt, this).listen('tap', no)
+
+		this.deletePromptTipText = text
+		this.deletePromptTip = tip
 	},
 
 	makeMenu: function() {
@@ -366,16 +393,36 @@ Plumber = f.unit({
 	promptDeleteNode: function(node) {
 		if(!node) return
 
-		var stats = node.pinch()
-		if(stats.removeCount < 2) {
-			node.disconnect()
-			this.tree = stats.maxRoot
-			this.view.setTree(this.tree)
-			this.view.selectNode(null)
+		this.deletePromptStat = node.pinch()
+
+		if(this.deletePromptStat.removeCount < 2) {
+			this.deleteNode()
 
 		} else {
-			console.log('do you want to delete', stats.removeCount, 'nodes?')
+			dom.text(this.deletePromptTipText,
+				['Do you want to delete', this.deletePromptStat.removeCount, 'nodes?'].join(' '))
+
+			this.deletePromptTip.visible.on()
 		}
+	},
+
+
+	closeDeletePrompt: function() {
+		this.deletePromptTip.visible.off()
+		delete this.deletePromptStat
+	},
+
+
+	deleteNode: function() {
+		var stats = this.deletePromptStat
+		if(!stats) return
+
+		stats.removeNode.disconnect()
+		this.tree = stats.maxRoot
+		this.view.setTree(this.tree)
+		this.view.selectNode(null)
+
+		this.closeDeletePrompt()
 	},
 
 
@@ -430,6 +477,15 @@ Plumber = f.unit({
 		canvas.style.top  = frame.y +'px'
 	},
 
+	onTap: function(e) {
+		if(this.deletePromptTip.visible.value) {
+			if(!dom.ancestor(e.target, this.deletePromptTip.element)
+			&& !dom.ancestor(e.target, this.view.markers.element)) {
+				this.closeDeletePrompt()
+			}
+		}
+	},
+
 	onDragOver: function(e) {
 		e.dataTransfer.dropEffect = 'copy'
 		e.preventDefault()
@@ -475,26 +531,24 @@ Plumber = f.unit({
 
 	onNodeSelect: function(node, prev) {
 		var system = this.view.markers
-		if(prev && prev.deleteMarker) {
-			system.removeMarker(prev.deleteMarker)
-			prev.deleteMarker = null
+		if(prev && prev.nodeMarker) {
+			system.removeMarker(prev.nodeMarker)
+			prev.nodeMarker.htap.release()
+			prev.nodeMarker = null
 		}
+
 		if(node) {
 			var m = this.view.markers.addMarker(node.localBox.getCenter(), 'remove', null, true)
 			m.deleteNode = node
 			m.align = 'bottom'
 			m.visible.on()
 
+			m.htap = new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.element)
 			m.watchAtlas.push(Atlas.set(dom.div('marker-delete', m.content), 'i-delete'))
 
-			node.deleteMarker = m
+			node.nodeMarker = m
 		}
 	},
-
-	onMarkerTap: function(marker) {
-		if(marker && marker.deleteNode) this.promptDeleteNode(marker.deleteNode)
-	},
-
 
 	onConnectionSelect: function(view, index, con) {
 		if(!this.connectionParts) {
@@ -548,6 +602,7 @@ Plumber = f.unit({
 		new EventHandler(this.onresize, this).listen('resize',  window)
 		new EventHandler(this.onkey,    this).listen('keydown', window)
 		new EventHandler(this.onkey,    this).listen('keyup',   window)
+		new EventHandler(this.onTap,    this).listen('tap',     window)
 
 		new EventHandler(this.onDragOver, this).listen('dragover', this.view .element)
 		new EventHandler(this.onDragOver, this).listen('dragover', this.view2.element)
@@ -566,7 +621,6 @@ Plumber = f.unit({
 		this.view2.events.on('view_clear', this.onViewClear2, this)
 
 		this.view.events.on('node_select', this.onNodeSelect, this)
-		this.view.events.on('marker_tap', this.onMarkerTap, this)
 
 		this.onresize()
 		// this.onhashchange()
@@ -584,6 +638,11 @@ Plumber = f.unit({
 
 		this.view.onTick(dt)
 		this.view2.onTick(dt)
+
+		if(this.deletePromptStat) {
+			var p = this.view.projector.worldToScreen(this.deletePromptStat.removeNode.localCenter)
+			this.deletePromptTip.move(Math.round(p.x), Math.round(p.y))
+		}
 	}
 })
 

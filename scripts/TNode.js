@@ -13,6 +13,7 @@ TNode = f.unit({
 
 		this.localBox = new THREE.Box3
 		this.localSphere = new THREE.Sphere
+		this.localCenter = new THREE.Vector3
 
 		this.connections = []
 
@@ -189,6 +190,7 @@ TNode = f.unit({
 		if(node.sample) {
 			node.localBox.copy(node.sample.box)
 			node.localBox.applyMatrix4(node.object.matrixWorld)
+			node.localBox.getCenter(node.localCenter)
 			this.box.union(node.localBox)
 
 			node.localSphere.copy(node.sample.sphere)

@@ -547,18 +547,17 @@ View3.prototype = {
 	},
 
 	onTap: function(e) {
-		if(e.target === this.element) {
+		if(e.target !== this.element) return
 
-			if(this.transformConnection) {
-				this.transformConnection.detachControl()
-				this.transformConnection = null
+		if(this.transformConnection) {
+			this.transformConnection.detachControl()
+			this.transformConnection = null
 
-				this.updateConnections()
-				this.needsRedraw = true
+			this.updateConnections()
+			this.needsRedraw = true
 
-			} else {
-				this.selectConnection(null)
-			}
+		} else {
+			this.selectConnection(null)
 		}
 
 		this.selectNode(this.nodeHovered)
@@ -566,10 +565,7 @@ View3.prototype = {
 
 	onMarkerTap: function(marker) {
 		var con = marker.connection
-		if(!con) {
-			this.events.emit('marker_tap', marker)
-			return
-		}
+		if(!con) return
 
 		if(kbd.state.CTRL) {
 			this.transformConnection = con

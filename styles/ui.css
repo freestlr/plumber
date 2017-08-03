@@ -124,6 +124,8 @@ body .dg .close-button {
 	position: absolute;
 	margin-top: -8px;
 	margin-left: -8px;
+	margin-top: -10px;
+	margin-left: -10px;
 	width: 16px;
 	height: 16px;
 	border: 1px solid #888;
@@ -270,4 +272,32 @@ body .dg .close-button {
 	background-color: white;
 	border: 1px solid black;
 	z-index: 4;
+}
+
+
+
+.prompt {
+
+}
+.prompt .tip-content {
+	padding: 12px;
+}
+.prompt-text {
+	text-align: center;
+	margin-top: 8px;
+	margin-bottom: 18px;
+	font-size: 14px;
+}
+.prompt-button {
+	display: inline-block;
+	text-align: center;
+	width: 80px;
+	height: 24px;
+	line-height: 24px;
+	margin: 4px;
+	font-size: 13px;
+	background-color: #eee;
+}
+.prompt-button:hover {
+	background-color: #ddd;
 }
