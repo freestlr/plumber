@@ -184,7 +184,7 @@ TConnection = f.unit({
 		,   quat   = new THREE.Quaternion
 
 		normal.copy(slave.normal).negate()
-		quat.setFromUnitVectors(this.normal, normal)
+		quat.setFromUnitVectors(normal, this.normal)
 
 
 		this.node.object.add(this.object)
