@@ -179,9 +179,24 @@ Sample.prototype = {
 			extra  : parts[2],
 			depth  : parts[3],
 			parts  : parts,
+			point  : new THREE.Vector3,
+			normal : new THREE.Vector3,
 			object : object
 		}
 
+		joint.point.setFromMatrixPosition(object.matrix)
+		joint.normal.set(1, 0, 0).applyMatrix4(object.matrix).sub(joint.point)
+
+
+		var normalMaterial = this.parent.imagery && this.parent.imagery.materials.norcon
+
+		var line = new THREE.Line(new THREE.Geometry, normalMaterial)
+		line.geometry.vertices.push(new THREE.Vector3, joint.normal.clone().setLength(20))
+		line.geometry.colors.push(new THREE.Color(0, 0, 0), new THREE.Color(1, 0, 0))
+		line.position.copy(joint.point)
+		line.name = 'debug-connection-normal'
+
+		this.object.add(line)
 		this.joints.push(joint)
 	},
 

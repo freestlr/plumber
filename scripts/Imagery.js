@@ -55,6 +55,7 @@ function Imagery() {
 		// corner  : { color: 0x444444 },
 		// pcorner : { color: 0x777777 },
 
+		norcon    : { color: 0xFFFFFF },
 		subtract  : { color: 0xff3977 },
 
 		wireframe : {},
@@ -106,6 +107,14 @@ Imagery.prototype = {
 			factory: THREE.MeshPhongMaterial,
 			makeMap: true,
 			side: THREE.DoubleSide
+		},
+
+		norcon: {
+			makeMap: false,
+			factory: THREE.LineBasicMaterial,
+			vertexColors: THREE.VertexColors,
+			linewidth: 2,
+			visible: false
 		},
 
 		subtract: {

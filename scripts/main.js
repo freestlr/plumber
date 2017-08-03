@@ -203,7 +203,6 @@ function preloadSample(sample, onComplete) {
 	}
 	if(sample) {
 		main.deferSample = sample.load().detach(onComplete)
-		// sample.describe()
 	}
 }
 
@@ -341,8 +340,10 @@ function onkey(e) {
 		return
 
 		case 'x':
-			var m = main.imagery.materials.subtract
-			m.visible = !m.visible
+			main.debug = !main.debug
+			main.imagery.materials.subtract.visible = !!main.debug
+			main.imagery.materials.norcon.visible = !!main.debug
+			if(main.debug && main.view2.tree) main.view2.tree.sample.describe()
 		break
 
 		case 'v':
