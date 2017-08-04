@@ -249,7 +249,8 @@ View3.prototype = {
 		,   nextCamera  = new THREE.Vector3
 		,   matrixTheta = new THREE.Matrix4
 
-		var distNow = camera.distanceTo(nextTarget)
+		var distNow = camera.distanceTo(target)
+		,   distMay = camera.distanceTo(nextTarget)
 		,   distMin = this.orbit.minDistance
 		,   distMax = this.orbit.maxDistance
 		,   distGot = f.clamp(isNaN(distance) ? distNow : distance, distMin, distMax)
@@ -306,8 +307,9 @@ View3.prototype = {
 			time = this.focusDuration
 		}
 
-		var size = node.sample.size.y * 4
-		this.orbitTo(node.localCenter, time, size * this.focusDistance)
+		var distance = node.sample.size.y * 4 * this.focusDistance
+
+		this.orbitTo(node.localCenter, time)
 	},
 
 
