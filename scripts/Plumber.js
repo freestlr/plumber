@@ -365,6 +365,18 @@ Plumber = f.unit({
 		if(e.ctrlKey || e.shiftKey || e.altKey) {
 
 		} else if(kbd.down && kbd.changed) switch(kbd.key) {
+			case 'ENTER':
+				if(this.deletePromptTip.visible.value) {
+					this.deleteNode()
+				}
+			return
+
+			case 'ESC':
+				if(this.deletePromptTip.visible.value) {
+					this.closeDeletePrompt()
+				}
+			return
+
 			case 'DEL':
 				this.promptDeleteNode(this.view.nodeSelected)
 			return
