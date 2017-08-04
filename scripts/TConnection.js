@@ -102,7 +102,7 @@ TConnection = f.unit({
 		}
 
 		if(more) {
-			setTimeout(f.binds(this.tween.start, this.tween), 0)
+			this.tween.start()
 		}
 
 		return more

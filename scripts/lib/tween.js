@@ -253,6 +253,7 @@ TWEEN.Tween.prototype = {
 		TWEEN.add(this)
 
 		this.onStartCallbackFired = false
+		this.ended = false
 
 		this.startTime = isNaN(time) ? window.performance.now() : +time
 		this.startTime += this.delayTime
