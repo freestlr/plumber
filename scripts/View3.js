@@ -116,7 +116,7 @@ View3.prototype = {
 
 	focusThetaMin: 0.5,
 	focusThetaMax: 2.2,
-	focusDistance: 1.5,
+	focusDistance: 1.0,
 	focusDuration: 300,
 
 	stencilNone: {
@@ -299,7 +299,8 @@ View3.prototype = {
 
 		this.updateTreeSize()
 
-		this.orbitTo(this.treeCenter, time, this.treeSize * this.focusDistance)
+		var distance = Math.sqrt(this.treeSize) * 25
+		this.orbitTo(this.treeCenter, time, distance)
 	},
 
 	focusOnNode: function(node, time) {

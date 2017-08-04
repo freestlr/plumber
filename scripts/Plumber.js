@@ -397,6 +397,10 @@ Plumber = f.unit({
 				if(this.debug && this.view2.tree) this.view2.tree.sample.describe()
 			break
 
+			case 'r':
+				this.onViewClear()
+			break
+
 			case 't':
 				// var sid = f.any(Object.keys(this.sampler.samples))
 				// this.preloadSample(this.sampler.samples[sid], this.connectSample)
