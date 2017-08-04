@@ -48,9 +48,7 @@ body .dg .close-button {
 }
 
 
-.view-2,
-.view-3,
-.view-calc {
+.view-3 {
 	position: absolute;
 	left: 0;
 	top: 0;
@@ -59,7 +57,6 @@ body .dg .close-button {
 	overflow: hidden;
 	z-index: 0;
 }
-.view-2 canvas,
 .view-3 canvas {
 	position: absolute;
 	left: 0;
@@ -71,11 +68,9 @@ body .dg .close-button {
 	        user-select: none;
 }
 
-.view-2.hover,
 .view-3.hover {
 	cursor: crosshair;
 }
-.view-2.drag,
 .view-3.drag {
 	cursor: -webkit-grab;
 	cursor:    -moz-grab;
@@ -83,7 +78,6 @@ body .dg .close-button {
 	cursor:      -o-grab;
 	cursor:         grab;
 }
-.view-2.down,
 .view-3.down {
 	cursor: -webkit-grabbing;
 	cursor:    -moz-grabbing;
