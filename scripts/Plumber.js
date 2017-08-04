@@ -334,18 +334,22 @@ Plumber = f.unit({
 		if(this.tree) {
 			var cons = this.tree.retrieveConnections({ connected: false }, true)
 
+			f.sort(cons, Math.random)
+
 			loop_cons:
 			for(var i = 0; i < cons.length; i++) {
 				var conA = cons[i]
 
 				for(var j = 0; j < node.connections.length; j++) {
 					var conB = node.connections[j]
+					if(!conB.canConnect(conA)) continue
 
-					if(conA.canConnect(conB)) {
-						conA.node.connect(conA.index, node, conB.index)
-						this.view.setTree(this.tree)
-						break loop_cons
-					}
+					this.makeViewConnection(conA, conB)
+					return
+
+					// conA.node.connect(conA.index, node, conB.index)
+					// this.view.setTree(this.tree)
+					// break loop_cons
 				}
 			}
 
@@ -394,8 +398,8 @@ Plumber = f.unit({
 			break
 
 			case 't':
-				var sid = f.any(Object.keys(this.sampler.samples))
-				this.preloadSample(this.sampler.samples[sid], this.connectSample)
+				// var sid = f.any(Object.keys(this.sampler.samples))
+				// this.preloadSample(this.sampler.samples[sid], this.connectSample)
 			break
 
 			case 'v':
@@ -587,22 +591,23 @@ Plumber = f.unit({
 		if(master && slave) this.makeViewConnection(master, slave)
 	},
 
+	animatedConnections: 0,
 	makeViewConnection: function(master, slave) {
 		this.view.selectConnection(null)
 		this.view2.selectConnection(null)
 		this.view2.setTree(null)
 
+		slave.node.updateSize()
 		master.node.connect(master.index, slave.node, slave.index)
 
 		this.view.setTree(this.tree)
 
 
-		this.animatedConnection = master
 		master.events.once('connect_start', function() {
-			this.animatedConnection = master
+			this.animatedConnections++
 		}, this)
 		master.events.once('connect_end', function() {
-			delete this.animatedConnection
+			this.animatedConnections--
 		}, this)
 
 		master.playConnection()
@@ -615,8 +620,7 @@ Plumber = f.unit({
 
 		var sample = this.sampler.samples[block.data]
 		if(sample) {
-			delete this.sampler.samples[sample.id]
-		}
+			delete this.sampler.samples[sample.id] }
 	},
 
 	run: function() {
@@ -651,9 +655,14 @@ Plumber = f.unit({
 	},
 
 	onTick: function(t, dt) {
-		if(this.animatedConnection) {
+		if(this.animatedConnections) {
 			this.view.needsRedraw = true
 			this.view.needsRetrace = true
+		}
+
+		if(kbd.state.t) {
+			var sid = f.any(Object.keys(this.sampler.samples))
+			this.preloadSample(this.sampler.samples[sid], this.connectSample)
 		}
 
 		TWEEN.update()
