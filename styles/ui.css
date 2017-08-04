@@ -281,23 +281,25 @@ body .dg .close-button {
 }
 .prompt .tip-content {
 	padding: 12px;
+	text-align: center;
 }
 .prompt-text {
 	text-align: center;
-	margin-top: 8px;
-	margin-bottom: 18px;
+	margin: 8px 8px 18px;
 	font-size: 14px;
 }
 .prompt-button {
 	display: inline-block;
 	text-align: center;
-	width: 80px;
-	height: 24px;
-	line-height: 24px;
+	min-width: 32px;
+	padding: 8px 14px 8px 14px;
 	margin: 4px;
-	font-size: 13px;
-	background-color: #eee;
+	font-size: 14px;
+	background-color: #296fd6;
+	border-left: 3px solid #102e84;
+	color: #fff;
 }
 .prompt-button:hover {
-	background-color: #ddd;
+	background-color: #083f84;
+	border-left-color: #000;
 }

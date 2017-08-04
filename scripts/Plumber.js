@@ -118,8 +118,8 @@ Plumber = f.unit({
 		,   ok   = dom.div('prompt-button hand prompt-button-ok', tip.content)
 		,   no   = dom.div('prompt-button hand prompt-button-cancel', tip.content)
 
-		dom.text(ok, 'OK')
-		dom.text(no, 'Cancel')
+		dom.text(ok, 'Yes')
+		dom.text(no, 'No')
 
 		new EventHandler(this.deleteNode, this).listen('tap', ok)
 		new EventHandler(this.closeDeletePrompt, this).listen('tap', no)
