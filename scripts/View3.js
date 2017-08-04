@@ -310,6 +310,15 @@ View3.prototype = {
 		this.orbitTo(this.treeCenter, time, this.treeSize * this.focusDistance, this.focusTheta)
 	},
 
+	focusOnNode: function(node, time) {
+		if(isNaN(time)) {
+			time = this.focusDuration
+		}
+
+		var size = node.sample.size.y * 4
+		this.orbitTo(node.localCenter, time, size * this.focusDistance, this.focusTheta)
+	},
+
 
 	lookAt: function() {
 

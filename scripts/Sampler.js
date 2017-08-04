@@ -41,6 +41,7 @@ function Sample(def, parent) {
 	this.joints = []
 
 	this.box    = new THREE.Box3
+	this.size   = new THREE.Vector3
 	this.sphere = new THREE.Sphere
 
 
@@ -166,6 +167,7 @@ Sample.prototype = {
 		this.box.makeEmpty()
 		this.sphere.radius = -1
 		this.traverse(this.object, this.configureObject)
+		this.box.getSize(this.size)
 
 		return this
 	},

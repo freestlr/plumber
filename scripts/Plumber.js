@@ -547,6 +547,9 @@ Plumber = f.unit({
 			m.watchAtlas.push(Atlas.set(dom.div('marker-delete', m.content), 'i-delete'))
 
 			node.nodeMarker = m
+
+
+			this.view.focusOnNode(node)
 		}
 	},
 

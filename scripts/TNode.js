@@ -8,12 +8,14 @@ TNode = f.unit({
 		this.boxCenter = new THREE.Vector3
 		this.boxSize   = new THREE.Vector3
 		this.boxLength = 1
+		this.sphere    = new THREE.Sphere
 
-		this.sphere = new THREE.Sphere
 
-		this.localBox = new THREE.Box3
-		this.localSphere = new THREE.Sphere
+		this.localBox    = new THREE.Box3
 		this.localCenter = new THREE.Vector3
+		this.localSize   = new THREE.Vector3
+		this.localLength = 1
+		this.localSphere = new THREE.Sphere
 
 		this.connections = []
 
@@ -191,6 +193,8 @@ TNode = f.unit({
 			node.localBox.copy(node.sample.box)
 			node.localBox.applyMatrix4(node.object.matrixWorld)
 			node.localBox.getCenter(node.localCenter)
+			node.localBox.getSize(node.localSize)
+			node.localLength = node.localSize.length()
 			this.box.union(node.localBox)
 
 			node.localSphere.copy(node.sample.sphere)
