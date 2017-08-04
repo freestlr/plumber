@@ -271,7 +271,7 @@ body .dg .close-button {
 
 
 .prompt {
-
+	z-index: 4;
 }
 .prompt .tip-content {
 	padding: 12px;
