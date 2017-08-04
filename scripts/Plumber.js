@@ -66,6 +66,7 @@ Plumber = f.unit({
 			.to({ position: this.splitView.position }, 400)
 			.easing(TWEEN.Easing.Cubic.Out)
 			.onUpdate(this.tiles.update, this.tiles)
+			.onComplete(this.onViewTweenComplete, this)
 
 
 
@@ -192,10 +193,19 @@ Plumber = f.unit({
 		this.tree = null
 		this.view.setTree(null)
 		this.displaySample(null)
+		this.preloadSample(null)
 	},
 
 	onViewClear2: function() {
 		this.displaySample(null)
+	},
+
+
+	onViewTweenComplete: function() {
+		if(!this.splitScreen) {
+			this.view2.setTree(null)
+			this.sampleView2 = null
+		}
 	},
 
 
@@ -227,16 +237,28 @@ Plumber = f.unit({
 			this.viewTween.start()
 		}
 
-		this.preloadSample(sample, this.setSample, this)
+		if(this.tree) {
+			this.view2.setTree(null)
+			this.preloadSample(sample, this.setSample, this.view2)
+		} else {
+			this.preloadSample(sample, this.setMainTree, this.view)
+		}
 	},
 
-	preloadSample: function(sample, onComplete, scope) {
+	preloadSample: function(sample, onComplete, targetView) {
+
 		if(this.deferSample) {
 			this.deferSample.set(null)
 			this.deferSample = null
+
+			this.view.setPreloader(null)
+			this.view2.setPreloader(null)
 		}
+
 		if(sample) {
-			this.deferSample = sample.load().detach(onComplete, scope || this)
+			targetView.setPreloader(sample)
+
+			this.deferSample = sample.load().detach(onComplete, this)
 		}
 	},
 
@@ -246,17 +268,18 @@ Plumber = f.unit({
 
 		var node = new TNode(sample)
 
-		if(this.tree) {
-			this.view2.setTree(node)
-			this.updateConnectionGroups(this.tree, node)
+		this.view2.setTree(node)
+		this.updateConnectionGroups(this.tree, node)
 
-			this.view.markers.markersVisible.on('view2')
-			this.view2.markers.markersVisible.on('view2')
+		this.view.markers.markersVisible.on('view2')
+		this.view2.markers.markersVisible.on('view2')
+	},
 
-		} else {
-			this.tree = node
-			this.view.setTree(node)
-		}
+	setMainTree: function(sample) {
+		if(!sample) return
+
+		this.tree = new TNode(sample)
+		this.view.setTree(this.tree)
 	},
 
 	updateConnectionGroups: function(tree, tree2) {
@@ -527,7 +550,7 @@ Plumber = f.unit({
 			var sid = dt.getData('text/sample')
 			,   sample = this.sampler.samples[sid]
 
-			this.preloadSample(sample, this.connectSample)
+			this.preloadSample(sample, this.tree ? this.connectSample : this.setMainTree, this.view)
 		}
 
 		e.preventDefault()
@@ -548,7 +571,7 @@ Plumber = f.unit({
 			Atlas.set(block.remove, 'i-cross', 'absmid'))
 
 		block.watchEvents.push(
-			new EventHandler(removeSample, null, block).listen('tap', block.remove))
+			new EventHandler(this.removeSample, this, block).listen('tap', block.remove))
 
 		menu.set(menu.blocks.indexOf(block), true)
 	},
@@ -666,7 +689,7 @@ Plumber = f.unit({
 
 		if(kbd.state.t) {
 			var sid = f.any(Object.keys(this.sampler.samples))
-			this.preloadSample(this.sampler.samples[sid], this.connectSample)
+			this.preloadSample(this.sampler.samples[sid], this.connectSample, this.view)
 		}
 
 		TWEEN.update()

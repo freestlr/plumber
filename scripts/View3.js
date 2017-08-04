@@ -77,6 +77,7 @@ function View3(options) {
 
 
 	this.makeGridSystem()
+	this.makePreloader()
 
 
 	this.dirLight.position.set(-100, 100, 100)
@@ -213,6 +214,47 @@ View3.prototype = {
 
 		this.gridXY.rotation.x = Math.PI/2
 		this.gridYZ.rotation.z = Math.PI/2
+	},
+
+	makePreloader: function() {
+		this.preloaderBox = dom.div('view-preloader-box absmid out-03 hidden', this.element)
+		this.preloaderBlocks = []
+		for(var i = 0; i < 10; i++) {
+			this.preloaderBlocks.push(dom.div('view-preloader-block', this.preloaderBox))
+		}
+	},
+
+	setLoading: function(enabled) {
+		if(this.preloaderEnabled === !!enabled) return
+		this.preloaderEnabled = !!enabled
+
+		dom.togclass(this.preloaderBox, 'hidden', !enabled)
+	},
+
+	setProgress: function(progress) {
+		if(this.preloaderProgress === progress) return
+		this.preloaderProgress = progress
+
+		var blox = this.preloaderBlocks.length
+		,   prog = f.clamp(progress, 0, 1) * blox
+		,   full = Math.floor(prog)
+		,   frac = prog - full
+
+		for(var i = 0; i < blox; i++) {
+			this.preloaderBlocks[i].style.opacity = i < full ? 1 : i > full ? 0 : frac
+		}
+	},
+
+	setPreloader: function(sample) {
+		if(sample && sample.progress < 1) {
+			this.preloaderSample = sample
+			this.setLoading(true)
+			this.setProgress(sample.progress)
+
+		} else {
+			this.preloaderSample = null
+			this.setLoading(false)
+		}
 	},
 
 	updateLights: function() {
@@ -795,6 +837,14 @@ View3.prototype = {
 	},
 
 	onTick: function(dt) {
+		if(this.preloaderSample) {
+			var p = this.preloaderSample.progress
+			this.setProgress(p)
+			this.setLoading(p < 1)
+
+			if(p >= 1) delete this.preloaderSample
+		}
+
 		this.transform.update()
 
 		if(this.orbitTween.playing) {

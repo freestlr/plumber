@@ -55,6 +55,15 @@ Loader.prototype = {
 			this.bytesTotal  += unit.bytesTotal
 			this.bytesLoaded += unit.bytesLoaded
 		}
+
+		if(typeof this.onProgressCallback === 'function') {
+			this.onProgressCallback.call(this.onProgressScope, this)
+		}
+	},
+
+	onProgress: function(func, scope) {
+		this.onProgressCallback = func
+		this.onProgressScope = scope
 	},
 
 	ready: function(done, fail, scope) {

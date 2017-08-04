@@ -82,7 +82,7 @@ Defer.prototype = {
 	},
 
 	detach: function(func, scope) {
-		this.push(new Defer(function(value) {
+		return this.push(new Defer(function(value) {
 			setTimeout(function() { func.call(scope, value) }, 0)
 		}))
 	},

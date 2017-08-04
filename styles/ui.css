@@ -297,3 +297,24 @@ body .dg .close-button {
 	background-color: #083f84;
 	border-left-color: #000;
 }
+
+
+
+.view-preloader-box {
+	width: 130px;
+	height: 25px;
+	border: 1px solid #333;
+	pointer-events: none;
+	padding: 0 1px 1px 0;
+}
+.view-preloader-box.hidden {
+	visibility: hidden;
+	opacity: 0;
+}
+.view-preloader-block {
+	display: inline-block;
+	width: 12px;
+	height: 24px;
+	background-color: #333;
+	margin: 1px 0 0 1px;
+}

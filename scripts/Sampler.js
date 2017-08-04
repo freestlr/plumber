@@ -1,5 +1,4 @@
 function Sampler() {
-	this.get = new Loader
 	this.samples = {}
 	this.keyIndex = []
 }
@@ -37,6 +36,7 @@ Sampler.prototype = {
 function Sample(def, parent) {
 	for(var name in def) this[name] = def[name]
 
+	this.progress = 0
 	this.parent = parent
 	this.joints = []
 
@@ -87,9 +87,8 @@ Sample.prototype = {
 		if(this.deferLoad) return this.deferLoad
 
 		var sample = this
-		,   defer  = new Defer
-		,   url    = this.parent.folder + this.src
-		,   get    = this.parent.get
+		,   defer = new Defer
+		,   url = this.parent.folder + this.src
 
 		if(!this.src) {
 			defer.resolve(null)
@@ -98,7 +97,8 @@ Sample.prototype = {
 
 		switch(this.format) {
 			case 'obj':
-				get.obj(url).defer.push(defer)
+				var loader = new Loader
+				loader.obj(url).defer.push(defer)
 			break
 
 			case 'fbx':
@@ -122,8 +122,13 @@ Sample.prototype = {
 			break
 
 			case 'json':
-				var loader = new THREE.ObjectLoader
-				get.json(url).defer.then(function(data) {
+				var loader = new Loader
+				loader.onProgress(function() {
+					this.progress = loader.bytesLoaded / loader.bytesTotal
+				}, this)
+
+				loader.json(url).defer.then(function(data) {
+					var loader = new THREE.ObjectLoader
 					return loader.parse(data)
 
 				}, this).push(defer)
@@ -153,6 +158,7 @@ Sample.prototype = {
 			console.error('sample', this.src || this.id, 'not zero position:', object.position)
 		}
 
+		this.progress = 1
 		this.object = object
 		this.object.updateMatrixWorld()
 
