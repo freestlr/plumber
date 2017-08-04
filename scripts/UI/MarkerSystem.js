@@ -167,12 +167,15 @@ UI.Marker = f.unit(Block.Tip, {
 		dom.text(this.elemGroup, '')
 
 		var g = this.connection.group
-		if(g === -1) {
+		if(isNaN(g)) {
+
+		} else if(g === -1) {
 			Atlas.set(this.elemGroup, 'i-deny')
 
 		} else {
 			dom.text(this.elemGroup, String.fromCharCode(g + 65))
 		}
+		this.visible.set(!isNaN(g), 'mapped')
 
 
 		dom.setclass(this.element, this.state)

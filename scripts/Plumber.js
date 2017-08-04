@@ -1,6 +1,8 @@
 Plumber = f.unit({
 	unitName: 'Plumber',
 
+	mode: 'constructor',
+
 	srcAtlas: 'images/atlas.svg',
 	srcCubemap: 'images/textures/cubemap.png',
 	srcConfig: 'configs/samples.json',
@@ -33,6 +35,7 @@ Plumber = f.unit({
 		this.renderer.autoClear = false
 
 
+		this.tiles = new TileView
 
 		this.view = new View3({
 			// eroot: document.body,
@@ -50,29 +53,22 @@ Plumber = f.unit({
 
 		this.list = dom.div('samples-list')
 
-
-		this.tiles = new TileView
-		this.tiles.setLayout(['h', ['h', 0, 0, 1], 0, 0.8])
-		this.tiles.setClients([
-			this.view,
-			this.view2,
-			{ element: this.list }
-		])
-
-		this.splitView = this.tiles.splits[0]
-
-
-		this.viewTween = new TWEEN.Tween(this.splitView)
-			.to({ position: this.splitView.position }, 400)
+		this.viewTween = new TWEEN.Tween({ position: 1 })
+			.to({ position: 1 }, 400)
 			.easing(TWEEN.Easing.Cubic.Out)
-			.onUpdate(this.tiles.update, this.tiles)
+			.onUpdate(this.onViewTweenUpdate, this)
 			.onComplete(this.onViewTweenComplete, this)
+
+
+
 
 
 
 		this.splitViewMessage = dom.div('split-view-message')
 		dom.text(this.splitViewMessage, 'no compatible connections')
-		dom.display(this.splitViewMessage, false)
+		this.splitViewMessageVisible = new Gate(Gate.AND, true)
+		this.splitViewMessageVisible.events.on('change', dom.display, dom, this.splitViewMessage)
+		this.splitViewMessageVisible.off('g_vm_cons')
 
 
 
@@ -90,7 +86,64 @@ Plumber = f.unit({
 
 		dom.append(document.body, this.tiles.element)
 
+		this.setMode(this.mode, true)
 		this.fetch()
+	},
+
+	setMode: function(mode, force) {
+		if(this.mode === mode && !force) return
+		this.mode = mode
+
+		var layout
+		,   clients
+		switch(mode) {
+			case 'constructor':
+				layout = ['h', ['h', 0, 0, 1], 0, 0.8]
+				clients = [this.view, this.view2, { element: this.list }]
+			break
+
+			default:
+				console.warn('unknown mode given:', mode, 'fallback to "viewer"')
+				mode = 'viewer'
+
+			case 'viewer':
+				layout = 0
+				clients = [this.view2]
+			break
+		}
+
+		this.modeis = {
+			ctr: mode === 'constructor',
+			vwr: mode === 'viewer'
+		}
+
+		this.view.setTree(null)
+		this.view2.setTree(null)
+
+
+		this.tiles.setLayout(layout)
+		this.tiles.setClients(clients)
+
+
+		this.splitView = this.tiles.splits[0]
+		if(this.splitView) {
+			var p = this.splitView.position
+			this.viewTween.target.position = p
+			this.viewTween.source.position = p
+		}
+
+
+		this.splitViewMessageVisible.set(this.modeis.ctr, 'g_vm_mode')
+
+
+		this.view .markers.markersVisible.off('g_m_view2')
+		this.view2.markers.markersVisible.off('g_m_view2')
+
+		this.view .markers.markersVisible.set(this.modeis.ctr, 'g_m_mode')
+		this.view2.markers.markersVisible.set(this.modeis.ctr, 'g_m_mode')
+
+
+		this.tiles.update()
 	},
 
 	fetch: function() {
@@ -201,6 +254,13 @@ Plumber = f.unit({
 	},
 
 
+	onViewTweenUpdate: function(k, values) {
+		if(this.splitView) {
+			this.splitView.position = values.position
+			this.tiles.update()
+		}
+	},
+
 	onViewTweenComplete: function() {
 		if(!this.splitScreen) {
 			this.view2.setTree(null)
@@ -213,17 +273,17 @@ Plumber = f.unit({
 		var sample = this.sampler.samples[sid]
 		if(sample === this.sampleView2) return
 
-		this.sampleView2 = this.tree ? sample : null
+		this.sampleView2 = this.tree || this.mode === 'viewer' ? sample : null
 		this.sampleMenu.setItem(this.sampleView2 && this.sampleView2.id)
 
-		this.splitScreen = this.sampleView2 && (this.sampleView2.object || this.sampleView2.src)
+		this.splitScreen = !!(this.sampleView2 && (this.sampleView2.object || this.sampleView2.src))
 
 		if(!this.splitScreen) {
-			this.view.markers.markersVisible.off('view2')
-			this.view2.markers.markersVisible.off('view2')
-
-			dom.display(this.splitViewMessage, false)
+			this.view.markers.markersVisible.off('g_m_view2')
+			this.view2.markers.markersVisible.off('g_m_view2')
 		}
+
+		this.splitViewMessageVisible.set(this.splitScreen, 'g_vm_screen')
 
 		this.view.enableRaycast = !this.splitScreen
 
@@ -237,7 +297,7 @@ Plumber = f.unit({
 			this.viewTween.start()
 		}
 
-		if(this.tree) {
+		if(this.sampleView2) {
 			this.view2.setTree(null)
 			this.preloadSample(sample, this.setSample, this.view2)
 		} else {
@@ -271,8 +331,8 @@ Plumber = f.unit({
 		this.view2.setTree(node)
 		this.updateConnectionGroups(this.tree, node)
 
-		this.view.markers.markersVisible.on('view2')
-		this.view2.markers.markersVisible.on('view2')
+		this.view.markers.markersVisible.on('g_m_view2')
+		this.view2.markers.markersVisible.on('g_m_view2')
 	},
 
 	setMainTree: function(sample) {
@@ -324,7 +384,7 @@ Plumber = f.unit({
 
 		// console.log(groups2.length)
 		this.hasAvailableConnections = groups2.length
-		dom.display(this.splitViewMessage, !this.hasAvailableConnections)
+		this.splitViewMessageVisible.set(!this.hasAvailableConnections, 'g_vm_cons')
 		this.updateSplitViewMessagePosition()
 		this.updateConnectionVisibilitySets()
 
@@ -344,43 +404,44 @@ Plumber = f.unit({
 		var available = con.group !== -1
 		,   compatible = match ? con.canConnect(match) : true
 
-		con.marker.visible.set(!this.hasAvailableConnections || available, 'active')
 		con.inactive.set(!available || !compatible, 'view2')
-		con.marker.updateState()
+
+		if(con.marker) {
+			con.marker.visible.set(!this.hasAvailableConnections || available, 'active')
+			con.marker.updateState()
+		}
 	},
 
 	connectSample: function(sample) {
 		if(!sample) return
 
-		var node = new TNode(sample)
-
-		if(this.tree) {
-			var cons = this.tree.retrieveConnections({ connected: false }, true)
-
-			f.sort(cons, Math.random)
-
-			loop_cons:
-			for(var i = 0; i < cons.length; i++) {
-				var conA = cons[i]
-
-				for(var j = 0; j < node.connections.length; j++) {
-					var conB = node.connections[j]
-					if(!conB.canConnect(conA)) continue
-
-					this.makeViewConnection(conA, conB)
-					return
-
-					// conA.node.connect(conA.index, node, conB.index)
-					// this.view.setTree(this.tree)
-					// break loop_cons
-				}
-			}
-
-		} else {
-			this.tree = node
-			this.view.setTree(this.tree)
+		if(!this.tree) {
+			this.setMainTree(sample)
+			return
 		}
 
+
+		var node = new TNode(sample)
+		var cons = this.tree.retrieveConnections({ connected: false }, true)
+
+		f.sort(cons, Math.random)
+
+		loop_cons:
+		for(var i = 0; i < cons.length; i++) {
+			var conA = cons[i]
+
+			for(var j = 0; j < node.connections.length; j++) {
+				var conB = node.connections[j]
+				if(!conB.canConnect(conA)) continue
+
+				this.makeViewConnection(conA, conB)
+
+				// conA.node.connect(conA.index, node, conB.index)
+				// this.view.setTree(this.tree)
+
+				break loop_cons
+			}
+		}
 
 		if(this.splitScreen) {
 			this.updateConnectionGroups(this.tree, this.view2.tree)
@@ -492,6 +553,8 @@ Plumber = f.unit({
 	},
 
 	updateSplitViewMessagePosition: function() {
+		if(!this.splitView) return
+
 		var elem = this.splitViewMessage
 		,   vp   = this.splitView
 		,   svw  = elem.offsetWidth
@@ -550,7 +613,7 @@ Plumber = f.unit({
 			var sid = dt.getData('text/sample')
 			,   sample = this.sampler.samples[sid]
 
-			this.preloadSample(sample, this.tree ? this.connectSample : this.setMainTree, this.view)
+			this.preloadSample(sample, this.connectSample, this.view)
 		}
 
 		e.preventDefault()
@@ -635,6 +698,9 @@ Plumber = f.unit({
 		}, this)
 		master.events.once('connect_end', function() {
 			this.animatedConnections--
+			if(!this.animatedConnections) {
+				this.view.focusOnTree()
+			}
 		}, this)
 
 		master.playConnection()
@@ -685,6 +751,7 @@ Plumber = f.unit({
 		if(this.animatedConnections) {
 			this.view.needsRedraw = true
 			this.view.needsRetrace = true
+			this.view.focusOnTree(3 * 16)
 		}
 
 		if(kbd.state.t) {

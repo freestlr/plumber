@@ -341,7 +341,7 @@ View3.prototype = {
 
 		this.updateTreeSize()
 
-		var distance = Math.sqrt(this.treeSize) * 25
+		var distance = Math.sqrt(this.treeSize) * 30
 		this.orbitTo(this.treeCenter, time, distance)
 	},
 
