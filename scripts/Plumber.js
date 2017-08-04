@@ -381,6 +381,11 @@ Plumber = f.unit({
 				if(this.debug && this.view2.tree) this.view2.tree.sample.describe()
 			break
 
+			case 't':
+				var sid = f.any(Object.keys(this.sampler.samples))
+				this.preloadSample(this.sampler.samples[sid], this.connectSample)
+			break
+
 			case 'v':
 				this.gui.closed ? this.gui.open() : this.gui.close()
 			return
@@ -549,7 +554,9 @@ Plumber = f.unit({
 			node.nodeMarker = m
 
 
-			this.view.focusOnNode(node)
+			if(!kbd.state.SHIFT) {
+				this.view.focusOnNode(node)
+			}
 		}
 	},
 
