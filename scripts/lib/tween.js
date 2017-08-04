@@ -51,7 +51,6 @@ var TWEEN = {
 			var tween = TWEEN.tweens[i]
 
 			if(tween.drop || !tween.update(time)) {
-				if(tween.debug) console.trace(tween.debug, 'ended')
 				TWEEN.tweens.splice(i, 1)
 			}
 		}
@@ -185,6 +184,8 @@ TWEEN.Tween.prototype = {
 	stop: function() {
 		TWEEN.remove(this)
 
+		if(this.debug) console.trace(this.debug, 'stop')
+
 		if(this.onStopCallback !== null) {
 			this.onStopCallback.call(this.onStopScope, this.source)
 		}
@@ -260,15 +261,26 @@ TWEEN.Tween.prototype = {
 		this.updateTarget()
 
 		for(var property in this.valuesTarget) {
-			this.delta[property] = this.source[property]
+			this.delta[property] = this.valuesSource[property]
 		}
 
-		if(this.debug) console.trace(this.debug, 'start')
+		if(this.debug) console.trace(this.debug, 'start',
+			'\n\tsource:', this.valuesSource,
+			'\n\ttarget:', this.valuesTarget)
 
 		return this
 	},
 
 	update: function(time) {
+		if(this.ended) {
+			this.ended = false
+			this.playing = false
+
+			if(this.debug) console.log(this.debug, 'ended')
+
+			return false
+		}
+
 		if(time < this.startTime) {
 			return true
 		}
@@ -281,7 +293,7 @@ TWEEN.Tween.prototype = {
 				this.onStartCallback.call(this.onStartScope, this.source)
 			}
 
-			if(this.debug) console.trace(this.debug, 'playing')
+			if(this.debug) console.log(this.debug, 'playing')
 		}
 
 		var elapsed = (time - this.startTime) / this.durationTime
@@ -303,6 +315,10 @@ TWEEN.Tween.prototype = {
 			this.delta[property] = valueCurrent - this.source[property]
 			this.source[property] = valueCurrent
 		}
+
+		if(this.debug) console.log(this.debug, 'update',
+			'\n\tvalues:', this.source,
+			'\n\tdetta:', this.delta)
 
 		if(this.onUpdateCallback !== null) {
 			this.onUpdateCallback.call(this.onUpdateScope, value, this.source)
@@ -337,11 +353,9 @@ TWEEN.Tween.prototype = {
 
 				this.startTime = time + this.delayTime
 
-				return true
-
 
 			} else {
-				this.playing = false
+				this.ended = true
 
 				if(this.onCompleteCallback !== null) {
 					this.onCompleteCallback.call(this.onCompleteScope, this.source)
@@ -352,8 +366,6 @@ TWEEN.Tween.prototype = {
 					// even if the `update()` method was called way past the duration of the tween
 					this.chainedTweens[i].start(this.startTime + this.durationTime)
 				}
-
-				return false
 			}
 		}
 
