@@ -9,8 +9,6 @@ Plumber = f.unit({
 	srcSamples: 'samples/',
 
 	init: function(options) {
-		for(var name in options) this[name] = options[name]
-
 		this.get   = new Loader
 		this.timer = new Timer(this.onTick, this)
 		this.file  = new FileImport
@@ -18,12 +16,13 @@ Plumber = f.unit({
 		this.imagery = new Imagery
 
 		this.events = new EventEmitter
-		this.events.debug = 'Plumber'
 
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
 		this.sampler.folder = this.srcSamples
 
+
+		this.connectionParts = []
 
 
 		this.renderer = new THREE.WebGLRenderer({
@@ -76,6 +75,7 @@ Plumber = f.unit({
 		this.element = this.tiles.element
 
 
+		this.makeMenu()
 		this.makeDeletePrompt()
 
 
@@ -86,9 +86,30 @@ Plumber = f.unit({
 		dom.append(this.element, this.splitViewMessage)
 		dom.append(this.list, this.file.element)
 
-		dom.append(document.body, this.tiles.element)
+
+		for(var name in options) switch(name) {
+			case 'eroot':
+				dom.append(options.eroot, this.element)
+			break
+
+			case 'mode':
+				this.mode = options.mode
+			break
+
+			case 'clearButton':
+				dom.display(this.view.clearButton, options.clearButton)
+				dom.display(this.view2.clearButton, options.clearButton)
+			break
+
+			case 'sampleList':
+				this.srcConfig = options.sampleList
+			break
+		}
+
 
 		this.setMode(this.mode, true)
+
+		this.ready = new Defer
 		this.fetch()
 	},
 
@@ -119,7 +140,8 @@ Plumber = f.unit({
 			vwr: mode === 'viewer'
 		}
 
-		this.view.setTree(null)
+		// this.view.setTree(null)
+		this.clearTree()
 		this.view2.setTree(null)
 
 
@@ -153,7 +175,14 @@ Plumber = f.unit({
 	},
 
 	addElement: function(id, src) {
-		this.onSampleImport({ id: id, src: src })
+		var sample = this.sampler.addSample({
+			id: id,
+			src: src
+		})
+
+		this.addSampleListItem(sample)
+		this.displaySample(sample.id)
+		return this.deferSample
 	},
 
 	fetch: function() {
@@ -163,10 +192,20 @@ Plumber = f.unit({
 		this.get.image(this.srcCubemap).defer
 			.then(this.imagery.unwrapCubemap3x2, this.imagery)
 
-		this.get.json(this.srcConfig).defer
+		if(this.srcConfig) this.get.json(this.srcConfig).defer
 			.then(this.sampler.addSampleList, this.sampler)
-			.then(this.makeMenu, this)
-			.detach(this.run, this)
+			.then(this.fetchItemsDone, this)
+
+		this.get.ready().detach(this.run, this)
+	},
+
+	fetchItemsDone: function() {
+		this.sampleMenu.addItemList(this.sampler.getList().map(function(sid) {
+			return {
+				text: this.sampler.samples[sid].name,
+				data: sid
+			}
+		}, this))
 	},
 
 	makeDeletePrompt: function() {
@@ -201,20 +240,11 @@ Plumber = f.unit({
 			options: {
 				factory: Block.Toggle,
 				ename: 'sample-item'
-			},
-
-			items: this.sampler.getList().map(function(sid) {
-				return {
-					text: this.sampler.samples[sid].name,
-					data: sid
-				}
-			}, this)
+			}
 		})
 
 		this.sampleMenu.events.on('add-block', this.onSubAdd, this)
 		this.sampleMenu.blocks.forEach(this.onSubAdd, this)
-
-		this.makeGUI()
 	},
 
 	makeGUI: function() {
@@ -248,13 +278,18 @@ Plumber = f.unit({
 
 	onSubChange: function(sid) {
 		this.displaySample(sid)
+
+		if(!sid) {
+			this.events.emit('onAddElement', { status: 'canceled' })
+		}
 	},
 
 
 
 	onViewClear: function() {
 		this.tree = null
-		this.view.setTree(null)
+		// this.view.setTree(null)
+		this.clearTree()
 		this.displaySample(null)
 		this.preloadSample(null)
 	},
@@ -302,6 +337,8 @@ Plumber = f.unit({
 		this.view.selectNode(null)
 		this.view.selectConnection(null)
 
+		this.view2.setTree(null)
+
 		var splitPosition = this.splitScreen ? 0.5 : 1
 		if(splitPosition !== this.viewTween.target.position) {
 			this.viewTween.target.position = splitPosition
@@ -309,7 +346,6 @@ Plumber = f.unit({
 		}
 
 		if(this.sampleView2) {
-			this.view2.setTree(null)
 			this.preloadSample(sample, this.setSample, this.view2)
 		} else {
 			this.preloadSample(sample, this.setMainTree, this.view)
@@ -329,7 +365,7 @@ Plumber = f.unit({
 		if(sample) {
 			targetView.setPreloader(sample)
 
-			this.deferSample = sample.load().detach(onComplete, this)
+			this.deferSample = this.ready.then(sample.load, sample).detach(onComplete, this)
 		}
 	},
 
@@ -351,6 +387,8 @@ Plumber = f.unit({
 
 		this.tree = new TNode(sample)
 		this.view.setTree(this.tree)
+
+		this.events.emit('onAddElement', { status: 'connected' })
 	},
 
 	updateConnectionGroups: function(tree, tree2) {
@@ -536,6 +574,13 @@ Plumber = f.unit({
 		delete this.deletePromptStat
 	},
 
+	clearTree: function() {
+		if(!this.view.tree) return
+
+		this.deletePromptStat = this.view.tree.pinchr()
+		this.deleteNode()
+	},
+
 
 	deleteNode: function() {
 		var stats = this.deletePromptStat
@@ -638,6 +683,12 @@ Plumber = f.unit({
 
 	onSampleImport: function(item) {
 		var sample = this.sampler.addSample(item)
+
+		this.addSampleListItem(sample)
+		this.displaySample(sample.id)
+	},
+
+	addSampleListItem: function(sample, set) {
 		var menu = this.sampleMenu
 
 		menu.removeBlock(menu.blocks[menu.getIndex(sample.id)])
@@ -655,7 +706,7 @@ Plumber = f.unit({
 		block.watchEvents.push(
 			new EventHandler(this.removeSample, this, block).listen('tap', block.remove))
 
-		menu.set(menu.blocks.indexOf(block), true)
+		if(set) menu.set(menu.blocks.indexOf(block))
 	},
 
 
@@ -686,10 +737,6 @@ Plumber = f.unit({
 	},
 
 	onConnectionSelect: function(view, index, con) {
-		if(!this.connectionParts) {
-			this.connectionParts = []
-		}
-
 		this.connectionParts[index] = con
 
 		this.updateConnectionVisibilitySets()
@@ -739,6 +786,8 @@ Plumber = f.unit({
 	},
 
 	run: function() {
+		this.makeGUI()
+
 		// new EventHandler(this.onhashchange, this).listen('hashchange', window)
 		new EventHandler(this.onresize, this).listen('resize',  window)
 		new EventHandler(this.onkey,    this).listen('keydown', window)
@@ -765,7 +814,16 @@ Plumber = f.unit({
 
 		this.onresize()
 		// this.onhashchange()
-		bootProgress(1)
+
+
+
+		this.view.onTick(0)
+		this.view2.onTick(0)
+
+		if(typeof bootProgress === 'function') bootProgress(1)
+
+		this.ready.resolve(true)
+
 		this.timer.play()
 	},
 

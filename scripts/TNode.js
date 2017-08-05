@@ -144,17 +144,21 @@ TNode = f.unit({
 			counts.push(count)
 		}
 
-		// if(maxIndex !== -1) {
-		// 	if(root !== nroot) {
-
-		// 	}
-		// }
-
-		// console.log(rcount - maxCount, maxRoot)
 		return {
 			removeNode: this,
 			removeCount: rcount - maxCount,
 			maxRoot: maxRoot
+		}
+	},
+
+	pinchr: function() {
+		var tcount = 0
+		this.traverse(function() { tcount++ })
+
+		return {
+			removeNode: this,
+			removeCount: tcount,
+			maxRoot: null
 		}
 	},
 

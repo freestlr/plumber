@@ -287,6 +287,8 @@ View3.prototype = {
 		var camera = this.camera.position
 		,   target = this.orbit.target
 
+		if(!nextTarget) nextTarget = target
+
 		var nextOffset  = new THREE.Vector3
 		,   nextCamera  = new THREE.Vector3
 		,   matrixTheta = new THREE.Matrix4
