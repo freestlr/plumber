@@ -18,6 +18,7 @@ Plumber = f.unit({
 		this.imagery = new Imagery
 
 		this.events = new EventEmitter
+		this.events.debug = 'Plumber'
 
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
@@ -146,6 +147,14 @@ Plumber = f.unit({
 		this.tiles.update()
 	},
 
+	getConnectionsArray: function() {
+		return this.tree.retrieveConnections({ connected: true }, true)
+	},
+
+	addElement: function(id, src) {
+		this.onSampleImport({ id: id, src: src })
+	},
+
 	fetch: function() {
 		this.get.xml(this.srcAtlas).defer
 			.then(Atlas.setSource)
@@ -251,6 +260,7 @@ Plumber = f.unit({
 
 	onViewClear2: function() {
 		this.displaySample(null)
+		this.events.emit('onAddElement', { status: 'canceled' })
 	},
 
 
@@ -387,6 +397,10 @@ Plumber = f.unit({
 		this.splitViewMessageVisible.set(!this.hasAvailableConnections, 'g_vm_cons')
 		this.updateSplitViewMessagePosition()
 		this.updateConnectionVisibilitySets()
+
+		if(!this.hasAvailableConnections) {
+			this.events.emit('onAddElement', { status: 'rejected' })
+		}
 
 		this.view.needsRetrace = true
 	},
@@ -532,6 +546,8 @@ Plumber = f.unit({
 		this.view.selectNode(null)
 
 		this.closeDeletePrompt()
+
+		this.events.emit('onRemoveElement', stats)
 	},
 
 
@@ -623,6 +639,8 @@ Plumber = f.unit({
 		var sample = this.sampler.addSample(item)
 		var menu = this.sampleMenu
 
+		menu.removeBlock(menu.blocks[menu.getIndex(sample.id)])
+
 		var block = menu.addItem({
 			data: sample.id,
 			text: sample.name
@@ -696,6 +714,7 @@ Plumber = f.unit({
 		master.events.once('connect_start', function() {
 			this.animatedConnections++
 		}, this)
+
 		master.events.once('connect_end', function() {
 			this.animatedConnections--
 			if(!this.animatedConnections) {
@@ -706,6 +725,8 @@ Plumber = f.unit({
 		master.playConnection()
 
 		this.displaySample(null)
+
+		this.events.emit('onAddElement', { status: 'connected' })
 	},
 
 	removeSample: function(block) {
@@ -751,7 +772,7 @@ Plumber = f.unit({
 		if(this.animatedConnections) {
 			this.view.needsRedraw = true
 			this.view.needsRetrace = true
-			this.view.focusOnTree(3 * 16)
+			// this.view.focusOnTree(3 * 16)
 		}
 
 		if(kbd.state.t) {

@@ -121,6 +121,7 @@ Sample.prototype = {
 				})
 			break
 
+			default:
 			case 'json':
 				var loader = new Loader
 				loader.onProgress(function() {

@@ -307,14 +307,16 @@ Block.Menu = f.unit(Block.List, {
 		this.update()
 	},
 
-	setItem: function(item, emitEvent) {
+	getIndex: function(data) {
 		for(var i = 0; i < this.blocks.length; i++) {
 			var block = this.blocks[i]
-			if(!block.hasOwnProperty('data') || block.data !== item) continue
-
-			return this.set(i, emitEvent)
+			if(block.hasOwnProperty('data') && block.data === data) return i
 		}
-		return this.set(-1, emitEvent)
+		return -1
+	},
+
+	setItem: function(data, emitEvent) {
+		this.set(this.getIndex(data), emitEvent)
 	},
 
 	unsetBlocks: function(except, emitEvent) {
@@ -493,8 +495,8 @@ Block.Tip = f.unit(Block, {
 
 		if(this.arrowPoint.x === apl
 		&& this.arrowPoint.y === apt
-		&& this.elementPoint.x === epl
-		&& this.elementPoint.y === ept
+		&& Math.abs(this.elementPoint.x - epl) < 2
+		&& Math.abs(this.elementPoint.y - ept) < 2
 		&& this.lastDistance === ao
 		&& this.lastAlign === align) return
 
