@@ -104,6 +104,9 @@ UI.Marker = f.unit(Block.Tip, {
 		this.elemGroup = dom.span('marker-group', this.content)
 		this.elemInfo = dom.span('marker-info', this.content)
 
+		dom.display(this.elemGroup, false)
+		dom.display(this.elemInfo, false)
+
 
 		this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
 		this.svg.className.baseVal = 'marker-depth-line marker-interactive out-03'
@@ -175,6 +178,7 @@ UI.Marker = f.unit(Block.Tip, {
 		} else {
 			dom.text(this.elemGroup, String.fromCharCode(g + 65))
 		}
+		dom.display(this.elemGroup, !isNaN(g))
 		this.visible.set(!isNaN(g), 'mapped')
 
 

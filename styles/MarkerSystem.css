@@ -17,7 +17,6 @@
 }
 .marker-content {
 	//position: absolute;
-	padding: 0 10px;
 
 	color: black;
 	box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.3);
@@ -41,6 +40,7 @@
 }
 
 .marker-group {
+	padding: 0 10px;
 	line-height: 56px;
 	font-family: Arial, sans-serif;
 	font-size: 48px;
@@ -52,21 +52,26 @@
 }
 .marker-info {
 	display: none;
-	line-height: 30px;
 	font-family: monospace;
 	font-size: 14px;
+	padding: 8px 10px;
 }
 .marker-system.debug .marker-group {
-	display: none;
+	display: none !important;
 }
 .marker-system.debug .marker-info {
-	display: block;
+	display: block !important;
 }
 
-.marker-delete {
-	padding: 12px 0 8px;
+.marker-action {
+	display: inline-block;
+	padding: 12px;
+	background-color: white;
 }
-.marker-delete svg {
+.marker-action:hover {
+	background-color: #ff3;
+}
+.marker-action svg {
 	width: 32px;
 	height: 32px;
 	fill: black;
@@ -95,7 +100,7 @@
 	z-index: 10000 !important;
 }
 .marker:hover .marker-delete svg {
-	fill: tomato;
+	//fill: tomato;
 }
 
 .marker:hover .marker-interactive {

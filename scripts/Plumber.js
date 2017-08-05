@@ -714,7 +714,7 @@ Plumber = f.unit({
 		var system = this.view.markers
 		if(prev && prev.nodeMarker) {
 			system.removeMarker(prev.nodeMarker)
-			prev.nodeMarker.htap.release()
+			prev.nodeMarker.hDel.release()
 			prev.nodeMarker = null
 		}
 
@@ -724,8 +724,16 @@ Plumber = f.unit({
 			m.align = 'bottom'
 			m.visible.on()
 
-			m.htap = new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.element)
-			m.watchAtlas.push(Atlas.set(dom.div('marker-delete', m.content), 'i-delete'))
+
+			m.bDel = dom.div('marker-action', m.content)
+			m.hDel = new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel)
+			m.watchAtlas.push(Atlas.set(m.bDel, 'i-delete'))
+
+			if(node.sample.link) {
+				m.bInfo = dom.a(node.sample.link, 'marker-action', m.content)
+				m.bInfo.setAttribute('target', '_blank')
+				m.watchAtlas.push(Atlas.set(m.bInfo, 'i-info'))
+			}
 
 			node.nodeMarker = m
 
