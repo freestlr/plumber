@@ -2,6 +2,13 @@ body {
 	background-color: white;
 }
 
+.plumber {
+	padding: 0;
+	margin: 0;
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+}
+
 /*
 .hand:hover {
 	background-color: #aaa;

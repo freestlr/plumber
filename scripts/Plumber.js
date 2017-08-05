@@ -80,6 +80,7 @@ Plumber = f.unit({
 
 
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
+		dom.addclass(this.element, 'plumber')
 		dom.addclass(this.renderer.domElement, 'canvas-main')
 		dom.prepend(this.element, this.renderer.domElement)
 		dom.append(this.element, this.splitViewMessage)
