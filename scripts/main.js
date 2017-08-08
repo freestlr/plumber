@@ -44,8 +44,6 @@ function onImportElement(sample) {
 }
 
 function onAddElement(e) {
-	console.log('onAddElement', e)
-
 	switch(e.status) {
 		case 'connected':
 			sidebar.sampleMenu.set(-1)

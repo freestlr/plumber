@@ -196,6 +196,30 @@ body .dg .close-button {
 }
 
 
+.empty-view-message {
+	background-color: #ebeff2;
+	z-index: 5;
+}
+.empty-view-message-center {
+	width: 500px;
+	height: 280px;
+	border: 1px solid #d0d8db;
+}
+.empty-view-message-frame {
+	width: 468px;
+	height: 248px;
+	border: 1px dashed #abafb2;
+}
+.empty-view-message-text {
+	width: 260px;
+	height: 132px;
+	text-align: center;
+	text-transform: uppercase;
+	font-size: 32px;
+	color: #537078;
+}
+
+
 
 .prompt {
 	z-index: 4;

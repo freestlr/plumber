@@ -72,6 +72,13 @@ Plumber = f.unit({
 		this.splitViewMessageVisible.off('g_vm_cons')
 
 
+		this.emptyViewMessage = dom.div('empty-view-message absmid')
+		var center = dom.div('empty-view-message-center absmid', this.emptyViewMessage)
+		,   frame  = dom.div('empty-view-message-frame absmid', this.emptyViewMessage)
+		,   text   = dom.div('empty-view-message-text absmid', this.emptyViewMessage)
+
+		dom.html(text, ['please', 'add', 'any product'].join('<br/>'))
+
 
 		this.element = this.tiles.element
 
@@ -84,6 +91,7 @@ Plumber = f.unit({
 		dom.addclass(this.renderer.domElement, 'canvas-main')
 		dom.prepend(this.element, this.renderer.domElement)
 		dom.append(this.element, this.splitViewMessage)
+		dom.append(this.element, this.emptyViewMessage)
 
 
 		for(var name in options) switch(name) {
@@ -246,7 +254,7 @@ Plumber = f.unit({
 
 
 	onViewClear: function() {
-		this.tree = null
+		// this.tree = null
 		// this.view.setTree(null)
 		this.clearTree()
 		this.displaySample(null)
@@ -343,8 +351,7 @@ Plumber = f.unit({
 	setMainTree: function(sample) {
 		if(!sample) return
 
-		this.tree = new TNode(sample)
-		this.view.setTree(this.tree)
+		this.absolutelySetMainTree(new TNode(sample))
 
 		this.events.emit('onAddElement', { status: 'connected' })
 	},
@@ -533,10 +540,18 @@ Plumber = f.unit({
 	},
 
 	clearTree: function() {
-		if(!this.view.tree) return
+		if(!this.tree) return
 
-		this.deletePromptStat = this.view.tree.pinchr()
+		this.deletePromptStat = this.tree.pinchr()
 		this.deleteNode()
+		this.absolutelySetMainTree(null)
+	},
+
+	absolutelySetMainTree: function(tree) {
+		this.tree = tree
+		this.view.setTree(this.tree)
+
+		dom.display(this.emptyViewMessage, !this.tree)
 	},
 
 
@@ -545,8 +560,7 @@ Plumber = f.unit({
 		if(!stats) return
 
 		stats.removeNode.disconnect()
-		this.tree = stats.maxRoot
-		this.view.setTree(this.tree)
+		this.absolutelySetMainTree(stats.maxRoot)
 		this.view.selectNode(null)
 
 		this.closeDeletePrompt()
