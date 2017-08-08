@@ -177,96 +177,6 @@ Imagery.prototype = {
 
 	},
 
-	saveMaterials: function() {
-		var materials = {}
-
-		for(var place in this.usedProducts) {
-			var item = this.usedProducts[place]
-			if(!item || !item.id || this.materials[place].parent) continue
-
-			materials[place] = item.id
-		}
-
-		return materials
-	},
-
-	loadMaterials: function(data) {
-		if(!data) return
-
-		if(!data.drain) {
-			var brown = main.db.query()
-				.from('product')
-				.joinInner('color', 'product.cid', 'color.id')
-				.where('color.name', 'eq', 'brown')
-				.joinInner('group', 'product.gid', 'group.id')
-				.where('group.name', 'eq', 'drain-standard')
-				.joinInner('unit', 'product.uid', 'unit.id')
-				.where('unit.name', 'eq', 'pipe')
-				.selectOne('product.id as id')
-
-			if(brown) data.drain = brown.id
-		}
-
-		for(var place in this.baseMaps) {
-			this.setMaterial(place, data[place])
-		}
-	},
-
-	getSimilarProduct: function(mat, unit) {
-		var units = main.db.query()
-			.from('product')
-			.joinInner('unit', 'product.uid', 'unit.id')
-			.where('unit.name', 'eq', unit)
-
-		if(!units.values.length) return
-
-		var products = units.selectField('product.id')
-			.map(function(id) { return this.products[id] }, this)
-
-		if(!mat) return products[0]
-
-
-		var ca = new THREE.Color
-		,   cb = new THREE.Color
-
-		ca.set(mat.color || (mat.texture && mat.texture.color))
-
-		f.sort(products, function(prod) {
-			var score = 0
-
-			if(prod.gid === mat.gid) {
-				score += 2
-			}
-
-			if(prod.cid === mat.cid) {
-				score += 4
-
-			} else {
-				cb.set(prod.color || (prod.texture && prod.texture.color))
-
-				var dr = ca.r - cb.r
-				,   dg = ca.g - cb.g
-				,   db = ca.b - cb.b
-
-				var cdiff = Math.sqrt(dr * dr + dg * dg + db * db)
-
-				score += (1 - cdiff) * 3
-			}
-
-			return -score
-		})
-
-		return products[0]
-	},
-
-	resetMaterials: function() {
-		this.usedProducts = {}
-
-		for(var name in this.materials) {
-			if(this.materials[name].parent) this.remSubmaterial(name)
-		}
-	},
-
 	makeTexture: function(options) {
 		var t = new THREE.Texture()
 		t.wrapS = THREE.RepeatWrapping
@@ -572,135 +482,6 @@ Imagery.prototype = {
 		this.setMaterialProduct(material, this.getLoadedProduct(material))
 	},
 
-	fetchDB: function() {
-
-		main.db.query().into('image').addColumn('object')
-
-		var prepareTypes = [
-			this.types.alpha,
-			this.types.normal,
-			this.types.texture,
-			this.types.logo,
-			this.types.thumb
-		]
-
-		var images = main.db.query()
-			.from('image')
-			.where('image.type', 'in', prepareTypes)
-			.select(
-				'image.id as id',
-				'image.type as type',
-				'image.path as path',
-				'image.resolution as resolution')
-
-
-		images.forEach(this.prepareImage, this) 
-
-		var products = main.db.query()
-			// .profile()
-			.from('product')
-			.joinInner('unit', 'product.uid', 'unit.id')
-			.joinInner('group', 'product.gid', 'group.id')
-			.joinLeft('color', 'product.cid', 'color.id')
-			.joinLeft('image as imgb', 'product.thumb', 'imgb.id')
-			.joinLeft('image as imga', 'product.alpha', 'imga.id')
-			.joinLeft('image as imgn', 'product.normal', 'imgn.id')
-			.joinLeft('image as imgt', 'product.texture', 'imgt.id')
-			.select(
-				'product.id as id',
-				'product.art as art',
-				'product.sample as sid',
-				'unit.id as uid',
-				'unit.name as unit',
-				'unit.width as width',
-				'unit.height as height',
-				'unit.depth as depth',
-				'unit.size as size',
-				'group.id as gid',
-				'group.name as group',
-				'color.id as cid',
-				'color.name as cname',
-				'color.color as color',
-				'color.title as title',
-				'imgb.object as thumb',
-				'imga.object as alpha',
-				'imgn.object as normal',
-				'imgt.object as texture')
-
-
-		for(var i = 0; i < products.length; i++) {
-			var prod = products[i]
-
-			// hardcode, motherfucker, did you wrote it?
-			if(prod.group === 'quadrohouse-v') {
-				prod.vertical = true
-			}
-
-			if(prod.sid) {
-				prod.sample = main.sampler.samples[prod.sid]
-			}
-
-			this.products[prod.id] = prod
-			this.productsList.push(prod)
-		}
-
-		return this.get.ready(function() {
-			this.obvProductsLoaded.write(true)
-			for(var name in this.materials) {
-				this.materials[name].obvLoaded.read()
-			}
-
-		}, this)
-	},
-
-	prepareImage: function(item) {
-		var create, preload, folder
-
-		switch(item.type) {
-			case this.types.alpha:
-			case this.types.normal:
-			case this.types.texture:
-				create = true
-				preload = true
-				folder = this.folders.textures
-			break
-
-			case this.types.logo:
-			case this.types.thumb:
-				create = true
-				preload = false
-				folder = this.folders.thumbs
-			break
-		}
-
-		var object = {
-			src: item.path,
-			url: folder + item.path,
-			loaded: new Observable(false),
-			resolution: item.resolution || 1
-		}
-
-		if(preload) {
-			var res = this.get.image(object.url)
-
-			res.defer.then(
-				f.binda(this.tileTexture, this, [object]),
-				f.binda(this.failTexture, this, [item]))
-
-			object.image = res.data
-		}
-
-		main.db.query()
-			.from('image')
-			.where('image.id', 'eq', item.id)
-			.update('image.object', object)
-
-		return object
-	},
-
-	failTexture: function(data) {
-		console.warn('No texture image', data.id)
-	},
 
 	textureColor: function(image, w, h) {
 		this.buffer.width  = w
@@ -778,9 +559,9 @@ Imagery.prototype = {
 			score   : Infinity
 		}
 		for(var i = 0; i <= range; i++) {
-			var spaceX  = 1 << i
+			var spaceX = 1 << i
 			,   cloneX = Math.round(spaceX / sourceX)
-			,   errorX  = (spaceX - sourceX * cloneX) / sourceX
+			,   errorX = (spaceX - sourceX * cloneX) / sourceX
 
 			if(!cloneX) continue
 
@@ -816,19 +597,18 @@ Imagery.prototype = {
 
 	debugFit: function(fit, data) {
 		var print
-
 		if(fit.error > 0.4) {
 			print = console.error
 		} else if(Math.abs(fit.errorX) > 0.4 || Math.abs(fit.errorY) > 0.4) {
 			print = console.warn
-		} else if(main.debug) {
+		} else if(this.debug) {
 			print = console.log
 		}
 
 		if(print) print.call(console,
 			'tile:', fit.sourceX +'x'+ fit.sourceY, '->', Math.round(fit.sizeX) +'x'+ Math.round(fit.sizeY),
 			'('+ fit.spaceX +'x'+ fit.spaceY +',', fit.cloneX +'x'+ fit.cloneY +')',
-			'errors:', +fit.errorX.toFixed(2), '+', +fit.errorY.toFixed(2), '=', fit.error,
+			'errors:', +fit.errorX.toFixed(2), '-', +fit.errorY.toFixed(2), '=', fit.error,
 			'\n', data.url)
 	},
 
