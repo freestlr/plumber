@@ -263,6 +263,12 @@ body .dg .close-button {
 	height: 10px;
 }
 
+.sample-thumb {
+	left: 8px;
+	right: auto;
+	height: 40px;
+}
+
 
 
 .split-view-message {

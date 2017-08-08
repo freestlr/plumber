@@ -27,24 +27,28 @@
 		"hide": 0,
 		"id": "B100_12MP-12MP",
 		"src": "B100_12MP-12MP.json",
+		"thumb": "images/thumbs/B100-12-12.png",
 		"link": "https://shop.eriks.nl/en/hydraulics-hydraulic-adapters-bsp-adaptors/bsp-connection-stud-straight-b100-12-12-11483321/"
 	},
 	{
 		"hide": 0,
 		"id": "10EFG6K",
 		"src": "10EFG6K.json",
+		"thumb": "images/thumbs/10EFG6K.png",
 		"link": "https://shop.eriks.nl/en/hydraulic-hose-10efg6k-795771/"
 	},
 	{
 		"hide": 0,
 		"id": "12G-12FBSPORXv2",
 		"src": "12G-12FBSPORX_v2.json",
+		"thumb": "images/thumbs/12G-12FBSPORX.png",
 		"link": "https://shop.eriks.nl/en/hydraulics/megacrimp-hose-fitting-12g12fbsporx-1064384/"
 	},
 	{
 		"hide": 0,
 		"id": "BSP T-piece B240-12",
 		"src": "BSP T-piece B240-12.json",
+		"thumb": "images/thumbs/BSP T-piece B240-12.png",
 		"link": "https://shop.eriks.nl/en/bsp-t-piece-b240-12-11483749/"
 	},
 

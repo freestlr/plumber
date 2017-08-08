@@ -270,6 +270,12 @@ Plumber = f.unit({
 
 		block.watchEvents.push(
 			new EventHandler(this.onSubDrag, this, block).listen('dragstart', block.element))
+
+		var sample = this.sampler.samples[block.data]
+		if(!sample) return
+
+		block.thumb = dom.img(sample.thumb, 'sample-thumb absmid', block.element)
+		// console.log(sample.thumb)
 	},
 
 	onSubDrag: function(block, e) {
