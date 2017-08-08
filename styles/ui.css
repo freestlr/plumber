@@ -203,6 +203,10 @@ body .dg .close-button {
 	background-color: #ebeff2;
 	z-index: 5;
 }
+.empty-view-message.hidden {
+	opacity: 0;
+	visibility: hidden;
+}
 .empty-view-message-center {
 	width: 500px;
 	height: 280px;

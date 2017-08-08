@@ -69,10 +69,11 @@ Plumber = f.unit({
 		dom.text(this.splitViewMessage, 'no compatible connections')
 		this.splitViewMessageVisible = new Gate(Gate.AND, true)
 		this.splitViewMessageVisible.events.on('change', dom.display, dom, this.splitViewMessage)
+		this.splitViewMessageVisible.events.on('opened', this.updateSplitViewMessagePosition, this)
 		this.splitViewMessageVisible.off('g_vm_cons')
 
 
-		this.emptyViewMessage = dom.div('empty-view-message absmid')
+		this.emptyViewMessage = dom.div('empty-view-message out-03 absmid')
 		var center = dom.div('empty-view-message-center absmid', this.emptyViewMessage)
 		,   frame  = dom.div('empty-view-message-frame absmid', this.emptyViewMessage)
 		,   text   = dom.div('empty-view-message-text absmid', this.emptyViewMessage)
@@ -254,11 +255,9 @@ Plumber = f.unit({
 
 
 	onViewClear: function() {
-		// this.tree = null
-		// this.view.setTree(null)
-		this.clearTree()
 		this.displaySample(null)
 		this.preloadSample(null)
+		this.clearTree()
 	},
 
 	onViewClear2: function() {
@@ -316,6 +315,8 @@ Plumber = f.unit({
 		} else {
 			this.preloadSample(sample, this.setMainTree, this.view)
 		}
+
+		dom.togclass(this.emptyViewMessage, 'hidden', true)
 	},
 
 	preloadSample: function(sample, onComplete, targetView) {
@@ -551,7 +552,7 @@ Plumber = f.unit({
 		this.tree = tree
 		this.view.setTree(this.tree)
 
-		dom.display(this.emptyViewMessage, !this.tree)
+		dom.togclass(this.emptyViewMessage, 'hidden', !!this.tree)
 	},
 
 
