@@ -44,8 +44,7 @@ Sampler.prototype = {
 			var loader = new THREE.ObjectLoader
 			,   defer = new Defer
 
-			loader.parse(json, function(object) { defer.resolve(console.log(object),object) })
-			console.log('wtf')
+			loader.parse(json, function(object) { defer.resolve(object) })
 			return defer
 
 		}).then(function(object) {
