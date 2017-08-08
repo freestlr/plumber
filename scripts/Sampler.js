@@ -28,6 +28,34 @@ Sampler.prototype = {
 
 	getList: function() {
 		return Object.keys(this.samples)
+	},
+
+	readFile: function(file, id) {
+		var reader = new FileReader
+
+		var defer = new Defer(function() {
+			return JSON.parse(reader.result)
+		})
+
+		dom.on('load', reader, f.binds(defer.resolve, defer))
+		reader.readAsText(file)
+
+		return defer.then(function(json) {
+			var loader = new THREE.ObjectLoader
+			,   defer = new Defer
+
+			loader.parse(json, function(object) { defer.resolve(console.log(object),object) })
+			console.log('wtf')
+			return defer
+
+		}).then(function(object) {
+			return this.addSample({
+				id: id || f.range(10).map(f.randchar).join(''),
+				src: file.name,
+				object: object
+			})
+
+		}, this)
 	}
 }
 

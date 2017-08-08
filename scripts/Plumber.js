@@ -3,15 +3,17 @@ Plumber = f.unit({
 
 	mode: 'constructor',
 
+	catchFiles: false,
+	catchSamples: true,
+
 	srcAtlas: 'images/atlas.svg',
 	srcCubemap: 'images/textures/cubemap.png',
-	srcConfig: 'configs/samples.json',
 	srcSamples: 'samples/',
 
 	init: function(options) {
 		this.get   = new Loader
 		this.timer = new Timer(this.onTick, this)
-		this.file  = new FileImport
+		this.ready = new Defer
 
 		this.imagery = new Imagery
 
@@ -51,7 +53,6 @@ Plumber = f.unit({
 			// clearColor: 0x00FF00
 		})
 
-		this.list = dom.div('samples-list')
 
 		this.viewTween = new TWEEN.Tween({ position: 1 })
 			.to({ position: 1 }, 400)
@@ -75,7 +76,6 @@ Plumber = f.unit({
 		this.element = this.tiles.element
 
 
-		this.makeMenu()
 		this.makeDeletePrompt()
 
 
@@ -84,7 +84,6 @@ Plumber = f.unit({
 		dom.addclass(this.renderer.domElement, 'canvas-main')
 		dom.prepend(this.element, this.renderer.domElement)
 		dom.append(this.element, this.splitViewMessage)
-		dom.append(this.list, this.file.element)
 
 
 		for(var name in options) switch(name) {
@@ -101,15 +100,14 @@ Plumber = f.unit({
 				dom.display(this.view2.clearButton, options.clearButton)
 			break
 
-			case 'sampleList':
-				this.srcConfig = options.sampleList
+			default:
+				if(name in this) this[name] = options[name]
 			break
 		}
 
 
 		this.setMode(this.mode, true)
 
-		this.ready = new Defer
 		this.fetch()
 	},
 
@@ -121,8 +119,8 @@ Plumber = f.unit({
 		,   clients
 		switch(mode) {
 			case 'constructor':
-				layout = ['h', ['h', 0, 0, 1], 0, 0.8]
-				clients = [this.view, this.view2, { element: this.list }]
+				layout = ['h', 0, 0, 1]
+				clients = [this.view, this.view2]
 			break
 
 			default:
@@ -174,15 +172,20 @@ Plumber = f.unit({
 		return this.tree.retrieveConnections({ connected: true }, true)
 	},
 
-	addElement: function(id, src) {
-		var sample = this.sampler.addSample({
-			id: id,
-			src: src
-		})
+	addElement: function(id, src, link) {
+		var sample = src ? this.addSample(id, src, link) : this.sampler.samples[id]
+		if(!sample) return
 
-		this.addSampleListItem(sample)
 		this.displaySample(sample.id)
 		return this.deferSample
+	},
+
+	addSample: function(id, src, link) {
+		return this.sampler.addSample({
+			id: id,
+			src: src,
+			link: link
+		})
 	},
 
 	fetch: function() {
@@ -192,21 +195,9 @@ Plumber = f.unit({
 		this.get.image(this.srcCubemap).defer
 			.then(this.imagery.unwrapCubemap3x2, this.imagery)
 
-		if(this.srcConfig) this.get.json(this.srcConfig).defer
-			.then(this.sampler.addSampleList, this.sampler)
-			.then(this.fetchItemsDone, this)
-
 		this.get.ready().detach(this.run, this)
 	},
 
-	fetchItemsDone: function() {
-		this.sampleMenu.addItemList(this.sampler.getList().map(function(sid) {
-			return {
-				text: this.sampler.samples[sid].name,
-				data: sid
-			}
-		}, this))
-	},
 
 	makeDeletePrompt: function() {
 		var tip = new Block.Tip({
@@ -224,28 +215,14 @@ Plumber = f.unit({
 		dom.text(ok, 'Yes')
 		dom.text(no, 'No')
 
-		new EventHandler(this.deleteNode, this).listen('tap', ok)
-		new EventHandler(this.closeDeletePrompt, this).listen('tap', no)
+		tip.watchEvents.push(
+			new EventHandler(this.deleteNode, this).listen('tap', ok),
+			new EventHandler(this.closeDeletePrompt, this).listen('tap', no))
 
 		this.deletePromptTipText = text
 		this.deletePromptTip = tip
 	},
 
-	makeMenu: function() {
-		this.sampleMenu = new Block.Menu({
-			eroot: this.list,
-			ename: 'sample-menu',
-			deselect: true,
-
-			options: {
-				factory: Block.Toggle,
-				ename: 'sample-item'
-			}
-		})
-
-		this.sampleMenu.events.on('add-block', this.onSubAdd, this)
-		this.sampleMenu.blocks.forEach(this.onSubAdd, this)
-	},
 
 	makeGUI: function() {
 		this.gui = new dat.GUI({
@@ -265,30 +242,6 @@ Plumber = f.unit({
 		}
 	},
 
-	onSubAdd: function(block) {
-		block.element.setAttribute('draggable', true)
-
-		block.watchEvents.push(
-			new EventHandler(this.onSubDrag, this, block).listen('dragstart', block.element))
-
-		var sample = this.sampler.samples[block.data]
-		if(!sample) return
-
-		block.thumb = dom.img(sample.thumb, 'sample-thumb absmid', block.element)
-		// console.log(sample.thumb)
-	},
-
-	onSubDrag: function(block, e) {
-		e.dataTransfer.setData('text/sample', block.data)
-	},
-
-	onSubChange: function(sid) {
-		this.displaySample(sid)
-
-		if(!sid) {
-			this.events.emit('onAddElement', { status: 'canceled' })
-		}
-	},
 
 
 
@@ -326,7 +279,6 @@ Plumber = f.unit({
 		if(sample === this.sampleView2) return
 
 		this.sampleView2 = this.tree || this.mode === 'viewer' ? sample : null
-		this.sampleMenu.setItem(this.sampleView2 && this.sampleView2.id)
 
 		this.splitScreen = !!(this.sampleView2 && (this.sampleView2.object || this.sampleView2.src))
 
@@ -437,7 +389,7 @@ Plumber = f.unit({
 			}
 		}
 
-		// console.log(groups2.length)
+
 		this.hasAvailableConnections = groups2.length
 		this.splitViewMessageVisible.set(!this.hasAvailableConnections, 'g_vm_cons')
 		this.updateSplitViewMessagePosition()
@@ -603,10 +555,6 @@ Plumber = f.unit({
 	},
 
 
-	// onhashchange: function(e) {
-	// 	this.displaySample(location.hash.slice(1))
-	// }
-
 	onresize: function() {
 		var e = this.tiles.element
 		,   w = e.offsetWidth
@@ -666,61 +614,57 @@ Plumber = f.unit({
 	},
 
 	onDragOver: function(e) {
-		e.dataTransfer.dropEffect = 'copy'
-		e.preventDefault()
+		if(this.catchFiles || this.catchSamples) {
+			e.dataTransfer.dropEffect = 'copy'
+			e.preventDefault()
+		}
 	},
 
 	onDrop: function(e) {
 		var dt = e.dataTransfer
 
-		var file = dt.files[0]
-		if(file) {
-			this.file.importJSON(file)
+		if(dt.files && dt.files.length) {
+
+			if(this.catchFiles) {
+				this.importFile(dt.files[0])
+				e.preventDefault()
+			}
 
 		} else {
-			var sid = dt.getData('text/sample')
-			,   sample = this.sampler.samples[sid]
+			if(this.catchSamples) {
+				var sid = dt.getData('text/sid')
+				,   sample = this.sampler.samples[sid]
 
-			this.preloadSample(sample, this.connectSample, this.view)
+				this.preloadSample(sample, this.connectSample, this.view)
+				e.preventDefault()
+			}
 		}
-
-		e.preventDefault()
 	},
 
-	onSampleImport: function(item) {
-		var sample = this.sampler.addSample(item)
+	importFile: function(file, id) {
+		return this.sampler.readFile(file, id)
+			.then(this.onSampleImport, this.onSampleImportFail, this)
+	},
 
-		this.addSampleListItem(sample)
+
+
+	onSampleImport: function(sample) {
 		this.displaySample(sample.id)
+		this.events.emit('onImportElement', sample)
+		return sample
 	},
 
-	addSampleListItem: function(sample, set) {
-		var menu = this.sampleMenu
-
-		menu.removeBlock(menu.blocks[menu.getIndex(sample.id)])
-
-		var block = menu.addItem({
-			data: sample.id,
-			text: sample.name
-		})
-
-		block.remove = dom.div('sample-remove absmid hand', block.element)
-
-		block.watchAtlas.push(
-			Atlas.set(block.remove, 'i-cross', 'absmid'))
-
-		block.watchEvents.push(
-			new EventHandler(this.removeSample, this, block).listen('tap', block.remove))
-
-		if(set) menu.set(menu.blocks.indexOf(block))
+	onSampleImportFail: function(e) {
+		console.warn('File import error:', e)
 	},
+
+
 
 
 	onNodeSelect: function(node, prev) {
 		var system = this.view.markers
 		if(prev && prev.nodeMarker) {
 			system.removeMarker(prev.nodeMarker)
-			prev.nodeMarker.hDel.release()
 			prev.nodeMarker = null
 		}
 
@@ -732,7 +676,7 @@ Plumber = f.unit({
 
 
 			m.bDel = dom.div('marker-action', m.content)
-			m.hDel = new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel)
+			m.watchEvents.push(new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel))
 			m.watchAtlas.push(Atlas.set(m.bDel, 'i-delete'))
 
 			if(node.sample.link) {
@@ -779,9 +723,6 @@ Plumber = f.unit({
 
 		master.events.once('connect_end', function() {
 			this.animatedConnections--
-			if(!this.animatedConnections) {
-				this.view.focusOnTree()
-			}
 		}, this)
 
 		master.playConnection()
@@ -791,18 +732,16 @@ Plumber = f.unit({
 		this.events.emit('onAddElement', { status: 'connected' })
 	},
 
-	removeSample: function(block) {
-		this.sampleMenu.removeBlock(block, true)
-
-		var sample = this.sampler.samples[block.data]
+	removeSample: function(id) {
+		var sample = this.sampler.samples[id]
 		if(sample) {
-			delete this.sampler.samples[sample.id] }
+			delete this.sampler.samples[id]
+		}
 	},
 
 	run: function() {
 		this.makeGUI()
 
-		// new EventHandler(this.onhashchange, this).listen('hashchange', window)
 		new EventHandler(this.onresize, this).listen('resize',  window)
 		new EventHandler(this.onkey,    this).listen('keydown', window)
 		new EventHandler(this.onkey,    this).listen('keyup',   window)
@@ -813,8 +752,6 @@ Plumber = f.unit({
 		new EventHandler(this.onDrop,     this).listen('drop',     this.view .element)
 		new EventHandler(this.onDrop,     this).listen('drop',     this.view2.element)
 
-		this.sampleMenu.events.on('change', this.onSubChange, this)
-		this.file.events.on('import', this.onSampleImport, this)
 
 		this.tiles.events.on('update', this.onTilesUpdate, this)
 
@@ -827,7 +764,6 @@ Plumber = f.unit({
 		this.view.events.on('node_select', this.onNodeSelect, this)
 
 		this.onresize()
-		// this.onhashchange()
 
 
 

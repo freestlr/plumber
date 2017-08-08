@@ -1,0 +1,69 @@
+.sidebar {
+	position: absolute;
+	background-color: white;
+	border-left: 1px solid black;
+	box-sizing: border-box;
+}
+
+.sample-menu {
+	margin-top: 80px;
+}
+
+.sample-item {
+	position: relative;
+	height: 42px;
+	line-height: 42px;
+	font-size: 12px;
+	font-family: monospace;
+	text-align: center;
+	border-bottom: 1px solid black;
+	white-space: nowrap;
+}
+.sample-item:hover {
+	background-color: #eee;
+}
+.sample-item.active {
+	background-color: #bbb;
+}
+
+.sample-remove {
+	left: auto;
+	right: 8px;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	border: 1px solid transparent;
+}
+.sample-remove:hover {
+	//background-color: #ccc;
+	border-color: black;
+}
+.sample-remove svg {
+	width: 10px;
+	height: 10px;
+}
+
+.sample-thumb {
+	left: 8px;
+	right: auto;
+	height: 40px;
+}
+
+
+
+.file-import {
+	position: absolute;
+	left: 10%;
+	right: 10%;
+	top: 20px;
+	width: 80%;
+	height: 42px;
+	border: 1px solid black;
+}
+.file-import svg {
+	width: 95%;
+	height: 95%;
+}
+.file-import:hover {
+	background-color: #eee;
+}

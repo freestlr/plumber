@@ -134,6 +134,10 @@ EventEmitter.prototype = {
 		}
 	},
 
+	relay: function(type, emitter, out) {
+		this.on(type, emitter.emit, emitter, out || type)
+	},
+
 	link: function(emitter, prefix, data) {
 		this._add(this.links, {
 			emitter : emitter,

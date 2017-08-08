@@ -208,7 +208,7 @@ Block.List = f.unit(Block, {
 
 	addBlock: function(block) {
 		this.blocks.push(block)
-		this.events.emit('add-block', block)
+		this.events.emit('block_add', block)
 		return block
 	},
 
