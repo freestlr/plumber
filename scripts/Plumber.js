@@ -688,13 +688,15 @@ Plumber = f.unit({
 			m.align = 'bottom'
 			m.visible.on()
 
+			dom.remclass(m.content, 'marker-interactive')
+
 
 			m.bDel = dom.div('marker-action', m.content)
 			m.watchEvents.push(new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel))
 			m.watchAtlas.push(Atlas.set(m.bDel, 'i-delete'))
 
 			if(node.sample.link) {
-				m.bInfo = dom.a(node.sample.link, 'marker-action', m.content)
+				m.bInfo = dom.a(node.sample.link, 'marker-action out-02', m.content)
 				m.bInfo.setAttribute('target', '_blank')
 				m.watchAtlas.push(Atlas.set(m.bInfo, 'i-info'))
 			}

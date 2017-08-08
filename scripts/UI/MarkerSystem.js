@@ -97,9 +97,9 @@ UI.Marker = f.unit(Block.Tip, {
 		dom.remclass(this.content, 'tip-content')
 
 		dom.addclass(this.arrow,   'marker-arrow')
-		dom.addclass(this.content, 'marker-content marker-interactive out-03')
+		dom.addclass(this.content, 'marker-content marker-interactive out-02')
 
-		this.arrowLine = dom.div('marker-arrow-line marker-interactive out-03', this.arrow)
+		this.arrowLine = dom.div('marker-arrow-line marker-interactive out-02', this.arrow)
 
 		this.elemGroup = dom.span('marker-group', this.content)
 		this.elemInfo = dom.span('marker-info', this.content)
@@ -109,7 +109,7 @@ UI.Marker = f.unit(Block.Tip, {
 
 
 		this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-		this.svg.className.baseVal = 'marker-depth-line marker-interactive out-03'
+		this.svg.className.baseVal = 'marker-depth-line marker-interactive out-02'
 
 		this.svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line')
 		this.svgLine.setAttribute('x1', 0)

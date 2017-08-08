@@ -40,15 +40,17 @@
 }
 
 .marker-group {
-	padding: 0 10px;
-	line-height: 56px;
+	width: 64px;
+	height: 64px;
+	line-height: 60px;
 	font-family: Arial, sans-serif;
-	font-size: 48px;
+	font-size: 52px;
+	text-align: center;
 }
 .marker-group svg {
 	width: 42px;
 	height: 42px;
-	padding-top: 10px;
+	margin: 11px;
 }
 .marker-info {
 	display: none;
@@ -67,33 +69,40 @@
 	display: inline-block;
 	padding: 12px;
 	background-color: white;
-}
-.marker-action:hover {
-	background-color: #ff3;
+	background-color: #ebeff2;
+	fill: #537078;
 }
 .marker-action svg {
 	width: 32px;
 	height: 32px;
-	fill: black;
+}
+.marker-action:hover {
+	background-color: #537078;
+	fill: #ebeff2;
 }
 
 
 .marker .marker-interactive {
-	opacity: 1;
-	background-color: white;
-	stroke: white;
-	transition-property: background-color, opacity, stroke;
+	color: #9ba9b2;
+	fill: #9ba9b2;
+	// stroke: #f7fbfd;
+	// background-color: #f7fbfd;
+	stroke: #ebeff2;
+	background-color: #ebeff2;
+	transition-property: color, background-color, stroke, fill;
 }
 
 .marker.connected .marker-interactive {
-	background-color: skyblue;
 	color: white;
+	fill: white;
 	stroke: skyblue;
+	background-color: skyblue;
 }
 .marker.connected.master .marker-interactive {
-	background-color: tomato;
 	color: white;
+	fill: white;
 	stroke: tomato;
+	background-color: tomato;
 }
 
 .marker:hover {
@@ -104,18 +113,25 @@
 }
 
 .marker:hover .marker-interactive {
-	stroke: yellow;
-	background-color: yellow;
+	color: #84b171;
+	fill: #84b171;
+	stroke: #bfffaf;
+	background-color: #bfffaf;
 }
 
 .marker.selected .marker-interactive {
-	stroke: lime;
-	background-color: lime;
+	color: white;
+	fill: white;
+	stroke: #58e85d;
+	background-color: #58e85d;
 }
 
 .marker.connected .marker-interactive,
 .marker.inactive  .marker-interactive {
-	opacity: 0.3;
+	color: #bbc4c9;
+	fill: #bbc4c9;
+	stroke: #cfd8dd;
+	background-color: #cfd8dd;
 	pointer-events: none;
 }
 .marker svg.marker-interactive {

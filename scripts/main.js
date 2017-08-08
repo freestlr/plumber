@@ -35,7 +35,7 @@ function addSample(item) {
 
 	var sample = main.addSample(item.id, item.src, item.link)
 
-	sidebar.addSample(sample.id, sample.name, sample.thumb, false)
+	sidebar.addSample(item.id, sample.name, item.thumb, false)
 }
 
 function onImportElement(sample) {

@@ -31,10 +31,7 @@ UI.Sidebar = f.unit(Block, {
 
 		this.remSample(id)
 
-		var block = menu.addItem({
-			data: id,
-			text: name
-		})
+		var block = menu.addItem({ data: id })
 
 		block.element.setAttribute('draggable', true)
 
@@ -43,11 +40,15 @@ UI.Sidebar = f.unit(Block, {
 
 
 		if(thumb) {
-			block.thumb = dom.img(thumb, 'sample-thumb absmid', block.element)
+			dom.img(thumb, 'sample-thumb', block.element)
+		}
+
+		if(name) {
+			dom.text(dom.div('sample-name', block.element), name)
 		}
 
 		if(removable) {
-			block.remove = dom.div('sample-remove absmid hand', block.element)
+			block.remove = dom.div('sample-remove hand', block.element)
 
 			block.watchAtlas.push(
 				Atlas.set(block.remove, 'i-cross', 'absmid'))

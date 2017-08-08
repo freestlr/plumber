@@ -168,18 +168,20 @@ body .dg .close-button {
 
 .view-clear {
 	position: absolute;
-	top: 14px;
+	top: 21px;
 	right: 24px;
-	width: 56px;
-	height: 56px;
+	width: 62px;
+	height: 62px;
 	border-radius: 50%;
+	fill: #537078;
 }
 .view-clear svg {
 	width: 26px;
 	height: 26px;
 }
 .view-clear:hover {
-	background-color: #ccc;
+	background-color: #537078;
+	fill: white;
 }
 
 
@@ -189,9 +191,10 @@ body .dg .close-button {
 	position: absolute;
 	padding: 8px 12px;
 	font: 14px Arial, sans-serif;
-	color: black;
-	background-color: white;
-	border: 1px solid black;
+	color: #537078;
+	background-color: #ebeff2;
+	border: 1px solid #537078;
+	border-radius: 2px;
 	z-index: 4;
 }
 

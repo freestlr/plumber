@@ -1,69 +1,79 @@
 .sidebar {
 	position: absolute;
-	background-color: white;
-	border-left: 1px solid black;
-	box-sizing: border-box;
+	background-color: #546f7a;
 }
 
 .sample-menu {
-	margin-top: 80px;
+	margin: 20px;
+	border-radius: 2px;
+	overflow: hidden;
 }
 
 .sample-item {
 	position: relative;
-	height: 42px;
-	line-height: 42px;
-	font-size: 12px;
-	font-family: monospace;
+	height: 156px;
+	font-size: 13px;
+	font-weight: bold;
 	text-align: center;
-	border-bottom: 1px solid black;
+	color: #4e6e7b;
+	border-bottom: 1px solid #eee;
+	background-color: white;
 	white-space: nowrap;
 }
+.sample-item:last-child {
+	border-bottom: none;
+}
 .sample-item:hover {
-	background-color: #eee;
+	background-color: #ebeff2;
 }
 .sample-item.active {
-	background-color: #bbb;
+	background-color: #cfd8dd;
+}
+
+.sample-name {
+	position: absolute;
+	width: 100%;
+	height: 18px;
+	bottom: 18px;
 }
 
 .sample-remove {
-	left: auto;
+	position: absolute;
+	top: 8px;
 	right: 8px;
 	width: 24px;
 	height: 24px;
 	border-radius: 50%;
-	border: 1px solid transparent;
-}
-.sample-remove:hover {
-	//background-color: #ccc;
-	border-color: black;
+	fill: #537078;
 }
 .sample-remove svg {
 	width: 10px;
 	height: 10px;
 }
+.sample-remove:hover {
+	background-color: #537078;
+	fill: white;
+}
 
 .sample-thumb {
-	left: 8px;
-	right: auto;
-	height: 40px;
+	height: 75%;
 }
 
 
 
 .file-import {
-	position: absolute;
-	left: 10%;
-	right: 10%;
-	top: 20px;
-	width: 80%;
-	height: 42px;
-	border: 1px solid black;
+	position: relative;
+	margin: 20px 20px 0;
+	height: 62px;
+	background-color: white;
+	border-radius: 2px;
 }
 .file-import svg {
-	width: 95%;
-	height: 95%;
+	width: 40px;
+	height: 40px;
+	margin: auto;
+	fill: #537078;
 }
 .file-import:hover {
-	background-color: #eee;
+	background-color: #ebeff2;
 }

@@ -43,7 +43,7 @@ function View3(options) {
 	this.smVBlur   = this.makeShader(THREE.VerticalBlurShader)
 	this.smFXAA    = this.makeShader(THREE.FXAAShader)
 
-	this.clearButton = dom.div('view-clear hand', this.element)
+	this.clearButton = dom.div('view-clear out-02 hand', this.element)
 	Atlas.set(this.clearButton, 'i-cross', 'absmid')
 	dom.on('tap', this.clearButton, this.events.will('view_clear'))
 
