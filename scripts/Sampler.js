@@ -130,7 +130,12 @@ Sample.prototype = {
 
 				loader.json(url).defer.then(function(data) {
 					var loader = new THREE.ObjectLoader
-					return loader.parse(data)
+					// return loader.parse(data)
+					var defer = new Defer
+					loader.parse(data, function(object) {
+						defer.resolve(object)
+					})
+					return defer
 
 				}, this).push(defer)
 			break

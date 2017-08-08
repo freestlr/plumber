@@ -265,10 +265,15 @@ Imagery.prototype = {
 
 		for(var i = 0; i < maps.length; i++) {
 			var map = maps[i]
+			var tex = { image: map.image }
+
+			this.tileTexture(tex)
 
 			map.wrapS = THREE.RepeatWrapping
 			map.wrapT = THREE.RepeatWrapping
-			// map.image = this.tileTexture({ image: map.image }).image
+			map.image = tex.image
+			map.repeat.x *= tex.repeatX
+			map.repeat.y *= tex.repeatY
 		}
 
 		m.envMap = this.skybox
