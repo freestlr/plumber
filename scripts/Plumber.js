@@ -292,10 +292,8 @@ Plumber = f.unit({
 
 		this.splitScreen = !!(this.sampleView2 && (this.sampleView2.object || this.sampleView2.src))
 
-		if(!this.splitScreen) {
-			this.view.markers.markersVisible.off('g_m_view2')
-			this.view2.markers.markersVisible.off('g_m_view2')
-		}
+		this.view.markers.markersVisible.off('g_m_view2')
+		this.view2.markers.markersVisible.off('g_m_view2')
 
 		this.splitViewMessageVisible.set(this.splitScreen, 'g_vm_screen')
 
@@ -727,6 +725,9 @@ Plumber = f.unit({
 
 	animatedConnections: 0,
 	makeViewConnection: function(master, slave) {
+		this.view.markers.markersVisible.off('g_m_view2')
+		this.view2.markers.markersVisible.off('g_m_view2')
+
 		this.view.selectConnection(null)
 		this.view2.selectConnection(null)
 		this.view2.setTree(null)

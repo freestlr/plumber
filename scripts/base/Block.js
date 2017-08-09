@@ -585,7 +585,7 @@ Block.Tip = f.unit(Block, {
 		t.o = +v
 
 		if(this.visible.value) {
-			dom.append(this.eroot, this.element)
+			dom.append(this.tipRoot, this.element)
 		}
 
 		this.transitionTween.start()

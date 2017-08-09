@@ -20,7 +20,7 @@ UI.MarkerSystem = f.unit(Block, {
 		if(!this.projector) return
 
 		var marker = new UI.Marker({
-			eroot: this.element,
+			tipRoot: this.element,
 			events: this.events,
 			projector: this.projector,
 			// point: this.projector.addPoint(),
