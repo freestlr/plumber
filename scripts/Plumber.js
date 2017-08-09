@@ -7,7 +7,7 @@ Plumber = f.unit({
 	catchSamples: true,
 
 	srcAtlas: 'images/atlas.svg',
-	srcCubemap: 'images/textures/cubemap.png',
+	srcCubemap: 'images/cubemap.png',
 
 	init: function(options) {
 		this.get   = new Loader
