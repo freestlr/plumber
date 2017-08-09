@@ -8,7 +8,6 @@ Plumber = f.unit({
 
 	srcAtlas: 'images/atlas.svg',
 	srcCubemap: 'images/textures/cubemap.png',
-	srcSamples: 'samples/',
 
 	init: function(options) {
 		this.get   = new Loader
@@ -21,7 +20,6 @@ Plumber = f.unit({
 
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
-		this.sampler.folder = this.srcSamples
 
 
 		this.connectionParts = []
@@ -317,7 +315,7 @@ Plumber = f.unit({
 			this.preloadSample(sample, this.setMainTree, this.view)
 		}
 
-		dom.togclass(this.emptyViewMessage, 'hidden', true)
+		dom.togclass(this.emptyViewMessage, 'hidden', this.tree || sample)
 	},
 
 	preloadSample: function(sample, onComplete, targetView) {

@@ -77,7 +77,7 @@ function Sample(def, parent) {
 	}
 
 	if(this.src) {
-		this.name = this.src.replace(/\.[^\.]*$/, '')
+		this.name = this.src.replace(/\.[^\.]*$/, '').split('/').pop()
 	}
 
 	if(this.object) {
@@ -236,6 +236,8 @@ Sample.prototype = {
 		line.geometry.colors.push(new THREE.Color(0, 0, 0), new THREE.Color(1, 0, 0))
 		line.position.copy(joint.point)
 		line.name = 'debug-connection-normal'
+
+		object.visible = false
 
 		this.object.add(line)
 		this.joints.push(joint)
