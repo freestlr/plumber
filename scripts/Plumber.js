@@ -254,14 +254,18 @@ Plumber = f.unit({
 
 
 	onViewClear: function() {
-		this.displaySample(null)
-		this.preloadSample(null)
-		this.clearTree()
+		this.clear()
 	},
 
 	onViewClear2: function() {
 		this.displaySample(null)
 		this.events.emit('onAddElement', { status: 'canceled' })
+	},
+
+	clear: function() {
+		this.displaySample(null)
+		this.preloadSample(null)
+		this.clearTree()
 	},
 
 
