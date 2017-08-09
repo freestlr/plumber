@@ -47,9 +47,13 @@ DEPTH - [число] глубина крепления, в тех же един�
 	2. комбинация PARAM креплений одна из следующих:
 		(f + m)
 		(u + u)
+		(u + f)
+		(u + m)
 		(FP + MP)
 		(female + male)
 		(uniform + uniform)
+		(uniform + female)
+		(uniform + male)
 		(in + out)
 		(inner + outer)
 		(internal + external)

@@ -149,9 +149,13 @@ TConnection = f.unit({
 	paramPairsAllow: [
 		['f', 'm'],
 		['u', 'u'],
+		['u', 'f'],
+		['u', 'm'],
 		['FP', 'MP'],
 		['female', 'male'],
 		['uniform', 'uniform'],
+		['uniform', 'female'],
+		['uniform', 'male'],
 		['in', 'out'],
 		['inner', 'outer'],
 		['internal', 'external']
