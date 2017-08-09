@@ -49,7 +49,7 @@ Sampler.prototype = {
 
 		}).then(function(object) {
 			return this.addSample({
-				id: id || f.range(10).map(f.randchar).join(''),
+				id: id,
 				src: file.name,
 				object: object
 			})
@@ -71,9 +71,8 @@ function Sample(def, parent) {
 	this.size   = new THREE.Vector3
 	this.sphere = new THREE.Sphere
 
-
-	if(this.hide) {
-		return
+	if(!this.id) {
+		this.id = f.range(10).map(f.randchar).join('')
 	}
 
 	if(this.src) {

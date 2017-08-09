@@ -35,11 +35,11 @@ function addSample(item) {
 
 	var sample = main.addSample(item.id, item.src, item.link)
 
-	sidebar.addSample(item.id, sample.name, item.thumb, false)
+	sidebar.addSample(item.id, item.id, item.thumb, false)
 }
 
 function onImportElement(sample) {
-	sidebar.addSample(sample.id, sample.name, sample.thumb, true)
+	sidebar.addSample(sample.id, sample.id, sample.thumb, true)
 	sidebar.setSample(sample.id)
 }
 
