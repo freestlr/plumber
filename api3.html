@@ -76,6 +76,7 @@
 			width: 640px;
 			height: 480px;
 			margin-right: 24px;
+			margin-bottom: 24px;
 		}
 		.button {
 			display: inline-block;
@@ -89,33 +90,60 @@
 			background-color: #333;
 			cursor: pointer;
 		}
+		.event-log {
+			width: 380px;
+			height: 400px;
+			background-color: #ebeff2;
+			overflow: auto;
+		}
 	</style>
 </head>
 
 <body>
 	<div class="view item1"></div>
-	<div class="button button-next">Next model</div>
+	<div class="button button-model-1">model 1</div>
+	<div class="button button-model-2">model 2</div>
+	<div class="button button-model-3">model 3</div>
+
+	<div>
+		<span>Events:</span>
+		<div class="event-log"></div>
+	</div>
 </body>
 
 <script>
 	var plumber = new Plumber({
 		eroot: document.querySelector('.item1'),
-		mode: 'viewer'
+		mode: 'constructor'
 	})
 
-	plumber.addSample('m1', 'samples/EFG6K.json')
-	plumber.addSample('m2', 'samples/B100_12MP-12MP.json')
-	plumber.addSample('m3', 'samples/12G-12FBSPORX_v2.json')
+	document.querySelector('.button-model-1').addEventListener('click', function() {
+		plumber.addElement('m1', 'samples/10EFG6K.json')
+	})
+
+	document.querySelector('.button-model-2').addEventListener('click', function() {
+		plumber.addElement('m2', 'samples/B100_12MP-12MP.json')
+	})
+
+	document.querySelector('.button-model-3').addEventListener('click', function() {
+		plumber.addElement('m3', 'samples/12G-12FBSPORX_v2.json')
+	})
 
 
-	var samples = ['m1', 'm2', 'm3']
-	var index = -1
 
-	var button = document.querySelector('.button-next')
-	button.addEventListener('click', function() {
-		index = (index + 1) % samples.length
+	function log(text) {
+		var e = document.querySelector('.event-log')
 
-		plumber.displaySample(samples[index])
+		e.innerHTML += '<br/>'+ text
+		e.scrollTop = 99999
+	}
+
+	plumber.events.on('onAddElement', function(e) {
+		log('onAddElement, status: '+ e.status)
+	})
+
+	plumber.events.on('onRemoveElement', function(e) {
+		log('onRemoveElement, removed '+ e.removeCount +' elements')
 	})
 
 
