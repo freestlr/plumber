@@ -113,7 +113,7 @@ View3.prototype = {
 
 	renderTarget: null,
 
-	clearColor: '#FFFFFF',
+	clearColor: '#EEEEEE',
 
 	focusThetaMin: 0.5,
 	focusThetaMax: 2.2,

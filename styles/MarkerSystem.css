@@ -68,8 +68,8 @@
 .marker-action {
 	display: inline-block;
 	padding: 12px;
-	background-color: white;
 	background-color: #ebeff2;
+	background-color: white;
 	fill: #537078;
 }
 .marker-action svg {
@@ -85,10 +85,10 @@
 .marker .marker-interactive {
 	color: #9ba9b2;
 	fill: #9ba9b2;
-	// stroke: #f7fbfd;
-	// background-color: #f7fbfd;
-	stroke: #ebeff2;
-	background-color: #ebeff2;
+	//stroke: #ebeff2;
+	//background-color: #ebeff2;
+	stroke: #fff;
+	background-color: #fff;
 	transition-property: color, background-color, stroke, fill;
 }
 
