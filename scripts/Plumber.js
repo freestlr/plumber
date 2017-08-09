@@ -241,7 +241,8 @@ Plumber = f.unit({
 
 		this.gui.closed = true
 
-		this.gui.addColor(this.view.stencilHover.params, 'drawColor').name('Hover').onChange(redraw)
+		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
+		this.gui.addColor(this.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
 		this.gui.addColor(this.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
 
 		var self = this
