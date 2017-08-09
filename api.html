@@ -59,11 +59,15 @@
 	<script src="scripts/Plumber.js"></script>
 
 
+	<link rel="stylesheet" href="styles/global.css">
 	<link rel="stylesheet" href="styles/ui.css">
 	<link rel="stylesheet" href="styles/TileView.css">
 	<link rel="stylesheet" href="styles/MarkerSystem.css">
 
 	<style>
+		body {
+			margin: 24px;
+		}
 		.view {
 			position: relative;
 		}
@@ -71,86 +75,48 @@
 			display: inline-block;
 			width: 640px;
 			height: 480px;
-			margin: 24px;
+			margin-right: 24px;
 		}
-		.item2 {
+		.button {
 			display: inline-block;
-			width: 320px;
-			height: 240px;
-			margin: 24px;
-		}
-		.item3 {
-			display: inline-block;
-			vertical-align: middle;
-			width: 768px;
-			height: 480px;
-			margin: 24px;
-		}
-		.item4 {
-			display: inline-block;
-			vertical-align: middle;
-			width: 128px;
-			height: 480px;
-			margin: 24px;
+			vertical-align: top;
+			padding: 8px 12px;
 			background-color: #eee;
-			border: 1px solid #ccc;
+			user-select: none;
+		}
+		.button:hover {
+			color: #eee;
+			background-color: #333;
+			cursor: pointer;
 		}
 	</style>
 </head>
 
 <body>
 	<div class="view item1"></div>
-	<div class="view item2"></div>
-	<div class="view item3"></div>
-	<div class="view item4"></div>
+	<div class="button button-next">Next model</div>
 </body>
 
 <script>
-	var p1 = new Plumber({
+	var plumber = new Plumber({
 		eroot: document.querySelector('.item1'),
-		sampleList: null,
 		mode: 'viewer'
 	})
 
-	p1.addElement('test', 'iso.json').then(function() {
-		p1.view2.orbitTo(null, 0, 20)
+	plumber.addSample('m1', 'samples/EFG6K.json')
+	plumber.addSample('m2', 'samples/B100_12MP-12MP.json')
+	plumber.addSample('m3', 'samples/12G-12FBSPORX_v2.json')
+
+
+	var samples = ['m1', 'm2', 'm3']
+	var index = -1
+
+	var button = document.querySelector('.button-next')
+	button.addEventListener('click', function() {
+		index = (index + 1) % samples.length
+
+		plumber.displaySample(samples[index])
 	})
-
-
-
-
-
-
-	var p2 = new Plumber({
-		eroot: document.querySelector('.item2'),
-		clearButton: false,
-		mode: 'viewer'
-	})
-
-	p2.ready.then(function() {
-		p2.displaySample('10EFG6K')
-	})
-
-
-
-	var p3 = new Plumber({
-		eroot: document.querySelector('.item3'),
-		mode: 'constructor'
-	})
-
-	var messages = []
-	function log(text) {
-		messages.push(text)
-		document.querySelector('.item4').innerHTML = messages.slice(-20).join('<br/>')
-	}
-	p3.events.on('onAddElement', function(e) {
-		log(e.status)
-	})
-	p3.events.on('onRemoveElement', function(e) {
-		log('removed '+ e.removeCount)
-	})
-
-
 
 
 </script>
