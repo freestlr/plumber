@@ -10,6 +10,7 @@ all: build build/plumber-engine.css build/plumber-engine.js
 
 build:
 	mkdir -p $@
+	cp scripts/lib/three.js $@
 	cp images/cubemap.png $@/plumber-cubemap.png
 	cp images/atlas.svg $@/plumber-atlas.svg
 
