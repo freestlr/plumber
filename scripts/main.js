@@ -3,6 +3,8 @@ var get = new Loader
 
 var main = new Plumber({
 	eroot: document.body,
+	srcAtlas: 'images/atlas.svg',
+	srcCubemap: 'images/cubemap.png',
 	catchFiles: true
 })
 

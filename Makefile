@@ -1,48 +1,39 @@
-extract=":JOIN /anchor/ { s/.*\[\(.*\)\]/\\1/; t TRIM; N; b JOIN; :TRIM; s/^\s*'\|',\?$$//gm; p }"
-styles= $(shell sed -n "$(shell echo $(extract) | sed 's/anchor/styles.html5/')" index.html)
-scripts=$(shell sed -n "$(shell echo $(extract) | sed 's/anchor/scripts.html5/')" index.html)
+extract=":JOIN /SEARCH/ { s/.*\[\(.*\)\]/\\1/; t TRIM; N; b JOIN; :TRIM; s/^\s*'\|',\?$$//gm; p; q }"
+styles= $(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_styles/g')" index.html)
+scripts=$(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_scripts/g')" index.html)
+
+estyles= $(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_styles/g')" engine.html)
+escripts=$(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_scripts/g')" engine.html)
 
 
-all: build build/index.html build/common.js build/common.css
-
-
-samples/awg.json: samples/*.awg
-	echo "{ \"date\": \"`date`\"" > $@
-	for i in $^; do echo -n ",\"`basename $$i`\": "; cat $$i; done >> $@
-	echo "}" >> $@
-	sed -i 's/\r//g' $@
-
-configs/config.js: configs/*.json samples/awg.json
-	echo "var config = { \"date\": \"`date`\"" > $@
-	for i in $^; do echo -n ",\"`basename $$i .json`\": "; cat $$i; done >> $@
-	echo "}" >> $@
-
+all: build build/plumber-engine.css build/plumber-engine.js
 
 build:
 	mkdir -p $@
-	ln -s ../images $@/images
-	ln -s ../samples $@/samples
+	cp images/cubemap.png $@/plumber-cubemap.png
+	cp images/atlas.svg $@/plumber-atlas.svg
 
-build/index.html: index.html gtm.html
+build/index.html: index.html
 	cp index.html $@
-	sed -i ':JOIN /scripts.html5/ { s/\[.*\]/["common.js"]/; t END; N; b JOIN }; :END' $@
-	sed -i ':JOIN /styles.html5/ { s/\[.*\]/["common.css"]/; t END; N; b JOIN }; :END' $@
-	cat gtm.html >> $@
+	sed -i ':JOIN /html5_scripts/ { s/\[.*\]/["common.js"]/; t END; N; b JOIN }; :END' $@
+	sed -i ':JOIN /html5_styles/ { s/\[.*\]/["common.css"]/; t END; N; b JOIN }; :END' $@
 
-build/common.css: $(styles)
+build/plumber-engine.css: $(estyles)
 	cat $^ > $@
 	# remove utf-8 BOM char as it's not on start of file
 	sed -i 's/\xEF\xBB\xBF//g' $@
 
-build/common.js: configs/config.js $(scripts)
+build/plumber-engine.js: $(escripts)
 	uglifyjs $^ --compress --mangle --output $@
 	# uglifyjs puts "use strict" to start of resulting file - make troubles
 	sed -i 's/^"use strict";//' $@
 	# and removes not used variables - IE gets bleeding on setter without arguments
 	sed -i 's/\(set \w\+\)()/\1(_)/' $@
 
+
+
+
 clean:
-	rm configs/config.js samples/awg.json
 	rm -rf build/
 
 fix:
@@ -50,4 +41,4 @@ fix:
 	sed -i '/metadata/ d' images/atlas.svg
 
 
-.PHONY: all fix
+.PHONY: all fix package

@@ -5,64 +5,9 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 
-	<script src="scripts/lib/f.js"></script>
-	<script src="scripts/lib/pf.js"></script>
-	<script src="scripts/lib/dom.js"></script>
-	<script src="scripts/lib/kbd.js"></script>
-	<script src="scripts/lib/perf.js"></script>
-	<script src="scripts/lib/tween.js"></script>
 	<script src="scripts/lib/three.js"></script>
-	<script src="scripts/lib/dat.gui.min.js"></script>
-	<script src="scripts/lib/inflate.min.js"></script>
-
-	<script src="scripts/base/EventEmitter.js"></script>
-	<script src="scripts/base/EventHandler.js"></script>
-	<script src="scripts/base/Observable.js"></script>
-	<script src="scripts/base/Timer.js"></script>
-	<script src="scripts/base/Defer.js"></script>
-	<script src="scripts/base/Gate.js"></script>
-	<script src="scripts/base/Loader.js"></script>
-	<script src="scripts/base/Loader.obj.js"></script>
-	<script src="scripts/base/Drag.js"></script>
-	<script src="scripts/base/Momentum.js"></script>
-	<script src="scripts/base/Block.js"></script>
-	<script src="scripts/base/Atlas.js"></script>
-	<script src="scripts/base/Locale.js"></script>
-
-	<script src="scripts/THREE.extend.js"></script>
-	<script src="scripts/THREE.OrbitControls.js"></script>
-	<script src="scripts/THREE.FirstPersonControls.js"></script>
-	<script src="scripts/TransformControls.js"></script>
-	<script src="scripts/FBXLoader.js"></script>
-	<script src="scripts/ColladaLoader.js"></script>
-
-	<script src="scripts/shaders/CopyShader.js"></script>
-	<script src="scripts/shaders/FillShader.js"></script>
-	<script src="scripts/shaders/OverlayShader.js"></script>
-	<script src="scripts/shaders/HorizontalBlurShader.js"></script>
-	<script src="scripts/shaders/VerticalBlurShader.js"></script>
-	<script src="scripts/shaders/FXAAShader.js"></script>
-
-	<script src="scripts/FileImport.js"></script>
-	<script src="scripts/TileView.js"></script>
-	<script src="scripts/PointProjector.js"></script>
-	<script src="scripts/Imagery.js"></script>
-	<script src="scripts/Sampler.js"></script>
-	<script src="scripts/View3.js"></script>
-	<script src="scripts/TNode.js"></script>
-	<script src="scripts/TConnection.js"></script>
-
-	<script src="scripts/UI/UI.js"></script>
-	<script src="scripts/UI/Submenu.js"></script>
-	<script src="scripts/UI/MarkerSystem.js"></script>
-
-	<script src="scripts/Plumber.js"></script>
-
-
-	<link rel="stylesheet" href="styles/global.css">
-	<link rel="stylesheet" href="styles/ui.css">
-	<link rel="stylesheet" href="styles/TileView.css">
-	<link rel="stylesheet" href="styles/MarkerSystem.css">
+	<script src="build/plumber-engine.js"></script>
+	<link rel="stylesheet" href="build/plumber-engine.css">
 
 	<style>
 		body {
@@ -100,6 +45,8 @@
 <script>
 	var plumber = new Plumber({
 		eroot: document.querySelector('.item1'),
+		srcAtlas: 'build/plumber-atlas.svg',
+		srcCubemap: 'build/plumber-cubemap.png',
 		mode: 'viewer'
 	})
 
