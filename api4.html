@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<head>
+	<title>fit test</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+
+	<script src="build/three.js"></script>
+	<script src="build/plumber-engine.js"></script>
+	<link rel="stylesheet" href="build/plumber-engine.css">
+
+	<style>
+		body {
+			margin: 0;
+		}
+		.view {
+			float: left;
+			display: inline-block;
+			position: relative;
+			height: 480px;
+			overflow: hidden;
+			box-sizing: border-box;
+		}
+		.view1 {
+			width: 40%;
+			background-color: #dac0de;
+		}
+		.view2 {
+			width: 60%;
+			background-color: #bada55;
+		}
+		.view:before {
+			position: absolute;
+			width: 50px;
+			height: 50px;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			margin: auto;
+		}
+		.view1:before {
+			content: 'view 1';
+		}
+		.view2:before {
+			content: 'view 2';
+		}
+		fieldset {
+			display: inline-block;
+		}
+		.button {
+			display: inline-block;
+			vertical-align: top;
+			padding: 8px 12px;
+			background-color: #eee;
+			user-select: none;
+		}
+		.button:hover {
+			color: #eee;
+			background-color: #333;
+			cursor: pointer;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="view view1"></div>
+	<div class="view view2"></div>
+
+	<fieldset>
+		<legend>Parent</legend>
+		<div class="button button-view-1">switch to view 1</div>
+		<div class="button button-view-2">switch to view 2</div>
+		<div class="button button-view-n">switch to null</div>
+	</fieldset>
+
+	<fieldset>
+		<legend>Models</legend>
+		<div class="button button-model-1">model 1</div>
+		<div class="button button-model-2">model 2</div>
+		<div class="button button-model-3">model 3</div>
+	</fieldset>
+</body>
+
+<script>
+	var plumber = new Plumber({
+		srcAtlas: 'build/plumber-atlas.svg',
+		srcCubemap: 'build/plumber-cubemap.png',
+		mode: 'constructor'
+	})
+
+
+	var view1 = document.querySelector('.view1')
+	var view2 = document.querySelector('.view2')
+
+
+	document.querySelector('.button-view-1').addEventListener('click', function() {
+		view1.appendChild(plumber.element)
+		plumber.onresize()
+	})
+
+	document.querySelector('.button-view-2').addEventListener('click', function() {
+		view2.appendChild(plumber.element)
+		plumber.onresize()
+	})
+
+	document.querySelector('.button-view-n').addEventListener('click', function() {
+		if(plumber.element.parentNode) {
+			plumber.element.parentNode.removeChild(plumber.element)
+		}
+	})
+
+	document.querySelector('.button-model-1').addEventListener('click', function() {
+		plumber.addElement('m1', 'samples/10EFG6K.json')
+	})
+
+	document.querySelector('.button-model-2').addEventListener('click', function() {
+		plumber.addElement('m2', 'samples/B100_12MP-12MP.json')
+	})
+
+	document.querySelector('.button-model-3').addEventListener('click', function() {
+		plumber.addElement('m3', 'samples/12G-12FBSPORX_v2.json')
+	})
+
+
+</script>
