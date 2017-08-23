@@ -208,7 +208,7 @@ Plumber = f.unit({
 
 	makeDeletePrompt: function() {
 		var tip = new Block.Tip({
-			eroot: this.element,
+			tipRoot: this.element,
 			align: 'top',
 			hidden: true
 		})
@@ -335,6 +335,8 @@ Plumber = f.unit({
 
 			this.deferSample = this.ready.then(sample.load, sample).detach(onComplete, this)
 		}
+
+		return this.deferSample
 	},
 
 
