@@ -1,6 +1,5 @@
 function Sampler() {
-	this.samples = {}
-	this.keyIndex = []
+	this.samples = []
 }
 
 Sampler.prototype = {
@@ -14,20 +13,15 @@ Sampler.prototype = {
 		if(!def || def.hide) return
 
 		var sample = new Sample(def, this)
-		if(this.samples[sample.id]) {
+
+		var prev = f.apick(this.samples, 'id', sample.id)
+		if(prev) {
+			f.adrop(this.samples, prev)
 			console.warn('Sample with id', sample.id, 'already exists')
 		}
 
-		this.samples[sample.id] = sample
+		this.samples.push(sample)
 		return sample
-	},
-
-	addSampleList: function(samples) {
-		samples.forEach(this.addSample, this)
-	},
-
-	getList: function() {
-		return Object.keys(this.samples)
 	},
 
 	readFile: function(file, id) {

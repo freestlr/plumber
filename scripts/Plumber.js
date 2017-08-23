@@ -180,7 +180,7 @@ Plumber = f.unit({
 	},
 
 	addElement: function(id, src, link) {
-		var sample = src ? this.addSample(id, src, link) : this.sampler.samples[id]
+		var sample = src ? this.addSample(id, src, link) : f.apick(this.sampler.samples, 'id', id)
 		if(!sample) return
 
 		this.displaySample(sample.id)
@@ -285,7 +285,7 @@ Plumber = f.unit({
 
 
 	displaySample: function(sid) {
-		var sample = this.sampler.samples[sid]
+		var sample = f.apick(this.sampler.samples, 'id', sid)
 		if(sample === this.sampleView2) return
 
 		this.sampleView2 = this.tree || this.mode === 'viewer' ? sample : null
@@ -508,8 +508,8 @@ Plumber = f.unit({
 			break
 
 			case 't':
-				// var sid = f.any(Object.keys(this.sampler.samples))
-				// this.preloadSample(this.sampler.samples[sid], this.connectSample)
+				// var sample = f.any(this.sampler.samples)
+				// this.preloadSample(sample, this.connectSample, this.view)
 			break
 
 			case 'v':
@@ -651,7 +651,7 @@ Plumber = f.unit({
 		} else {
 			if(this.catchSamples) {
 				var sid = dt.getData('text/sid')
-				,   sample = this.sampler.samples[sid]
+				,   sample = f.apick(this.sampler.samples, 'id', sid)
 
 				this.preloadSample(sample, this.connectSample, this.view)
 				e.preventDefault()
@@ -756,9 +756,9 @@ Plumber = f.unit({
 	},
 
 	removeSample: function(id) {
-		var sample = this.sampler.samples[id]
+		var sample = f.apick(this.sampler.samples, 'id', id)
 		if(sample) {
-			delete this.sampler.samples[id]
+			f.adrop(this.sampler.samples, sample)
 		}
 	},
 
@@ -808,8 +808,8 @@ Plumber = f.unit({
 		}
 
 		if(kbd.state.t) {
-			var sid = f.any(Object.keys(this.sampler.samples))
-			this.preloadSample(this.sampler.samples[sid], this.connectSample, this.view)
+			var sample = f.any(this.sampler.samples)
+			this.preloadSample(sample, this.connectSample, this.view)
 		}
 
 		TWEEN.update()
