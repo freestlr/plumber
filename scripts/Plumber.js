@@ -21,6 +21,8 @@ Plumber = f.unit({
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
 
+		TSerial.sampler = this.sampler
+
 
 		this.connectionParts = []
 
@@ -177,6 +179,14 @@ Plumber = f.unit({
 
 	getConnectionsArray: function() {
 		return this.tree.retrieveConnections({ connected: true }, true)
+	},
+
+	exportJSON: function() {
+		return TSerial.toJSON(this.tree)
+	},
+
+	importJSON: function(json) {
+		TSerial.fromJSON(json).then(this.absolutelySetMainTree, this)
 	},
 
 	addElement: function(id, src, link) {
