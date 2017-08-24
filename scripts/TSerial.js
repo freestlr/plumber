@@ -20,25 +20,14 @@ TSerial = {
 
 
 		var data = []
-		for(var i = 0; i < nodes.length; i++) {
+		for(var i = 1; i < nodes.length; i++) {
 			var upcon = cons[i]
-
-			if(upcon) {
-				var a  = nodes.indexOf(upcon.connected.node)
-				,   ai = upcon.connected.index
-				,   bi = upcon.index
-
-			} else {
-				var a  = i
-				,   ai = 0
-				,   bi = 0
-			}
 
 			data.push({
 				t: typei[i],
-				a: a,
-				ai: ai,
-				bi: bi
+				a: nodes.indexOf(upcon.connected.node),
+				ai: upcon.connected.index,
+				bi: upcon.index
 			})
 		}
 
@@ -66,20 +55,18 @@ TSerial = {
 		}
 
 		return Defer.all(defers).then(function() {
+			var root = new TNode(samples[0])
+
+			nodes.push(root)
 			for(var i = 0; i < json.nodes.length; i++) {
 				nodes.push(new TNode(samples[json.nodes[i].t]))
 			}
 
-			var root
 			for(var i = 0; i < json.nodes.length; i++) {
 				var n = json.nodes[i]
-				if(n.a === i) {
-					root = nodes[i]
-					continue
-				}
 
 				var nodeA = nodes[n.a]
-				,   nodeB = nodes[i]
+				,   nodeB = nodes[i+1]
 
 				var conA = nodeA.connections[n.ai]
 				,   conB = nodeB.connections[n.bi]
@@ -89,10 +76,6 @@ TSerial = {
 				if(animate) {
 					conA.playConnection()
 				}
-			}
-
-			if(!root) {
-				console.error('bad json', json)
 			}
 
 			return root
