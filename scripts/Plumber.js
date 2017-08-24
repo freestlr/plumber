@@ -2,6 +2,7 @@ Plumber = f.unit({
 	unitName: 'Plumber',
 
 	mode: 'constructor',
+	explode: 0,
 
 	catchFiles: false,
 	catchSamples: true,
@@ -252,11 +253,19 @@ Plumber = f.unit({
 		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
 		this.gui.addColor(this.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
 		this.gui.addColor(this.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
+		this.gui.add(this, 'explode').min(0).max(1).name('Explode').onChange(explode)
 
 		var self = this
 		function redraw() {
 			self.view.needsRedraw = true
 			self.view2.needsRedraw = true
+		}
+
+		function explode(value) {
+			if(!self.tree) return
+
+			self.tree.traverseConnections(f.func('transitionProgress', 1 - value))
+			self.view.needsRedraw = true
 		}
 	},
 

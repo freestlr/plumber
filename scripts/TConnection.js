@@ -30,90 +30,122 @@ TConnection = f.unit({
 
 	makeTween: function() {
 		this.tween = new TWEEN.Tween()
-			.easing(TWEEN.Easing.Cubic.InOut)
+			.easing(TWEEN.Easing.Linear.None)
 			.onStart(this.onTweenStart, this)
 			.onUpdate(this.onTweenUpdate, this)
 			.onComplete(this.onTweenComplete, this)
 	},
 
 	onTweenStart: function() {
+
 	},
 
-	onTweenUpdate: function() {
-		if(!this.connected || !this.master) return
-
-		var values = this.tween.source
-
-		if('distance' in values) {
-			this.connected.object.position
-				.copy(this.normal)
-				.setLength(values.distance)
-		}
-
-		if('screw' in values) {
-			this.connected.object.rotateOnAxis(this.connected.normal, this.tween.delta.screw)
-		}
+	onTweenUpdate: function(t) {
+		this.transitionProgress(t)
 	},
 
 	onTweenComplete: function() {
-		if(!this.playNextStage()) {
-			this.animating = false
-			this.events.emit('connect_end', this)
+		this.animating = false
+		this.events.emit('connect_end', this)
+	},
+
+
+
+	transitionStageDuration: {
+		approachDelay: 400,
+		approachTime: 1200,
+		screwDelay: 200,
+		screwTime: 1200
+	},
+
+	getTransitionStages: function() {
+		if(!this.connected || !this.master) return [0]
+
+		var depth = this.depth + this.connected.depth
+		var dur = this.transitionStageDuration
+
+		if(depth > 0) {
+			return [dur.approachDelay, dur.approachTime, dur.screwDelay, dur.screwTime]
+
+		} else {
+			return [dur.approachDelay, dur.approachTime]
 		}
 	},
 
-	playNextStage: function() {
-		if(!this.connected || !this.master) return false
+	transitionProgress: function(progress) {
+		if(!this.connected || !this.master) return
 
-		this.stage++
+		var stages = this.getTransitionStages()
+		,   stageIndex = -1
+		,   stageProgress = 0
+
+		var timeTotal = stages.reduce(f.sum)
+		,   timeNow = Math.max(0, Math.min(1, progress)) * timeTotal
+
+		if(!timeTotal) return
+
+		var easing = TWEEN.Easing.Cubic.InOut
+		for(var i = 0; i < stages.length; i++) {
+			var stageTime = stages[i]
+
+			if(timeNow <= stageTime) {
+				stageIndex = i
+				stageProgress = easing(timeNow / stageTime)
+				break
+			}
+
+			timeNow -= stageTime
+		}
+
+
 
 		var depth = this.depth + this.connected.depth
 		,   screw = this.screw || this.connected.screw ? Math.PI * 2 : 0
 		,   distance = this.connected.node.sample.length / 2
 
-		var more = true
-		switch(this.stage) {
-			case 0:
-				this.tween
-					.from({ distance: depth + distance })
-					.to({ distance: depth })
-					.delay(400)
-					.duration(1200)
 
-				this.onTweenUpdate()
+		var par_distance = 0
+		,   par_screw = 0
+		switch(stageIndex) {
+			case -1: return
+
+			case 0:
+				par_distance = depth + distance
+				par_screw = screw
 			break
 
 			case 1:
-				if(!depth) {
-					more = false
-					break
-				}
-
-				this.tween
-					.from({ distance: depth, screw: -screw })
-					.to({ distance: 0, screw: 0 })
-					.delay(200)
-					.duration(1200)
+				par_distance = depth + distance * (1 - stageProgress)
+				par_screw = screw
 			break
 
-			default:
-				more = false
+			case 2:
+				par_distance = depth
+				par_screw = screw
+			break
+
+			case 3:
+				par_distance = depth * (1 - stageProgress)
+				par_screw = screw * (1 - stageProgress)
 			break
 		}
 
-		if(more) {
-			this.tween.start()
-		}
 
-		return more
+		this.connected.object.position
+			.copy(this.normal)
+			.setLength(par_distance)
+
+		this.object.quaternion.setFromAxisAngle(this.normal, par_screw)
 	},
 
 	playConnection: function() {
-		this.stage = -1
+		if(!this.connected || !this.master) return
+
 		this.animating = true
 		this.events.emit('connect_start', this)
 
-		this.playNextStage()
+		var duration = this.getTransitionStages().reduce(f.sum)
+		this.tween.duration(duration).start()
 	},
 
 
