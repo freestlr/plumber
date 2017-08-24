@@ -380,9 +380,11 @@ View3.prototype = {
 			this.tree.events.on('connect_start', this.onConnectStart, this)
 		}
 
+		this.animatedConnections.forEach(this.onConnectEnd, this)
+
 		this.updateTreeSize()
 		this.updateProjection()
-		this.updateConnections()
+		this.updateConnectionTree()
 
 		this.focusOnTree()
 		this.needsRedraw = true
@@ -417,12 +419,12 @@ View3.prototype = {
 		}
 	},
 
-	updateConnections: function() {
+	updateConnectionTree: function() {
 		var remove = this.markers.markers.slice()
 
 		if(this.tree) {
 			this.tree.object.updateMatrixWorld()
-			this.tree.traverseConnections(this.addConnectionMarker, this, remove)
+			this.tree.traverseConnections(this.updateConnection, this, remove)
 		}
 
 		for(var i = 0; i < remove.length; i++) {
@@ -430,9 +432,13 @@ View3.prototype = {
 		}
 	},
 
-	addConnectionMarker: function(con, remove) {
+	updateConnection: function(con, remove) {
 		if(!con.marker) {
 			con.marker = this.markers.addMarker(null, con.data.object.name, con)
+		}
+
+		if(con.animating) {
+			this.onConnectStart(con)
 		}
 
 		con.getPosition(con.marker.point.world)
@@ -455,7 +461,7 @@ View3.prototype = {
 		var con = this.transformConnection
 		if(con) {
 			con.updateControl()
-			this.updateConnections()
+			this.updateConnectionTree()
 			this.markers.removeMarker(con.marker)
 		}
 
@@ -635,7 +641,7 @@ View3.prototype = {
 			this.transformConnection.detachControl()
 			this.transformConnection = null
 
-			this.updateConnections()
+			this.updateConnectionTree()
 			this.needsRedraw = true
 
 		} else {
