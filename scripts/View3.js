@@ -418,16 +418,27 @@ View3.prototype = {
 	},
 
 	updateConnections: function() {
-		this.markers.clear()
+		var remove = this.markers.markers.slice()
 
-		if(!this.tree) return
+		if(this.tree) {
+			this.tree.object.updateMatrixWorld()
+			this.tree.traverseConnections(this.addConnectionMarker, this, remove)
+		}
 
-		this.tree.object.updateMatrixWorld()
-		this.tree.traverseConnections(this.addConnectionMarker, this)
+		for(var i = 0; i < remove.length; i++) {
+			this.markers.removeMarker(remove[i])
+		}
 	},
 
-	addConnectionMarker: function(con) {
-		con.marker = this.markers.addMarker(con.getPosition(), con.data.object.name, con)
+	addConnectionMarker: function(con, remove) {
+		if(!con.marker) {
+			con.marker = this.markers.addMarker(null, con.data.object.name, con)
+		}
+
+		con.getPosition(con.marker.point.world)
+
+		var index = remove.indexOf(con.marker)
+		if(index !== -1) remove.splice(index, 1)
 	},
 
 	updateProjection: function() {
