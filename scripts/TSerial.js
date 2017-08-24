@@ -3,39 +3,48 @@ TSerial = {
 
 	toJSON: function(tree) {
 		var types = []
-		var typei = []
-		var nodes = []
+		,   typei = []
+		,   nodes = []
+		,   cons  = []
 		tree.traverse(function(node) {
 			var ti = types.indexOf(node.sample.src)
 			if(ti === -1) {
-				typei.push(types.length)
+				ti = types.length
 				types.push(node.sample.src)
-
-			} else {
-				typei.push(ti)
 			}
 
+			typei.push(ti)
 			nodes.push(node)
+			cons.push(node.upcon)
 		})
 
-		var cons = tree.retrieveConnections({ connected: true, master: true }, true)
-		var conj = []
 
-		for(var i = 0; i < cons.length; i++) {
-			var con = cons[i]
+		var data = []
+		for(var i = 0; i < nodes.length; i++) {
+			var upcon = cons[i]
 
-			conj.push({
-				a: nodes.indexOf(con.node),
-				ai: con.index,
-				b: nodes.indexOf(con.connected.node),
-				bi: con.connected.index
+			if(upcon) {
+				var a  = nodes.indexOf(upcon.connected.node)
+				,   ai = upcon.connected.index
+				,   bi = upcon.index
+
+			} else {
+				var a  = i
+				,   ai = 0
+				,   bi = 0
+			}
+
+			data.push({
+				t: typei[i],
+				a: a,
+				ai: ai,
+				bi: bi
 			})
 		}
 
 		return {
 			types: types,
-			nodes: typei,
-			cons: conj
+			nodes: data
 		}
 	},
 
@@ -58,26 +67,35 @@ TSerial = {
 
 		return Defer.all(defers).then(function() {
 			for(var i = 0; i < json.nodes.length; i++) {
-				nodes.push(new TNode(samples[json.nodes[i]]))
+				nodes.push(new TNode(samples[json.nodes[i].t]))
 			}
 
-			for(var i = 0; i < json.cons.length; i++) {
-				var con = json.cons[i]
+			var root
+			for(var i = 0; i < json.nodes.length; i++) {
+				var n = json.nodes[i]
+				if(n.a === i) {
+					root = nodes[i]
+					continue
+				}
 
-				var nodeA = nodes[con.a]
-				,   nodeB = nodes[con.b]
+				var nodeA = nodes[n.a]
+				,   nodeB = nodes[i]
 
-				var conA = nodeA.connections[con.ai]
-				,   conB = nodeB.connections[con.bi]
+				var conA = nodeA.connections[n.ai]
+				,   conB = nodeB.connections[n.bi]
 
-				nodeA.connect(con.ai, nodeB, con.bi)
+				nodeA.connect(n.ai, nodeB, n.bi)
 
 				if(animate) {
 					conA.playConnection()
 				}
 			}
 
-			return nodes[0]
+			if(!root) {
+				console.error('bad json', json)
+			}
+
+			return root
 		})
 	},
 
@@ -85,8 +103,7 @@ TSerial = {
 	toString: function(json) {
 		return JSON.stringify({
 			t: json.types,
-			n: json.nodes,
-			c: json.cons.map(function(c) { return [c.a, c.ai, c.b, c.bi] })
+			n: json.nodes.map(function(n) { return [n.t, n.a, n.ai, n.bi] })
 		})
 	},
 
@@ -95,8 +112,7 @@ TSerial = {
 
 		return {
 			types: d.t,
-			nodes: d.n,
-			cons: d.c.map(function(c) { return { a: c[0], ai: c[1], b: c[2], bi: c[3] } })
+			nodes: d.n.map(function(n) { return { t: n[0], a: n[1], ai: n[2], bi: n[3] } })
 		}
 	}
 }
