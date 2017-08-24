@@ -187,7 +187,15 @@ Plumber = f.unit({
 	},
 
 	importJSON: function(json, animate) {
-		TSerial.fromJSON(json, animate).then(this.absolutelySetMainTree, this)
+		return TSerial.fromJSON(json, animate).then(this.absolutelySetMainTree, this)
+	},
+
+	exportString: function() {
+		return TSerial.toString(this.exportJSON())
+	},
+
+	importString: function(string, animate) {
+		return this.importJSON(TSerial.fromString(string), animate)
 	},
 
 	addElement: function(id, src, link) {

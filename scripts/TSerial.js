@@ -84,18 +84,118 @@ TSerial = {
 
 
 	toString: function(json) {
-		return JSON.stringify({
-			t: json.types,
-			n: json.nodes.map(function(n) { return [n.t, n.a, n.ai, n.bi] })
-		})
+		var tc = json.types.length
+		,   nc = json.nodes.length
+		,   cc = 0
+
+		for(var i = 0; i < json.nodes.length; i++) {
+			var n = json.nodes[i]
+
+			cc = Math.max(cc, n.ai, n.bi)
+		}
+
+		var ts = Math.ceil(Math.log2(tc))
+		,   ns = Math.ceil(Math.log2(nc +1))
+		,   cs = Math.ceil(Math.log2(cc +1))
+
+		var string = ''
+		,   buffer = 0
+		,   offset = 0
+		function write(size, value) {
+			buffer |= value << offset
+			offset += size
+
+			while(offset > 7) {
+				string += String.fromCharCode(buffer & 0xFF)
+				buffer >>= 8
+				offset -= 8
+			}
+		}
+		function writeEnd() {
+			write(8 - offset, 0)
+		}
+
+
+
+		write(16, tc)
+		for(var i = 0; i < tc; i++) {
+			var t = json.types[i]
+
+			write(16, t.length)
+			for(var j = 0; j < t.length; j++) {
+				write(8, t.charCodeAt(j))
+			}
+		}
+
+		write(16, cc)
+		write(16, nc)
+		for(var i = 0; i < nc; i++) {
+			var n = json.nodes[i]
+
+			write(ts, n.t)
+			write(ns, n.a)
+			write(cs, n.ai)
+			write(cs, n.bi)
+		}
+
+		writeEnd()
+
+		return btoa(string)
 	},
 
-	fromString: function(string) {
-		var d = JSON.parse(string)
+	fromString: function(data) {
+		var string = atob(data)
 
-		return {
-			types: d.t,
-			nodes: d.n.map(function(n) { return { t: n[0], a: n[1], ai: n[2], bi: n[3] } })
+
+		var buffer = 0
+		,   index  = 0
+		,   have   = 0
+		function read(size) {
+			while(have < size) {
+				buffer |= string.charCodeAt(index) << have
+				have += 8
+				index++
+			}
+
+			var value = buffer & ((1 << size) -1)
+
+			buffer >>= size
+			have -= size
+
+			return value
 		}
+
+		var json = { types: [], nodes: [] }
+
+
+		var tc = read(16)
+		for(var i = 0; i < tc; i++) {
+			var l = read(16)
+
+			var type = ''
+			for(var j = 0; j < l; j++) {
+				type += String.fromCharCode(read(8))
+			}
+
+			json.types.push(type)
+		}
+
+		var cc = read(16)
+		,   nc = read(16)
+
+		var ts = Math.ceil(Math.log2(tc))
+		,   ns = Math.ceil(Math.log2(nc +1))
+		,   cs = Math.ceil(Math.log2(cc +1))
+
+		for(var i = 0; i < nc; i++) {
+			json.nodes.push({
+				t: read(ts),
+				a: read(ns),
+				ai: read(cs),
+				bi: read(cs)
+			})
+		}
+
+		return json
 	}
 }
