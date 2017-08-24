@@ -11,6 +11,9 @@ function View3(options) {
 	this.raycaster = new THREE.Raycaster
 	this.root      = new THREE.Object3D
 	this.grid      = new THREE.Object3D
+	this.lastcam   = new THREE.Matrix4
+
+	this.animatedConnections = []
 
 	this.scene.autoUpdate = false
 
@@ -65,7 +68,6 @@ function View3(options) {
 
 	this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
 
-	this.lastcam = new THREE.Matrix4
 
 
 
@@ -365,6 +367,8 @@ View3.prototype = {
 	setTree: function(node) {
 		if(this.tree) {
 			this.root.remove(this.tree.object)
+
+			this.tree.events.off(null, null, this)
 		}
 
 		this.tree = node
@@ -372,8 +376,9 @@ View3.prototype = {
 		if(this.tree) {
 			this.root.add(this.tree.object)
 			this.root.updateMatrixWorld()
-		}
 
+			this.tree.events.on('connect_start', this.onConnectStart, this)
+		}
 
 		this.updateTreeSize()
 		this.updateProjection()
@@ -381,6 +386,22 @@ View3.prototype = {
 
 		this.focusOnTree()
 		this.needsRedraw = true
+	},
+
+	onConnectStart: function(con) {
+		var index = this.animatedConnections.indexOf(con)
+		if(index === -1) {
+			this.animatedConnections.push(con)
+			con.events.on('connect_end', this.onConnectEnd, this)
+		}
+	},
+
+	onConnectEnd: function(con) {
+		var index = this.animatedConnections.indexOf(con)
+		if(index !== -1) {
+			this.animatedConnections.splice(index, 1)
+			con.events.off(null, null, this)
+		}
 	},
 
 	updateTreeSize: function() {
@@ -848,6 +869,11 @@ View3.prototype = {
 		}
 
 		this.transform.update()
+
+		if(this.animatedConnections.length) {
+			this.needsRedraw = true
+			this.needsRetrace = true
+		}
 
 		if(this.orbitTween.playing) {
 			this.orbit.target.x += this.orbitTween.delta.x

@@ -3,6 +3,7 @@ TNode = f.unit({
 
 	init: function(sample) {
 		this.object    = new THREE.Object3D
+		this.events    = new EventEmitter
 
 		this.box       = new THREE.Box3
 		this.boxCenter = new THREE.Vector3
@@ -92,13 +93,19 @@ TNode = f.unit({
 		object.node = this
 	},
 
+
 	addConnection: function(joint) {
-		this.connections.push(new TConnection(this, joint, this.connections.length))
+		var con = new TConnection(this, joint, this.connections.length)
+
+		con.events.link(this.events)
+
+		this.connections.push(con)
 	},
 
 	remConnection: function() {
 
 	},
+
 
 	pinch: function() {
 		var list   = []
@@ -179,6 +186,8 @@ TNode = f.unit({
 			return console.warn('TN.connect to used joint')
 		}
 
+		node.events.link(this.events)
+
 		node.upcon = conB
 		node.upnode = this
 		conA.connect(conB)
@@ -189,6 +198,10 @@ TNode = f.unit({
 			var con = this.connections[i]
 
 			if(con.connected) con.disconnect()
+		}
+
+		if(this.upnode) {
+			this.events.unlink(this.upnode.events)
 		}
 	},
 

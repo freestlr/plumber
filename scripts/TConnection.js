@@ -37,7 +37,6 @@ TConnection = f.unit({
 	},
 
 	onTweenStart: function() {
-		this.events.emit('connect_start', this)
 	},
 
 	onTweenUpdate: function() {
@@ -58,6 +57,7 @@ TConnection = f.unit({
 
 	onTweenComplete: function() {
 		if(!this.playNextStage()) {
+			this.animating = false
 			this.events.emit('connect_end', this)
 		}
 	},
@@ -110,6 +110,9 @@ TConnection = f.unit({
 
 	playConnection: function() {
 		this.stage = -1
+		this.animating = true
+		this.events.emit('connect_start', this)
+
 		this.playNextStage()
 	},
 

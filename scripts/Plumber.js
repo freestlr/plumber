@@ -735,7 +735,6 @@ Plumber = f.unit({
 		if(master && slave) this.makeViewConnection(master, slave)
 	},
 
-	animatedConnections: 0,
 	makeViewConnection: function(master, slave) {
 		this.view.markers.markersVisible.off('g_m_view2')
 		this.view2.markers.markersVisible.off('g_m_view2')
@@ -749,16 +748,8 @@ Plumber = f.unit({
 
 		this.view.setTree(this.tree)
 
-
-		master.events.once('connect_start', function() {
-			this.animatedConnections++
-		}, this)
-
-		master.events.once('connect_end', function() {
-			this.animatedConnections--
-		}, this)
-
 		master.playConnection()
+
 
 		this.displaySample(null)
 
@@ -811,11 +802,6 @@ Plumber = f.unit({
 	},
 
 	onTick: function(t, dt) {
-		if(this.animatedConnections) {
-			this.view.needsRedraw = true
-			this.view.needsRetrace = true
-			// this.view.focusOnTree(3 * 16)
-		}
 
 		if(kbd.state.t) {
 			var sample = f.any(this.sampler.samples)
