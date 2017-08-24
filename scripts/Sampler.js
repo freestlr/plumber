@@ -63,6 +63,7 @@ function Sample(def, parent) {
 
 	this.box    = new THREE.Box3
 	this.size   = new THREE.Vector3
+	this.length = 1
 	this.sphere = new THREE.Sphere
 
 	if(!this.id) {
@@ -200,6 +201,7 @@ Sample.prototype = {
 		this.sphere.radius = -1
 		this.traverse(this.object, this.configureObject)
 		this.box.getSize(this.size)
+		this.length = this.size.length()
 
 		return this
 	},
