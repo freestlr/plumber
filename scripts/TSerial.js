@@ -39,10 +39,11 @@ TSerial = {
 		}
 	},
 
-	fromJSON: function(json) {
-		var defers = []
-
+	fromJSON: function(json, animate) {
 		var samples = []
+		,   nodes   = []
+		,   defers  = []
+
 		for(var i = 0; i < json.types.length; i++) {
 			var src = json.types[i]
 
@@ -56,8 +57,6 @@ TSerial = {
 		}
 
 		return Defer.all(defers).then(function() {
-
-			var nodes = []
 			for(var i = 0; i < json.nodes.length; i++) {
 				nodes.push(new TNode(samples[json.nodes[i]]))
 			}
@@ -71,8 +70,11 @@ TSerial = {
 				var conA = nodeA.connections[con.ai]
 				,   conB = nodeB.connections[con.bi]
 
-				conA.connect(conB)
-				// nodeA.connect(con.ai, nodeB, con.bi)
+				nodeA.connect(con.ai, nodeB, con.bi)
+
+				if(animate) {
+					conA.playConnection()
+				}
 			}
 
 			return nodes[0]

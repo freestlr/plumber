@@ -185,8 +185,8 @@ Plumber = f.unit({
 		return TSerial.toJSON(this.tree)
 	},
 
-	importJSON: function(json) {
-		TSerial.fromJSON(json).then(this.absolutelySetMainTree, this)
+	importJSON: function(json, animate) {
+		TSerial.fromJSON(json, animate).then(this.absolutelySetMainTree, this)
 	},
 
 	addElement: function(id, src, link) {
