@@ -365,6 +365,9 @@ View3.prototype = {
 	},
 
 	setTree: function(node) {
+		this.selectNode(null)
+		this.hoverNode(null)
+
 		if(this.tree) {
 			this.root.remove(this.tree.object)
 
@@ -401,8 +404,10 @@ View3.prototype = {
 	onConnectEnd: function(con) {
 		var index = this.animatedConnections.indexOf(con)
 		if(index !== -1) {
-			this.animatedConnections.splice(index, 1)
 			con.events.off(null, null, this)
+			con.node.updateSize()
+
+			this.animatedConnections.splice(index, 1)
 		}
 	},
 
@@ -433,18 +438,16 @@ View3.prototype = {
 	},
 
 	updateConnection: function(con, remove) {
-		if(!con.marker) {
-			con.marker = this.markers.addMarker(null, con.data.object.name, con)
+		if(con.marker) {
+			this.markers.addMarker(con.marker)
+
+			var index = remove.indexOf(con.marker)
+			if(index !== -1) remove.splice(index, 1)
 		}
 
 		if(con.animating) {
 			this.onConnectStart(con)
 		}
-
-		con.getPosition(con.marker.point.world)
-
-		var index = remove.indexOf(con.marker)
-		if(index !== -1) remove.splice(index, 1)
 	},
 
 	updateProjection: function() {
@@ -462,7 +465,7 @@ View3.prototype = {
 		if(con) {
 			con.updateControl()
 			this.updateConnectionTree()
-			this.markers.removeMarker(con.marker)
+			// this.markers.removeMarker(con.marker)
 		}
 
 		this.needsRedraw = true
@@ -659,7 +662,9 @@ View3.prototype = {
 			this.transformConnection = con
 			this.transformConnection.attachControl(this.transform)
 
-			this.markers.removeMarker(con.marker)
+			// this.markers.removeMarker(con.marker)
+			// delete con.marker
+
 			this.needsRedraw = true
 
 		} else {

@@ -13,7 +13,7 @@ PointProjector.prototype = {
 		this.points = []
 	},
 
-	addPoint: function(local) {
+	addPoint: function(local, auto) {
 		var point = {
 			world   : new THREE.Vector3,
 			screen  : new THREE.Vector2,
@@ -21,7 +21,7 @@ PointProjector.prototype = {
 			visible : false
 		}
 
-		this.points.push(point)
+		if(auto) this.points.push(point)
 		return point
 	},
 

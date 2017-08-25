@@ -18,7 +18,11 @@ TNode = f.unit({
 		this.localLength = 1
 		this.localSphere = new THREE.Sphere
 
+		this.objectCenter = new THREE.Object3D
+
 		this.connections = []
+
+		this.object.add(this.objectCenter)
 
 		if(sample) this.setSample(sample)
 	},
@@ -82,6 +86,8 @@ TNode = f.unit({
 		this.sample = sample
 		this.sampleObject = object
 		this.sample.traverse(this.sampleObject, this.setObjectParent, this)
+
+		this.sample.box.getCenter(this.objectCenter.position)
 
 		this.object.add(this.sampleObject)
 
@@ -202,6 +208,14 @@ TNode = f.unit({
 
 		if(this.upnode) {
 			this.events.unlink(this.upnode.events)
+		}
+	},
+
+	destroy: function() {
+		for(var i = 0; i < this.connections.length; i++) {
+			var con = this.connections[i]
+
+			con.destroy()
 		}
 	},
 

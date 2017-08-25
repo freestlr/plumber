@@ -24,6 +24,16 @@ TConnection = f.unit({
 
 		this.makeTween()
 
+		this.marker = new UI.Marker({
+			connection: this
+		})
+
+		this.objectInner = new THREE.Object3D
+		this.objectOuter = new THREE.Object3D
+
+		this.node.object.add(this.objectInner)
+		this.node.object.add(this.objectOuter)
+
 		// this.node.object.add(this.object)
 		this.setPosition(joint.object.matrix)
 	},
@@ -154,6 +164,9 @@ TConnection = f.unit({
 		this.point.setFromMatrixPosition(matrix)
 		this.normal.set(1, 0, 0).applyMatrix4(matrix).sub(this.point)
 
+		this.objectInner.position.copy(this.point)
+		this.objectOuter.position.copy(this.normal).setLength(this.depth).add(this.point)
+
 		if(!this.connected) {
 			// this.object.position.copy(this.point)
 		}
@@ -162,21 +175,14 @@ TConnection = f.unit({
 	getPosition: function(target) {
 		if(!target) target = new THREE.Vector3
 
-		if(this.connected) {
-			target.setFromMatrixPosition(this.object.matrixWorld)
-
-		} else {
-			target.copy(this.normal).setLength(this.depth).add(this.point)
-				.applyMatrix4(this.node.object.matrixWorld)
-		}
-
+		target.setFromMatrixPosition(this.objectOuter.matrixWorld)
 		return target
 	},
 
 	getInnerPosition: function(target) {
 		if(!target) target = new THREE.Vector3
 
-		target.copy(this.point).applyMatrix4(this.node.object.matrixWorld)
+		target.setFromMatrixPosition(this.objectInner.matrixWorld)
 		return target
 	},
 
@@ -268,6 +274,10 @@ TConnection = f.unit({
 
 		master.events.emit('disconnect', [master, slave])
 		slave.events.emit('disconnect', [slave, master])
+	},
+
+	destroy: function() {
+		this.marker.destroy()
 	},
 
 

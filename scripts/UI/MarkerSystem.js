@@ -16,50 +16,25 @@ UI.MarkerSystem = f.unit(Block, {
 		}
 	},
 
-	addMarker: function(position, text, con, undisposable) {
-		if(!this.projector) return
-
-		var marker = new UI.Marker({
-			tipRoot: this.element,
-			events: this.events,
-			projector: this.projector,
-			// point: this.projector.addPoint(),
-			connection: con
-		})
-
-		if(position) {
-			marker.point.world.copy(position)
-		}
-
-		if(con) {
-			con.getInnerPosition(marker.inner.world)
-		}
-
-		if(undisposable) {
-			marker.undisposable = true
-		} else {
-			marker.visible.set(this.markersVisible.value, 'system')
-		}
-
-		marker.updateState()
-		// this.updateMarker(marker)
+	addMarker: function(marker) {
+		var index = this.markers.indexOf(marker)
+		if(index !== -1) return
 
 		this.markers.push(marker)
+		marker.plug(this)
+		marker.updateState()
 
-		0&& console.log('addMarker',
-			con.data.id,
-			marker.point.world,
-			con.connected ? con.master ? 'master' : 'slave' : 'empty')
-		return marker
+		if(!marker.undisposable) {
+			marker.visible.set(this.markersVisible.value, 'system')
+		}
 	},
 
 	removeMarker: function(marker) {
 		var index = this.markers.indexOf(marker)
-		if(index !== -1) {
-			this.markers.splice(index, 1)
+		if(index === -1) return
 
-			marker.destroy()
-		}
+		this.markers.splice(index, 1)
+		marker.unplug()
 	},
 
 	clear: function() {
@@ -137,13 +112,35 @@ UI.Marker = f.unit(Block.Tip, {
 
 		}
 
-		this.point = this.projector.addPoint()
-		this.inner = this.projector.addPoint()
-
 		this.watchEvents.push(
 			new EventHandler(this.onTap, this).listen('tap', this.element),
 			new EventHandler(this.onEnter, this).listen('mouseenter', this.element),
 			new EventHandler(this.onLeave, this).listen('mouseleave', this.element))
+	},
+
+	plug: function(system) {
+		if(this.system) this.unplug()
+
+		this.system = system
+		if(!this.system) return
+
+		this.tipRoot = this.system.element
+		this.point = this.system.projector.addPoint()
+		this.inner = this.system.projector.addPoint()
+	},
+
+	unplug: function() {
+		if(!this.system) return
+
+		dom.remove(this.element)
+
+		this.system.projector.remPoint(this.point)
+		this.system.projector.remPoint(this.inner)
+
+		delete this.point
+		delete this.inner
+		delete this.tipRoot
+		delete this.system
 	},
 
 	destroy: function() {
@@ -152,7 +149,7 @@ UI.Marker = f.unit(Block.Tip, {
 		if(this.connection) {
 			this.connection.events.off(null, null, this)
 		}
-		this.projector.remPoint(this.point)
+		this.unplug()
 
 		Atlas.free(this.elemGroup)
 	},
@@ -187,18 +184,28 @@ UI.Marker = f.unit(Block.Tip, {
 	},
 
 	onEnter: function() {
-		this.events.emit('marker_enter', this)
+		if(this.system) this.system.events.emit('marker_enter', this)
 	},
 
 	onLeave: function() {
-		this.events.emit('marker_leave', this)
+		if(this.system) this.system.events.emit('marker_leave', this)
 	},
 
 	onTap: function() {
-		this.events.emit('marker_tap', this)
+		if(this.system) this.system.events.emit('marker_tap', this)
 	},
 
 	update: function() {
+		if(!this.system) return
+
+		if(this.connection) {
+			this.connection.getPosition(this.point.world)
+			this.connection.getInnerPosition(this.inner.world)
+		}
+
+		this.system.projector.updatePoint(this.point)
+		this.system.projector.updatePoint(this.inner)
+
 		var visible = this.visible.value || this.inTransition
 
 		var px = Math.round(this.point.screen.x)

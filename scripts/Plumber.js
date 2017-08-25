@@ -229,6 +229,7 @@ Plumber = f.unit({
 		var tip = new Block.Tip({
 			tipRoot: this.element,
 			align: 'top',
+			point: this.view.projector.addPoint(),
 			hidden: true
 		})
 
@@ -710,14 +711,20 @@ Plumber = f.unit({
 		var system = this.view.markers
 		if(prev && prev.nodeMarker) {
 			system.removeMarker(prev.nodeMarker)
+			prev.nodeMarker.destroy()
 			prev.nodeMarker = null
 		}
 
 		if(node) {
-			var m = this.view.markers.addMarker(node.localBox.getCenter(), 'remove', null, true)
-			m.deleteNode = node
-			m.align = 'bottom'
-			m.visible.on()
+			var m = new UI.Marker({
+				undisposable: true,
+				deleteNode: node,
+				align: 'bottom'
+			})
+
+			system.addMarker(m)
+
+			m.visible.on('main')
 
 			dom.remclass(m.content, 'marker-interactive')
 
@@ -830,9 +837,21 @@ Plumber = f.unit({
 		this.view.onTick(dt)
 		this.view2.onTick(dt)
 
+		if(this.view.nodeSelected) {
+			var marker = this.view.nodeSelected.nodeMarker
+
+			marker.point.world.setFromMatrixPosition(this.view.nodeSelected.objectCenter.matrixWorld)
+			this.view.projector.updatePoint(marker.point)
+			marker.update()
+		}
+
 		if(this.deletePromptStat) {
-			var p = this.view.projector.worldToScreen(this.deletePromptStat.removeNode.localCenter)
-			this.deletePromptTip.move(Math.round(p.x), Math.round(p.y))
+			var node = this.deletePromptStat.removeNode
+			,   point = this.deletePromptTip.point
+
+			point.world.setFromMatrixPosition(node.objectCenter.matrixWorld)
+			this.view.projector.updatePoint(point)
+			this.deletePromptTip.move(Math.round(point.screen.x), Math.round(point.screen.y))
 		}
 	}
 })
