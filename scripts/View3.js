@@ -494,6 +494,10 @@ View3.prototype = {
 				this.needsRedraw = true
 			return
 
+			case 'c':
+				this.focusOnTree()
+			return
+
 			case 'g':
 				this.enableGrid = !this.enableGrid
 				this.needsRedraw = true

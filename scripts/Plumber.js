@@ -519,9 +519,8 @@ Plumber = f.unit({
 				this.promptDeleteNode(this.view.nodeSelected)
 			return
 
-			case 'c':
-				this.view.focusOnTree()
-				this.view2.focusOnTree()
+			case 'u':
+				location.hash = this.exportString()
 			return
 
 			case 'x':
@@ -821,8 +820,18 @@ Plumber = f.unit({
 		if(typeof bootProgress === 'function') bootProgress(1)
 
 		this.ready.resolve(true)
+		this.loadFromHash()
 
 		this.timer.play()
+	},
+
+	loadFromHash: function() {
+		var hash = location.hash.slice(1)
+		if(hash) try {
+			this.importString(hash, true)
+			location.hash = ''
+
+		} catch(e) {}
 	},
 
 	onTick: function(t, dt) {
