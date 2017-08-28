@@ -11,6 +11,7 @@ Sampler.prototype = {
 
 	addSample: function(def) {
 		if(!def || def.hide) return
+		if(!def.object && !def.src) return
 
 		var sample = new Sample(def, this)
 
