@@ -142,6 +142,30 @@ f.aflat = function(array) {
 	return [].concat.apply([], array)
 }
 
+
+f.jeq = function(a, b) {
+	if(a === b) return true
+
+	var at = typeof a
+	,   bt = typeof b
+	if(at !== bt) return false
+
+	switch(at) {
+		case 'boolean':
+		case 'number':
+		case 'string': return false
+	}
+
+	if(a.length !== b.length) return false
+
+	var k
+	for(k in a) if(k in b === false) return false
+	for(k in b) if(!f.jeq(a[k], b[k])) return false
+
+	return true
+}
+
+
 f.seq = function(a, b) {
 	return a.length === b.length && f.snot(a, b).length === 0
 }
