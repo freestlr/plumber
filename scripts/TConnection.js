@@ -39,7 +39,7 @@ TConnection = f.unit({
 	},
 
 	makeTween: function() {
-		this.tween = new TWEEN.Tween()
+		this.tween = new TWEEN.Tween({ connected: 0 })
 			.easing(TWEEN.Easing.Linear.None)
 			.onStart(this.onTweenStart, this)
 			.onUpdate(this.onTweenUpdate, this)
@@ -50,8 +50,8 @@ TConnection = f.unit({
 
 	},
 
-	onTweenUpdate: function(t) {
-		this.transitionProgress(t)
+	onTweenUpdate: function(t, values) {
+		this.transitionProgress(values.connected)
 	},
 
 	onTweenComplete: function() {
@@ -62,9 +62,9 @@ TConnection = f.unit({
 
 
 	transitionStageDuration: {
-		approachDelay: 400,
+		approachDelay: 100,
 		approachTime: 1200,
-		screwDelay: 200,
+		screwDelay: 100,
 		screwTime: 1200
 	},
 
@@ -148,14 +148,20 @@ TConnection = f.unit({
 		this.object.quaternion.setFromAxisAngle(this.normal, par_screw)
 	},
 
-	playConnection: function() {
+	playConnection: function(state, timeScale) {
 		if(!this.connected || !this.master) return
 
 		this.animating = true
 		this.events.emit('connect_start', this)
 
 		var duration = this.getTransitionStages().reduce(f.sum)
-		this.tween.duration(duration).start()
+		,   connected = state == null ? 1 : state
+
+		if(!isNaN(timeScale)) {
+			duration *= timeScale
+		}
+
+		this.tween.to({ connected: connected }, duration).start()
 	},
 
 

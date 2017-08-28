@@ -40,13 +40,15 @@ TNode = f.unit({
 		}
 	},
 
-	traverseConnections: function(func, scope, data) {
+	traverseConnections: function(func, scope, data, level) {
+		if(level == null) level = 0
+
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
 
-			func.call(scope || this, con, data)
+			func.call(scope || this, con, data, level)
 
-			if(con.connected && con.master) con.target.traverseConnections(func, scope, data)
+			if(con.connected && con.master) con.target.traverseConnections(func, scope, data, level +1)
 		}
 	},
 

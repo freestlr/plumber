@@ -39,6 +39,7 @@ Plumber = f.unit({
 
 
 		this.tiles = new TileView
+		this.element = this.tiles.element
 
 		this.view = new View3({
 			// eroot: document.body,
@@ -64,6 +65,15 @@ Plumber = f.unit({
 
 
 
+		this.explodeButton = new Block.Toggle({
+			eroot: this.element,
+			ename: 'button-explode out-01',
+			eicon: 'i-search',
+			active: false,
+			deselect: true
+		})
+
+		this.explodeButton.events.on('change', this.onExplode, this)
 
 
 		this.splitViewMessage = dom.div('split-view-message')
@@ -82,7 +92,6 @@ Plumber = f.unit({
 		dom.html(text, ['please', 'add', 'any product'].join('<br/>'))
 
 
-		this.element = this.tiles.element
 
 
 		this.makeDeletePrompt()
@@ -261,7 +270,7 @@ Plumber = f.unit({
 
 		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
 		this.gui.addColor(this.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
-		this.gui.addColor(this.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
+		this.gui.addColor(this.view.stencilHover.params, 'drawColor').name('Hover').onChange(redraw)
 		this.gui.add(this, 'explode').min(0).max(1).name('Explode').onChange(explode)
 
 		var self = this
@@ -311,6 +320,53 @@ Plumber = f.unit({
 		}
 	},
 
+	onExplode: function(enabled) {
+		if(this.explodeStepDefer) {
+			this.explodeStepDefer.abort()
+			delete this.explodeStepDefer
+		}
+
+
+		if(enabled) {
+			this.tree.traverseConnections(function(con) {
+				if(con.connected && con.master) con.playConnection(0)
+			})
+
+		} else {
+			var list = []
+			,   level = 0
+
+			this.tree.traverseConnections(function(con, data, level) {
+				if(!con.connected || !con.master) return
+
+				if(!list[level]) {
+					list[level] = []
+				}
+
+				list[level].push(con)
+			})
+
+			function runStep() {
+				var cons = list[level++]
+				if(!cons) return
+
+				var defers = []
+				for(var i = 0; i < cons.length; i++) {
+					var con = cons[i]
+
+					var defer = new Defer
+					con.events.once('connect_end', defer.resolve, defer)
+					con.playConnection(1, 0.4)
+
+					defers.push(defer)
+				}
+
+				this.explodeStepDefer = Defer.all(defers).then(runStep, this)
+			}
+
+			runStep.call(this)
+		}
+	},
 
 	displaySample: function(sid) {
 		var sample = f.apick(this.sampler.samples, 'id', sid)
