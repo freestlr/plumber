@@ -132,7 +132,7 @@ Loader.ajaxTransport = function() {
 	}
 	req.onprogress = function(e) {
 		unit.bytesLoaded = e.loaded
-		unit.bytesTotal  = e.total
+		unit.bytesTotal  = e.lengthComputable ? e.total : e.loaded * 3
 		unit.loader.progress()
 	}
 
