@@ -208,7 +208,11 @@ Plumber = f.unit({
 	},
 
 	addElement: function(id, src, link) {
-		var sample = src ? this.addSample(id, src, link) : f.apick(this.sampler.samples, 'id', id)
+		var sample =
+			f.apick(this.sampler.samples, 'src', src) ||
+			f.apick(this.sampler.samples,  'id',  id) ||
+			this.addSample(id, src, link)
+
 		if(!sample) return
 
 		this.displaySample(sample.id)
@@ -221,6 +225,19 @@ Plumber = f.unit({
 			src: src,
 			link: link
 		})
+	},
+
+	addFigure: function(json) {
+
+	},
+
+	addComplex: function(id, json) {
+		if(!json || !json.types) return
+
+		for(var i = 0; i < json.types.length; i++) {
+
+		}
+
 	},
 
 	fetch: function() {
@@ -301,7 +318,7 @@ Plumber = f.unit({
 
 	clear: function() {
 		this.displaySample(null)
-		this.preloadSample(null)
+		this.constructNode(null)
 		this.clearTree()
 	},
 
@@ -395,39 +412,46 @@ Plumber = f.unit({
 			this.viewTween.start()
 		}
 
-		if(this.sampleView2) {
-			this.preloadSample(sample, this.setSample, this.view2)
-		} else {
-			this.preloadSample(sample, this.setMainTree, this.view)
-		}
-
 		dom.togclass(this.emptyViewMessage, 'hidden', this.tree || sample)
-	},
 
-	preloadSample: function(sample, onComplete, targetView) {
+		if(!sample) {
+			this.constructNode(null)
 
-		if(this.deferSample) {
-			this.deferSample.set(null)
-			this.deferSample = null
+		} else if(this.sampleView2) {
+			this.constructNode(sample, this.view2).then(this.setTree2, this)
 
-			this.view.setPreloader(null)
-			this.view2.setPreloader(null)
+		} else {
+			this.constructNode(sample, this.view).then(this.setTree1, this)
 		}
 
-		if(sample) {
-			targetView.setPreloader(sample)
+	},
 
-			this.deferSample = this.ready.then(sample.load, sample).detach(onComplete, this)
+	isComplexFigure: function(figure) {
+		return figure && figure.types && figure.nodes
+	},
+
+	constructNode: function(figure, targetView) {
+		this.view.setPreloader(null)
+		this.view2.setPreloader(null)
+
+		if(this.ready.pending) {
+			return this.ready.then(f.binda(this.constructNode, this, arguments))
 		}
 
-		return this.deferSample
+
+		if(figure instanceof Sample) {
+			targetView.setPreloader(figure)
+			// return figure.load().then(function(sample) { return new TNode(sample) })
+			return figure.load().then(TNode.New)
+
+		} else if(this.isComplexFigure(figure)) {
+			return TSerial.fromJSON(figure)
+		}
 	},
 
 
-	setSample: function(sample) {
-		if(!sample) return
-
-		var node = new TNode(sample)
+	setTree2: function(node) {
+		if(!node) return
 
 		this.view2.setTree(node)
 		this.updateConnectionGroups(this.tree, node)
@@ -436,12 +460,12 @@ Plumber = f.unit({
 		this.view2.markers.markersVisible.on('g_m_view2')
 	},
 
-	setMainTree: function(sample) {
-		if(!sample) return
+	setTree1: function(node) {
+		this.absolutelySetMainTree(node)
 
-		this.absolutelySetMainTree(new TNode(sample))
-
-		this.events.emit('onAddElement', { status: 'connected' })
+		if(node) {
+			this.events.emit('onAddElement', { status: 'connected' })
+		}
 	},
 
 	updateConnectionGroups: function(tree, tree2) {
@@ -518,16 +542,12 @@ Plumber = f.unit({
 		}
 	},
 
-	connectSample: function(sample) {
-		if(!sample) return
+	connectNode: function(node) {
+		if(!node) return
 
-		if(!this.tree) {
-			this.setMainTree(sample)
-			return
-		}
+		if(!this.tree) return this.setTree1(node)
 
 
-		var node = new TNode(sample)
 		var cons = this.tree.retrieveConnections({ connected: false }, true)
 
 		f.sort(cons, Math.random)
@@ -592,7 +612,7 @@ Plumber = f.unit({
 
 			case 't':
 				// var sample = f.any(this.sampler.samples)
-				// this.preloadSample(sample, this.connectSample, this.view)
+				// this.constructNode(sample, this.view).then(this.connectNode)
 			break
 
 			case 'v':
@@ -736,7 +756,7 @@ Plumber = f.unit({
 				var sid = dt.getData('text/sid')
 				,   sample = f.apick(this.sampler.samples, 'id', sid)
 
-				this.preloadSample(sample, this.connectSample, this.view)
+				this.constructNode(sample, this.view).then(this.connectNode, this)
 				e.preventDefault()
 			}
 		}
@@ -894,7 +914,7 @@ Plumber = f.unit({
 
 		if(kbd.state.t) {
 			var sample = f.any(this.sampler.samples)
-			this.preloadSample(sample, this.connectSample, this.view)
+			this.constructNode(sample, this.view).then(this.connectNode, this)
 		}
 
 		TWEEN.update()
@@ -920,8 +940,3 @@ Plumber = f.unit({
 		}
 	}
 })
-
-
-
-
-

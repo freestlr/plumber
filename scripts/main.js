@@ -35,7 +35,11 @@ function eventmap() {
 function addSample(item) {
 	if(!item || item.hide) return
 
-	var sample = main.addSample(item.id, item.src, item.link)
+	if(item.complex) {
+		// var sample = main.addComplex(item.id, item)
+	} else {
+		var sample = main.addSample(item.id, item.src, item.link)
+	}
 
 	sidebar.addSample(item.id, item.id, item.thumb, false)
 }

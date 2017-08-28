@@ -51,5 +51,25 @@
 		"thumb": "images/thumbs/BSP T-piece B240-12.png",
 		"link": "https://shop.eriks.nl/en/bsp-t-piece-b240-12-11483749/"
 	},
+	{
+		"hide": 1,
+		"id": "heavy 1",
+		"complex": true,
+		"types": [
+			"samples/heavy 1/Clamp_428_PP.json",
+			"samples/heavy 1/CoverPlateaDP_AS_4.json",
+			"samples/heavy 1/bolt_m12.json",
+			"samples/heavy 1/Weld plate SP4.json"
+		],
+		"nodes": [
+			{"t": 1, "a": 0, "ai": 2, "bi": 1},
+			{"t": 2, "a": 1, "ai": 2, "bi": 0},
+			{"t": 2, "a": 1, "ai": 3, "bi": 0},
+			{"t": 2, "a": 1, "ai": 4, "bi": 0},
+			{"t": 2, "a": 1, "ai": 5, "bi": 0},
+			{"t": 3, "a": 0, "ai": 3, "bi": 5},
+			{"t": 0, "a": 6, "ai": 0, "bi": 3}
+		]
+	},
 
 0]
