@@ -37,6 +37,11 @@
 }
 .marker-depth-line {
 	position: absolute;
+	stroke-width: 1.2;
+	z-index: -1;
+}
+.marker-depth-line-shadow {
+	stroke: rgba(0, 0, 0, 0.4);
 }
 
 .marker-group {

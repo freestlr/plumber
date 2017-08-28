@@ -90,6 +90,12 @@ UI.Marker = f.unit(Block.Tip, {
 		this.svgLine.setAttribute('x1', 0)
 		this.svgLine.setAttribute('y1', 0)
 
+		this.svgLineShadow = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+		this.svgLineShadow.className.baseVal = 'marker-depth-line-shadow'
+		this.svgLineShadow.setAttribute('x1', 1)
+		this.svgLineShadow.setAttribute('y1', 1)
+
+		dom.append(this.svg, this.svgLineShadow)
 		dom.append(this.svg, this.svgLine)
 		dom.append(this.element, this.svg)
 
@@ -244,6 +250,9 @@ UI.Marker = f.unit(Block.Tip, {
 		this.svg.style.marginTop  = -ss -1 +'px'
 		this.svg.style.left = px - this.elementPoint.x +'px'
 		this.svg.style.top  = py - this.elementPoint.y +'px'
+
+		this.svgLineShadow.setAttribute('x2', dx +1)
+		this.svgLineShadow.setAttribute('y2', dy +1)
 
 		this.svgLine.setAttribute('x2', dx)
 		this.svgLine.setAttribute('y2', dy)
