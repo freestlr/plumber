@@ -147,7 +147,7 @@ Sample.prototype = {
 			case 'json':
 				var loader = new Loader
 				loader.onProgress(function() {
-					this.progress = loader.bytesLoaded / loader.bytesTotal
+					if(!this.broken) this.progress = loader.bytesLoaded / loader.bytesTotal
 				}, this)
 
 				loader.json(url).defer.then(function(data) {
@@ -176,7 +176,10 @@ Sample.prototype = {
 	},
 
 	loadError: function(err) {
+		this.broken = true
+		this.progress = 1
 		console.warn('Sample load error', this.src || this.id, err)
+		throw err
 	},
 
 	configure: function(object) {

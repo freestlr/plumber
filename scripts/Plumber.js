@@ -318,7 +318,8 @@ Plumber = f.unit({
 
 	clear: function() {
 		this.displaySample(null)
-		this.constructNode(null)
+		this.view.setPreloader(null)
+		this.view2.setPreloader(null)
 		this.clearTree()
 	},
 
@@ -415,7 +416,6 @@ Plumber = f.unit({
 		dom.togclass(this.emptyViewMessage, 'hidden', this.tree || sample)
 
 		if(!sample) {
-			this.constructNode(null)
 
 		} else if(this.sampleView2) {
 			this.constructNode(sample, this.view2).then(this.setTree2, this)
@@ -431,21 +431,42 @@ Plumber = f.unit({
 	},
 
 	constructNode: function(figure, targetView) {
-		this.view.setPreloader(null)
-		this.view2.setPreloader(null)
-
 		if(this.ready.pending) {
 			return this.ready.then(f.binda(this.constructNode, this, arguments))
 		}
 
+		if(targetView) {
+			targetView.setPreloader(null)
+		}
+
 
 		if(figure instanceof Sample) {
-			targetView.setPreloader(figure)
-			// return figure.load().then(function(sample) { return new TNode(sample) })
-			return figure.load().then(TNode.New)
+			targetView.setPreloader([figure])
+
+			return figure.load().then(TNode.New, f.nop)
+
 
 		} else if(this.isComplexFigure(figure)) {
-			return TSerial.fromJSON(figure)
+
+			var defers = []
+			for(var i = 0; i < figure.types.length; i++) {
+				var src = figure.types[i]
+
+				var sample = f.apick(this.sampler.samples, 'src', src)
+				if(!sample) {
+					sample = this.sampler.addSample({ src: src })
+				}
+
+				samples.push(sample)
+				defers.push(sample.load())
+			}
+
+			targetView.setPreloader(samples)
+
+			return Defer.all(defers).then(function() {
+				return TSerial.constructJSON(figure, samples, false)
+
+			}, f.nop)
 		}
 	},
 

@@ -293,7 +293,7 @@ body .dg .property-name {
 .view-preloader-box {
 	width: 130px;
 	height: 25px;
-	border: 1px solid #333;
+	border: 1px solid #546f7a;
 	pointer-events: none;
 	padding: 0 1px 1px 0;
 }
@@ -305,6 +305,6 @@ body .dg .property-name {
 	display: inline-block;
 	width: 12px;
 	height: 24px;
-	background-color: #333;
+	background-color: #546f7a;
 	margin: 1px 0 0 1px;
 }

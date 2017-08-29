@@ -247,15 +247,30 @@ View3.prototype = {
 		}
 	},
 
-	setPreloader: function(sample) {
-		if(sample && sample.progress < 1) {
-			this.preloaderSample = sample
-			this.setLoading(true)
-			this.setProgress(sample.progress)
+	setPreloader: function(samples) {
+		this.preloaderSamples = samples
+		this.updatePreloader()
+	},
 
-		} else {
-			this.preloaderSample = null
-			this.setLoading(false)
+	updatePreloader: function() {
+		var progress = 1
+
+		var items = this.preloaderSamples && this.preloaderSamples.length
+		if(items) {
+
+			progress = 0
+			for(var i = 0; i < items; i++) {
+				progress += this.preloaderSamples[i].progress
+			}
+
+			progress /= items
+		}
+
+		this.setProgress(progress)
+		this.setLoading(progress < 1)
+
+		if(progress >= 1) {
+			delete this.preloaderSamples
 		}
 	},
 
@@ -886,12 +901,8 @@ View3.prototype = {
 	},
 
 	onTick: function(dt) {
-		if(this.preloaderSample) {
-			var p = this.preloaderSample.progress
-			this.setProgress(p)
-			this.setLoading(p < 1)
-
-			if(p >= 1) delete this.preloaderSample
+		if(this.preloaderSamples) {
+			this.updatePreloader()
 		}
 
 		this.transform.update()

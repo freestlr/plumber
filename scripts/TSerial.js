@@ -58,6 +58,36 @@ TSerial = {
 			var root = new TNode(samples[0])
 
 			nodes.push(root)
+			if(json.nodes) for(var i = 0; i < json.nodes.length; i++) {
+				nodes.push(new TNode(samples[json.nodes[i].t]))
+			}
+
+			if(json.nodes) for(var i = 0; i < json.nodes.length; i++) {
+				var n = json.nodes[i]
+
+				var nodeA = nodes[n.a]
+				,   nodeB = nodes[i+1]
+
+				var conA = nodeA.connections[n.ai]
+				,   conB = nodeB.connections[n.bi]
+
+				nodeA.connect(n.ai, nodeB, n.bi)
+
+				if(animate) {
+					conA.playConnection()
+				}
+			}
+
+			return root
+		})
+	},
+
+	constructJSON: function(json, samples, animate) {
+		var root = new TNode(samples[0])
+
+		if(json && json.nodes) {
+
+			var nodes = [root]
 			for(var i = 0; i < json.nodes.length; i++) {
 				nodes.push(new TNode(samples[json.nodes[i].t]))
 			}
@@ -77,9 +107,9 @@ TSerial = {
 					conA.playConnection()
 				}
 			}
+		}
 
-			return root
-		})
+		return root
 	},
 
 
