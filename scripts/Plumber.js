@@ -192,7 +192,7 @@ Plumber = f.unit({
 	},
 
 	importJSON: function(json, animate) {
-		return TSerial.fromJSON(json, animate).then(this.absolutelySetMainTree, this)
+		return TSerial.fromJSON(json, this.sampler, animate).then(this.absolutelySetMainTree, this)
 	},
 
 	exportString: function() {

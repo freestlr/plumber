@@ -36,8 +36,8 @@ TSerial = {
 		}
 	},
 
-	fromJSON: function(json, animate) {
-		var samples = TSerial.prepareSamples(json.types)
+	fromJSON: function(json, sampler, animate) {
+		var samples = TSerial.prepareSamples(json.types, sampler)
 
 		return Defer.all(samples.map(f.func('load'))).then(function() {
 			return TSerial.constructJSON(json, samples, animate)
