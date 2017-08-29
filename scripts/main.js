@@ -43,7 +43,16 @@ function addSample(item) {
 }
 
 function changeSample(sample) {
-	main.displayFigure(!sample || main.isComplexFigure(sample) ? sample : sample.id)
+	if(!sample) {
+		main.displayFigure(null)
+
+	} else if(main.isComplexFigure(sample)) {
+		main.clear()
+		main.displayFigure(sample)
+
+	} else {
+		main.displayFigure(sample.id)
+	}
 }
 
 function onImportElement(sample) {
