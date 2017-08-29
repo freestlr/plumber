@@ -52,9 +52,8 @@
 		"link": "https://shop.eriks.nl/en/bsp-t-piece-b240-12-11483749/"
 	},
 	{
-		"hide": 1,
+		"hide": 0,
 		"id": "heavy 1",
-		"complex": true,
 		"types": [
 			"samples/heavy 1/Clamp_428_PP.json",
 			"samples/heavy 1/CoverPlateaDP_AS_4.json",
@@ -69,6 +68,33 @@
 			{"t": 2, "a": 1, "ai": 5, "bi": 0},
 			{"t": 3, "a": 0, "ai": 3, "bi": 5},
 			{"t": 0, "a": 6, "ai": 0, "bi": 3}
+		]
+	},
+	{
+		"id": "Standard set 1 v2 #A",
+		"types": [
+			"samples/Standard set 1 v2 A/Clamp 219 PP.json",
+			"samples/Standard set 1 v2 A/Weld plate SP.json",
+			"samples/Standard set 1 v2 A/CoverPlateBolts - DP-AS.json",
+			"samples/Standard set 1 v2 A/bolt_m6.json"
+		],
+		"nodes": [
+			{"t": 1, "a": 0, "ai": 0, "bi": 2},
+			{"t": 2, "a": 0, "ai": 4, "bi": 0},
+			{"t": 3, "a": 2, "ai": 1, "bi": 0},
+			{"t": 3, "a": 2, "ai": 2, "bi": 0}
+		]
+	},
+	{
+		"id": "Standard set 2 v3 #A",
+		"types": [
+			"samples/Standard set 2 v3 A/clamp_216.json",
+			"samples/Standard set 2 v3 A/Weld plate.json",
+			"samples/Standard set 2 v3 A/bolts_m6.json"
+		],
+		"nodes": [
+			{"t": 1, "a": 0, "ai": 0, "bi": 0},
+			{"t": 2, "a": 1, "ai": 1, "bi": 0}
 		]
 	},
 

@@ -26,7 +26,7 @@ function eventmap() {
 	})
 
 	sidebar.events.when({
-		'sample_change': main.displaySample,
+		'sample_change': changeSample,
 		'sample_remove': main.removeSample,
 		'file_import': main.importFile
 	}, main)
@@ -35,18 +35,22 @@ function eventmap() {
 function addSample(item) {
 	if(!item || item.hide) return
 
-	if(item.complex) {
-		// var sample = main.addComplex(item.id, item)
-	} else {
-		var sample = main.addSample(item.id, item.src, item.link)
+	if(!main.isComplexFigure(item)) {
+		main.addSample(item.id, item.src, item.link)
 	}
 
-	sidebar.addSample(item.id, item.id, item.thumb, false)
+	sidebar.addSample(item, item.id, item.thumb, false)
+}
+
+function changeSample(sample) {
+	console.log('changeSample', sample)
+
+	main.displayFigure(!sample || main.isComplexFigure(sample) ? sample : sample.id)
 }
 
 function onImportElement(sample) {
-	sidebar.addSample(sample.id, sample.id, sample.thumb, true)
-	sidebar.setSample(sample.id)
+	sidebar.addSample(sample, sample.id, sample.thumb, true)
+	sidebar.setSample(sample)
 }
 
 function onAddElement(e) {
@@ -60,6 +64,10 @@ function onAddElement(e) {
 		break
 
 		case 'rejected':
+		break
+
+		case 'error':
+			sidebar.sampleMenu.set(-1)
 		break
 	}
 }

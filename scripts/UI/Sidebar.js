@@ -26,12 +26,12 @@ UI.Sidebar = f.unit(Block, {
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
 	},
 
-	addSample: function(id, name, thumb, removable) {
+	addSample: function(data, name, thumb, removable) {
 		var menu = this.sampleMenu
 
-		this.remSample(id)
+		this.remSample(data)
 
-		var block = menu.addItem({ data: id })
+		var block = menu.addItem({ data: data })
 
 		block.element.setAttribute('draggable', true)
 
@@ -58,14 +58,14 @@ UI.Sidebar = f.unit(Block, {
 		}
 	},
 
-	remSample: function(id) {
+	remSample: function(data) {
 		var menu = this.sampleMenu
 
-		menu.removeBlock(menu.blocks[menu.getIndex(id)])
+		menu.removeBlock(menu.blocks[menu.getIndex(data)])
 	},
 
-	setSample: function(id) {
-		this.sampleMenu.setItem(id)
+	setSample: function(data) {
+		this.sampleMenu.setItem(data)
 	},
 
 	onSampleRemove: function(block) {

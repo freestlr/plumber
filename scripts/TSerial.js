@@ -1,5 +1,4 @@
 TSerial = {
-	sampler: null,
 
 	toJSON: function(tree) {
 		var types = []
@@ -38,47 +37,16 @@ TSerial = {
 	},
 
 	fromJSON: function(json, animate) {
-		var samples = []
-		,   nodes   = []
-		,   defers  = []
+		var samples = TSerial.prepareSamples(json.types)
 
-		for(var i = 0; i < json.types.length; i++) {
-			var src = json.types[i]
+		return Defer.all(samples.map(f.func('load'))).then(function() {
+			return TSerial.constructJSON(json, samples, animate)
+		})
+	},
 
-			var sample = f.apick(TSerial.sampler.samples, 'src', src)
-			if(!sample) {
-				sample = TSerial.sampler.addSample({ src: src })
-			}
-
-			samples.push(sample)
-			defers.push(sample.load())
-		}
-
-		return Defer.all(defers).then(function() {
-			var root = new TNode(samples[0])
-
-			nodes.push(root)
-			if(json.nodes) for(var i = 0; i < json.nodes.length; i++) {
-				nodes.push(new TNode(samples[json.nodes[i].t]))
-			}
-
-			if(json.nodes) for(var i = 0; i < json.nodes.length; i++) {
-				var n = json.nodes[i]
-
-				var nodeA = nodes[n.a]
-				,   nodeB = nodes[i+1]
-
-				var conA = nodeA.connections[n.ai]
-				,   conB = nodeB.connections[n.bi]
-
-				nodeA.connect(n.ai, nodeB, n.bi)
-
-				if(animate) {
-					conA.playConnection()
-				}
-			}
-
-			return root
+	prepareSamples: function(types, sampler) {
+		return types.map(function(src) {
+			return f.apick(sampler.samples, 'src', src) || sampler.addSample({ src: src })
 		})
 	},
 

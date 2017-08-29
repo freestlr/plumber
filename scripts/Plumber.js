@@ -22,8 +22,6 @@ Plumber = f.unit({
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
 
-		TSerial.sampler = this.sampler
-
 
 		this.connectionParts = []
 
@@ -215,7 +213,7 @@ Plumber = f.unit({
 
 		if(!sample) return
 
-		this.displaySample(sample.id)
+		this.displayFigure(sample.id)
 		return this.deferSample
 	},
 
@@ -312,12 +310,12 @@ Plumber = f.unit({
 	},
 
 	onViewClear2: function() {
-		this.displaySample(null)
+		this.displayFigure(null)
 		this.events.emit('onAddElement', { status: 'canceled' })
 	},
 
 	clear: function() {
-		this.displaySample(null)
+		this.displayFigure(null)
 		this.view.setPreloader(null)
 		this.view2.setPreloader(null)
 		this.clearTree()
@@ -386,13 +384,21 @@ Plumber = f.unit({
 		}
 	},
 
-	displaySample: function(sid) {
-		var sample = f.apick(this.sampler.samples, 'id', sid)
-		if(sample === this.sampleView2) return
+	displayFigure: function(figure) {
+		if(typeof figure === 'string') {
+			figure = f.apick(this.sampler.samples, 'id', figure)
+		}
 
-		this.sampleView2 = this.tree || this.mode === 'viewer' ? sample : null
+		if(this.sampleView2 === figure) return
 
-		this.splitScreen = !!(this.sampleView2 && (this.sampleView2.object || this.sampleView2.src))
+		if(this.tree && this.mode !== 'viewer') {
+			this.sampleView2 = figure
+
+		} else {
+			this.sampleView2 = null
+		}
+
+		this.splitScreen = !!this.sampleView2
 
 		this.view.markers.markersVisible.off('g_m_view2')
 		this.view2.markers.markersVisible.off('g_m_view2')
@@ -413,21 +419,21 @@ Plumber = f.unit({
 			this.viewTween.start()
 		}
 
-		dom.togclass(this.emptyViewMessage, 'hidden', this.tree || sample)
+		dom.togclass(this.emptyViewMessage, 'hidden', this.tree || figure)
 
-		if(!sample) {
+		if(!figure) {
 
 		} else if(this.sampleView2) {
-			this.constructNode(sample, this.view2).then(this.setTree2, this)
+			this.constructNode(figure, this.view2).then(this.setTree2, this)
 
 		} else {
-			this.constructNode(sample, this.view).then(this.setTree1, this)
+			this.constructNode(figure, this.view).then(this.setTree1, this)
 		}
 
 	},
 
 	isComplexFigure: function(figure) {
-		return figure && figure.types && figure.nodes
+		return figure && figure.types instanceof Array
 	},
 
 	constructNode: function(figure, targetView) {
@@ -435,44 +441,35 @@ Plumber = f.unit({
 			return this.ready.then(f.binda(this.constructNode, this, arguments))
 		}
 
-		if(targetView) {
-			targetView.setPreloader(null)
-		}
+		if(targetView) targetView.setPreloader(null)
 
 
 		if(figure instanceof Sample) {
-			targetView.setPreloader([figure])
+			if(targetView) targetView.setPreloader([figure])
 
-			return figure.load().then(TNode.New, f.nop)
+			return figure.load().then(TNode.New, this.constructError, this)
 
 
 		} else if(this.isComplexFigure(figure)) {
+			var samples = TSerial.prepareSamples(figure.types, this.sampler)
 
-			var defers = []
-			for(var i = 0; i < figure.types.length; i++) {
-				var src = figure.types[i]
+			if(targetView) targetView.setPreloader(samples)
 
-				var sample = f.apick(this.sampler.samples, 'src', src)
-				if(!sample) {
-					sample = this.sampler.addSample({ src: src })
-				}
-
-				samples.push(sample)
-				defers.push(sample.load())
-			}
-
-			targetView.setPreloader(samples)
-
-			return Defer.all(defers).then(function() {
+			return Defer.all(samples.map(f.func('load'))).then(function() {
 				return TSerial.constructJSON(figure, samples, false)
 
-			}, f.nop)
+			}, this.constructError, this)
 		}
+	},
+
+	constructError: function(e) {
+		this.events.emit('onAddElement', { status: 'error', error: e })
 	},
 
 
 	setTree2: function(node) {
 		if(!node) return
+		console.log('setTree2', node)
 
 		this.view2.setTree(node)
 		this.updateConnectionGroups(this.tree, node)
@@ -791,7 +788,7 @@ Plumber = f.unit({
 
 
 	onSampleImport: function(sample) {
-		this.displaySample(sample.id)
+		this.displayFigure(sample.id)
 		this.events.emit('onImportElement', sample)
 		return sample
 	},
@@ -871,7 +868,7 @@ Plumber = f.unit({
 		master.playConnection()
 
 
-		this.displaySample(null)
+		this.displayFigure(null)
 
 		this.events.emit('onAddElement', { status: 'connected' })
 	},

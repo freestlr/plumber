@@ -40,6 +40,7 @@ TConnection = f.unit({
 
 	makeTween: function() {
 		this.tween = new TWEEN.Tween({ connected: 0 })
+			.to({ connected: 1 }, 1000)
 			.easing(TWEEN.Easing.Linear.None)
 			.onStart(this.onTweenStart, this)
 			.onUpdate(this.onTweenUpdate, this)
@@ -155,13 +156,19 @@ TConnection = f.unit({
 		this.events.emit('connect_start', this)
 
 		var duration = this.getTransitionStages().reduce(f.sum)
-		,   connected = state == null ? 1 : state
-
 		if(!isNaN(timeScale)) {
 			duration *= timeScale
 		}
 
-		this.tween.to({ connected: connected }, duration).start()
+		if(state == null) {
+			this.tween.target.connected = 1
+
+		} else {
+			this.tween.source.connected = +!state
+			this.tween.target.connected = + state
+		}
+
+		this.tween.duration(duration).start()
 	},
 
 

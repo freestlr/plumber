@@ -126,7 +126,7 @@ Loader.ajaxTransport = function() {
 				unit.deferHead.resolve(unit.data)
 
 			} else {
-				unit.deferHead.reject(req.status)
+				unit.deferHead.reject('HTTP '+ req.status)
 			}
 		}
 	}
