@@ -11,8 +11,10 @@ UI.MarkerSystem = f.unit(Block, {
 
 	onMarkersVisible: function(visible) {
 		for(var i = 0; i < this.markers.length; i++) {
-			var m = this.markers[i]
-			if(!m.undisposable) m.visible.set(visible, 'system')
+			var marker = this.markers[i]
+			if(!marker.undisposable) {
+				marker.visible.set(visible, 'system')
+			}
 		}
 	},
 
@@ -21,12 +23,13 @@ UI.MarkerSystem = f.unit(Block, {
 		if(index !== -1) return
 
 		this.markers.push(marker)
-		marker.plug(this)
-		marker.updateState()
 
 		if(!marker.undisposable) {
 			marker.visible.set(this.markersVisible.value, 'system')
 		}
+
+		marker.plug(this)
+		marker.updateState()
 	},
 
 	removeMarker: function(marker) {

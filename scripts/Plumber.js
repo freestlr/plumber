@@ -176,8 +176,8 @@ Plumber = f.unit({
 
 
 		this.updateMarkerVisibility()
-		this.view .markers.markersVisible.set(this.modeis.ctr, 'g_m_mode')
-		this.view2.markers.markersVisible.set(this.modeis.ctr, 'g_m_mode')
+		this.view .markers.markersVisible.set(!!this.modeis.ctr, 'g_m_mode')
+		this.view2.markers.markersVisible.set(!!this.modeis.ctr, 'g_m_mode')
 
 
 		this.tiles.update()
@@ -484,8 +484,8 @@ Plumber = f.unit({
 	updateMarkerVisibility: function() {
 		var visible = this.debug || this.view2.tree
 
-		this.view .markers.markersVisible.set(visible, 'g_m_split')
-		this.view2.markers.markersVisible.set(visible, 'g_m_split')
+		this.view .markers.markersVisible.set(!!visible, 'g_m_split')
+		this.view2.markers.markersVisible.set(!!visible, 'g_m_split')
 	},
 
 	updateConnectionGroups: function(tree, tree2) {
