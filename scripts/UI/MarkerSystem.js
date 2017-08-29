@@ -41,7 +41,8 @@ UI.MarkerSystem = f.unit(Block, {
 		while(this.markers.length) this.removeMarker(this.markers[0])
 	},
 
-	update: function() {
+	update: function(force) {
+		if(force) this.markers.forEach(f.func('updateState'))
 		f.sort(this.markers, this.distanceSort, this)
 		this.markers.forEach(this.updateMarker, this)
 	},
@@ -163,30 +164,50 @@ UI.Marker = f.unit(Block.Tip, {
 	updateState: function() {
 		if(!this.connection) return
 
+
 		for(var key in this.state) {
 			var val = this.connection[key]
 
 			this.state[key] = val instanceof Gate ? val.value : val
 		}
 
+		if(this.state.connected) {
+			this.align = this.state.master ? 'left' : 'right'
+			this.distance = 1000
+
+		} else {
+			this.align = 'top'
+			this.distance = 100
+		}
+
 		Atlas.free(this.elemGroup)
 		dom.text(this.elemGroup, '')
 
-		var g = this.connection.group
-		if(isNaN(g)) {
+		var group = this.connection.group
+		var hasGroup = !isNaN(this.connection.group)
+		if(!hasGroup) {
 
-		} else if(g === -1) {
+		} else if(group === -1) {
 			Atlas.set(this.elemGroup, 'i-deny')
 
 		} else {
-			dom.text(this.elemGroup, String.fromCharCode(g + 65))
+			dom.text(this.elemGroup, String.fromCharCode(group + 65))
 		}
-		dom.display(this.elemGroup, !isNaN(g))
-		this.visible.set(!isNaN(g), 'mapped')
 
-
+		dom.display(this.elemGroup, hasGroup)
 		dom.setclass(this.element, this.state)
-		this.visible.set(!this.state.connected, 'available')
+
+
+		var visible = false
+		if(this.system && this.system.verbose) {
+			visible = true
+		} else if(this.system && this.system.debug) {
+			visible = !this.state.connected
+		} else {
+			visible = hasGroup && !this.state.connected
+		}
+
+		this.visible.set(visible, 'state')
 	},
 
 	onEnter: function() {

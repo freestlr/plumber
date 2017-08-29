@@ -497,11 +497,19 @@ View3.prototype = {
 			case 'w': return this.transform.setSpace('world')
 
 			case 'x':
-				this.enableWireframe = !this.enableWireframe
+				this.debug = !this.debug
+				this.enableWireframe = this.debug
 				this.needsRedraw = true
 
-				dom.togclass(this.markers.element, 'debug', this.enableWireframe)
-				this.markers.update()
+				dom.togclass(this.markers.element, 'debug', this.debug)
+				this.markers.debug = this.debug
+				this.markers.update(true)
+			return
+
+			case 's':
+				this.verbose = !this.verbose
+				this.markers.verbose = this.verbose
+				this.markers.update(true)
 			return
 
 			case 'z':

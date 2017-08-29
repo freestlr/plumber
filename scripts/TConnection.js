@@ -112,7 +112,7 @@ TConnection = f.unit({
 
 		var depth = this.depth + this.connected.depth
 		,   screw = this.screw || this.connected.screw ? Math.PI * 2 : 0
-		,   distance = this.connected.node.sample.length / 2
+		,   distance = (this.node.sample.length + this.connected.node.sample.length) /2
 
 
 		var par_distance = 0

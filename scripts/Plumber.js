@@ -175,9 +175,7 @@ Plumber = f.unit({
 		this.splitViewMessageVisible.set(this.modeis.ctr, 'g_vm_mode')
 
 
-		this.view .markers.markersVisible.off('g_m_view2')
-		this.view2.markers.markersVisible.off('g_m_view2')
-
+		this.updateMarkerVisibility()
 		this.view .markers.markersVisible.set(this.modeis.ctr, 'g_m_mode')
 		this.view2.markers.markersVisible.set(this.modeis.ctr, 'g_m_mode')
 
@@ -400,8 +398,6 @@ Plumber = f.unit({
 
 		this.splitScreen = !!this.sampleView2
 
-		this.view.markers.markersVisible.off('g_m_view2')
-		this.view2.markers.markersVisible.off('g_m_view2')
 
 		this.splitViewMessageVisible.set(this.splitScreen, 'g_vm_screen')
 
@@ -418,6 +414,8 @@ Plumber = f.unit({
 			this.viewTween.target.position = splitPosition
 			this.viewTween.start()
 		}
+
+		this.updateMarkerVisibility()
 
 		dom.togclass(this.emptyViewMessage, 'hidden', this.tree || figure)
 
@@ -469,13 +467,10 @@ Plumber = f.unit({
 
 	setTree2: function(node) {
 		if(!node) return
-		console.log('setTree2', node)
 
 		this.view2.setTree(node)
 		this.updateConnectionGroups(this.tree, node)
-
-		this.view.markers.markersVisible.on('g_m_view2')
-		this.view2.markers.markersVisible.on('g_m_view2')
+		this.updateMarkerVisibility()
 	},
 
 	setTree1: function(node) {
@@ -484,6 +479,13 @@ Plumber = f.unit({
 		if(node) {
 			this.events.emit('onAddElement', { status: 'connected' })
 		}
+	},
+
+	updateMarkerVisibility: function() {
+		var visible = this.debug || this.view2.tree
+
+		this.view .markers.markersVisible.set(visible, 'g_m_split')
+		this.view2.markers.markersVisible.set(visible, 'g_m_split')
 	},
 
 	updateConnectionGroups: function(tree, tree2) {
@@ -621,7 +623,9 @@ Plumber = f.unit({
 				this.debug = !this.debug
 				this.imagery.materials.subtract.visible = !!this.debug
 				this.imagery.materials.norcon.visible = !!this.debug
-				if(this.debug && this.view2.tree) this.view2.tree.sample.describe()
+				this.updateMarkerVisibility()
+
+				// if(this.debug && this.view2.tree) this.view2.tree.sample.describe()
 			break
 
 			case 'r':
@@ -853,9 +857,6 @@ Plumber = f.unit({
 	},
 
 	makeViewConnection: function(master, slave) {
-		this.view.markers.markersVisible.off('g_m_view2')
-		this.view2.markers.markersVisible.off('g_m_view2')
-
 		this.view.selectConnection(null)
 		this.view2.selectConnection(null)
 		this.view2.setTree(null)

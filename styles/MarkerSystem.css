@@ -100,14 +100,14 @@
 .marker.connected .marker-interactive {
 	color: white;
 	fill: white;
-	stroke: skyblue;
-	background-color: skyblue;
+	stroke: #257190;
+	background-color: #257190;
 }
-.marker.connected.master .marker-interactive {
+.marker.master .marker-interactive {
 	color: white;
 	fill: white;
-	stroke: tomato;
-	background-color: tomato;
+	stroke: #9c402f;
+	background-color: #9c402f;
 }
 
 .marker:hover {
@@ -131,13 +131,11 @@
 	background-color: #58e85d;
 }
 
-.marker.connected .marker-interactive,
 .marker.inactive  .marker-interactive {
 	color: #bbc4c9;
 	fill: #bbc4c9;
 	stroke: #cfd8dd;
 	background-color: #cfd8dd;
-	pointer-events: none;
 }
 .marker svg.marker-interactive {
 	background-color: transparent !important;

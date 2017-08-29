@@ -43,8 +43,6 @@ function addSample(item) {
 }
 
 function changeSample(sample) {
-	console.log('changeSample', sample)
-
 	main.displayFigure(!sample || main.isComplexFigure(sample) ? sample : sample.id)
 }
 
