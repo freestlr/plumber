@@ -54,6 +54,7 @@
 	{
 		"hide": 0,
 		"id": "heavy 1",
+		"thumb": "images/thumbs/heavy 1.png",
 		"types": [
 			"samples/heavy 1/Weld plate SP4.json",
 			"samples/heavy 1/Clamp_428_PP.json",
@@ -72,6 +73,7 @@
 	},
 	{
 		"id": "Standard set 1 v2 #A",
+		"thumb": "images/thumbs/Standard set 1 v2 A.png",
 		"types": [
 			"samples/Standard set 1 v2 A/Clamp 219 PP.json",
 			"samples/Standard set 1 v2 A/Weld plate SP.json",
@@ -87,6 +89,7 @@
 	},
 	{
 		"id": "Standard set 2 v3 #A",
+		"thumb": "images/thumbs/Standard set 2 v3 A.png",
 		"types": [
 			"samples/Standard set 2 v3 A/clamp_216.json",
 			"samples/Standard set 2 v3 A/Weld plate.json",
