@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<head>
+	<title>fit test</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+	<script src="scripts/lib/jsonformat.js"></script>
+	<script src="scripts/TSerial.js"></script>
+	<style>
+		.block {
+			position: absolute;
+			top: 0;
+			width: 50%;
+			height: 100%;
+			overflow: hidden;
+			padding: 12px;
+			box-sizing: border-box;
+		}
+		.block-left {
+			left: 0;
+		}
+		.block-left .label,
+		.block-left input {
+			float: right;
+		}
+		.block-right {
+			right: 0;
+		}
+		textarea {
+			width: 100%;
+			height: 60%;
+			box-sizing: border-box;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="view">
+		<div class="block block-left">
+			<div class="label">input</div>
+			<textarea id="eTextIn"></textarea>
+			<input type="button" id="eButtonIn" value="encode >>>">
+		</div>
+
+		<div class="block block-right">
+			<div class="label">output</div>
+			<textarea id="eTextOut"></textarea>
+			<input type="button" id="eButtonOut" value="<<< decode">
+		</div>
+	</div>
+
+	<script>
+		// eTextIn.addEventListener('change', encode)
+		// eTextIn.addEventListener('input', encode)
+		eButtonIn.addEventListener('click', encode)
+
+		// eTextOut.addEventListener('change', decode)
+		// eTextOut.addEventListener('input', decode)
+		eButtonOut.addEventListener('click', decode)
+
+
+		function encode() {
+			try {
+				eTextOut.value = TSerial.toString(JSON.parse(eTextIn.value))
+
+			} catch(e) {
+				eTextOut.value = e
+			}
+		}
+
+		function decode() {
+			try {
+				eTextIn.value = jsonformat(TSerial.fromString(eTextOut.value), null, 60)
+
+			} catch(e) {
+				eTextIn.value = e
+			}
+		}
+
+
+		var example = {
+			types: [
+				'samples/heavy 1/Weld plate SP4.json',
+				'samples/heavy 1/Clamp_428_PP.json',
+				'samples/heavy 1/CoverPlateaDP_AS_4.json',
+				'samples/heavy 1/bolt_m12.json'
+			],
+			nodes: [
+				{ t: 1, a: 0, ai: 0, bi: 3 },
+				{ t: 1, a: 0, ai: 5, bi: 3 },
+				{ t: 2, a: 2, ai: 2, bi: 1 },
+				{ t: 3, a: 3, ai: 2, bi: 0 },
+				{ t: 3, a: 3, ai: 3, bi: 0 },
+				{ t: 3, a: 3, ai: 4, bi: 0 },
+				{ t: 3, a: 3, ai: 5, bi: 0 }
+			]
+		}
+
+		eTextIn.value = jsonformat(example, null, 60)
+		encode()
+
+	</script>
+</body>
