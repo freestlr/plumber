@@ -903,7 +903,7 @@ Plumber = f.unit({
 		new EventHandler(this.onkey,    this).listen('keydown', window)
 		new EventHandler(this.onkey,    this).listen('keyup',   window)
 		new EventHandler(this.onTap,    this).listen('tap',     window)
-		new EventHandler(this.onHash,   this).listen('hashchange', window)
+		// new EventHandler(this.onHash,   this).listen('hashchange', window)
 
 		new EventHandler(this.onDragOver, this).listen('dragover', this.view .element)
 		new EventHandler(this.onDragOver, this).listen('dragover', this.view2.element)
