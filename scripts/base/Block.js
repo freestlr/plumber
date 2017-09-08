@@ -91,7 +91,7 @@ Block = f.unit({
 
 		this.width  = w
 		this.height = h
-		this.onresize()
+		this.onResize()
 	},
 
 	autoresize: function() {
@@ -104,10 +104,10 @@ Block = f.unit({
 
 		this.width  = w
 		this.height = h
-		this.onresize()
+		this.onResize()
 	},
 
-	onresize: function() {
+	onResize: function() {
 
 	}
 })
@@ -242,7 +242,6 @@ Block.Menu = f.unit(Block.List, {
 	unitName: 'Block_Menu',
 	ename: 'menu',
 	active: -1,
-	deselect: false,
 
 	options: {
 		ename: 'menu-item',
@@ -270,9 +269,6 @@ Block.Menu = f.unit(Block.List, {
 	update: function() {
 		for(var i = this.blocks.length -1; i >= 0; i--) {
 			var block = this.blocks[i]
-			if(!this.deselect) {
-				block.disabled = block.active
-			}
 			if(!block.active) continue
 
 			this.active = i
@@ -324,9 +320,7 @@ Block.Menu = f.unit(Block.List, {
 			var block = this.blocks[i]
 			if(block === except) continue
 
-			if(block.set(0, emitEvent)) {
-				if(!this.deselect) block.disabled = false
-			}
+			block.set(0, emitEvent, true)
 		}
 	}
 })
@@ -350,7 +344,7 @@ Block.Tip = f.unit(Block, {
 		this.arrowPoint   = { x: 0, y: 0 }
 		this.elementPoint = { x: 0, y: 0 }
 
-		this.transitionTween = new TWEEN.Tween({ o: 0, x: 0, y: 0 })
+		this.transitionTween = new TWEEN.Tween({ v: +!this.hidden })
 			.easing(TWEEN.Easing.Cubic.Out)
 			.to({}, this.animationTime)
 			.onStart(this.onTransitionStart, this)
@@ -502,6 +496,8 @@ Block.Tip = f.unit(Block, {
 
 		this.arrowPoint.x = apl
 		this.arrowPoint.y = apt
+		this.arrow.style.left = apl +'px'
+		this.arrow.style.top  = apt +'px'
 
 		this.elementPoint.x = epl
 		this.elementPoint.y = ept
@@ -513,14 +509,25 @@ Block.Tip = f.unit(Block, {
 		this.updateTransform()
 	},
 
+
+	alignAxes: {
+		left   : { x:  1, y:  0 },
+		right  : { x: -1, y:  0 },
+		top    : { x:  0, y:  1 },
+		bottom : { x:  0, y: -1 }
+	},
+
+	transitionAxis: null,
+
 	updateTransform: function() {
-		var s = this.transitionTween.source
-		,   a = this.arrowPoint
+		var d = (1 - this.transitionTween.source.v) * this.tweenDistance
 		,   e = this.elementPoint
 
-		this.transform(this.element, e.x + s.x, e.y + s.y)
-		this.arrow.style.left = a.x +'px'
-		this.arrow.style.top  = a.y +'px'
+		var a = this.transitionAxis
+			|| this.alignAxes[this.lastAlign || this.align]
+			|| { x: 0, y: 0 }
+
+		this.transform(this.element, e.x + d * a.x, e.y + d * a.y)
 	},
 
 	transform: function(element, x, y, s) {
@@ -560,34 +567,20 @@ Block.Tip = f.unit(Block, {
 	},
 
 	visibleMethod: function(elem, v) {
-		var s = this.transitionTween.source
-		,   t = this.transitionTween.target
-		,   d = this.tweenDistance
-
-		var ox = { left: d, right: -d } [this.lastAlign] || 0
-		,   oy = { top: d, bottom: -d } [this.lastAlign] || 0
-
-
 		if(!this.initVisible) {
 			this.initVisible = true
 
-			s.x = v ? ox : 0
-			s.y = v ? oy : 0
-			s.o = +!v
-
+			this.transitionTween.source.v = +v
 			this.onTransitionUpdate()
 			this.onTransitionEnd()
 			return
 		}
 
-		t.x = v ? 0 : ox
-		t.y = v ? 0 : oy
-		t.o = +v
-
 		if(this.visible.value) {
 			dom.append(this.tipRoot, this.element)
 		}
 
+		this.transitionTween.target.v = +v
 		this.transitionTween.start()
 	},
 
@@ -596,8 +589,7 @@ Block.Tip = f.unit(Block, {
 	},
 
 	onTransitionUpdate: function() {
-		var s = this.transitionTween.source
-		this.element.style.opacity = s.o
+		this.element.style.opacity = this.transitionTween.source.v
 		this.updateTransform()
 	},
 
