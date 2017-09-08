@@ -37,13 +37,19 @@
 
 	<div class="view">
 		<div class="block block-left">
-			<div class="label">input</div>
+			<div class="label">
+				input
+				<span id="eSizeIn" class="size"></span>
+			</div>
 			<textarea id="eTextIn"></textarea>
 			<input type="button" id="eButtonIn" value="encode >>>">
 		</div>
 
 		<div class="block block-right">
-			<div class="label">output</div>
+			<div class="label">
+				output
+				<span id="eSizeOut" class="size"></span>
+			</div>
 			<textarea id="eTextOut"></textarea>
 			<input type="button" id="eButtonOut" value="<<< decode">
 		</div>
@@ -62,28 +68,37 @@
 		function encode() {
 			try {
 				eTextOut.value = TSerial.toString(JSON.parse(eTextIn.value))
+				updateSize(true)
 
 			} catch(e) {
 				eTextOut.value = e
+				updateSize(false)
 			}
 		}
 
 		function decode() {
 			try {
 				eTextIn.value = jsonformat(TSerial.fromString(eTextOut.value), null, 60)
+				updateSize(true)
 
 			} catch(e) {
 				eTextIn.value = e
+				updateSize(false)
 			}
+		}
+
+		function updateSize(ok) {
+			eSizeIn .textContent = ok ? '('+ JSON.stringify(JSON.parse(eTextIn.value)).length +' bytes json)' : ''
+			eSizeOut.textContent = ok ? '('+ eTextOut.value.length +' bytes base64)' : ''
 		}
 
 
 		var example = {
 			types: [
-				'samples/heavy 1/Weld plate SP4.json',
-				'samples/heavy 1/Clamp_428_PP.json',
-				'samples/heavy 1/CoverPlateaDP_AS_4.json',
-				'samples/heavy 1/bolt_m12.json'
+				'Weld plate SP4.json',
+				'Clamp_428_PP.json',
+				'CoverPlateaDP_AS_4.json',
+				'bolt_m12.json'
 			],
 			nodes: [
 				{ t: 1, a: 0, ai: 0, bi: 3 },
