@@ -650,6 +650,13 @@ Plumber = f.unit({
 		this.view2.onKey(e)
 	},
 
+	rotateNode: function(node) {
+		if(!node || !node.upcon) return
+
+		node.upcon.rotate(Math.PI / 6)
+		this.view.needsRedraw = true
+	},
+
 	promptDeleteNode: function(node) {
 		if(!node) return
 
@@ -829,6 +836,10 @@ Plumber = f.unit({
 
 			dom.remclass(m.content, 'marker-interactive')
 
+
+			m.bRot = dom.div('marker-action', m.content)
+			m.watchEvents.push(new EventHandler(this.rotateNode, this, node).listen('tap', m.bRot))
+			m.watchAtlas.push(Atlas.set(m.bRot, 'i-rotate'))
 
 			m.bDel = dom.div('marker-action', m.content)
 			m.watchEvents.push(new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel))

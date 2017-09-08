@@ -293,6 +293,12 @@ TConnection = f.unit({
 		slave.events.emit('disconnect', [slave, master])
 	},
 
+	rotate: function(angle) {
+		if(!this.connected || this.master) return
+
+		this.object.rotateOnAxis(this.normal, angle)
+	},
+
 	destroy: function() {
 		this.marker.destroy()
 	},
