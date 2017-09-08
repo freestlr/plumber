@@ -5,6 +5,7 @@ var main = new Plumber({
 	eroot: document.body,
 	srcAtlas: 'images/atlas.svg',
 	srcCubemap: 'images/cubemap.png',
+	dirSamples: 'samples/',
 	catchFiles: true
 })
 
