@@ -903,6 +903,7 @@ Plumber = f.unit({
 		new EventHandler(this.onkey,    this).listen('keydown', window)
 		new EventHandler(this.onkey,    this).listen('keyup',   window)
 		new EventHandler(this.onTap,    this).listen('tap',     window)
+		new EventHandler(this.onHash,   this).listen('hashchange', window)
 
 		new EventHandler(this.onDragOver, this).listen('dragover', this.view .element)
 		new EventHandler(this.onDragOver, this).listen('dragover', this.view2.element)
@@ -941,7 +942,13 @@ Plumber = f.unit({
 			this.importString(hash, true)
 			location.hash = ''
 
-		} catch(e) {}
+		} catch(e) {
+			console.warn('loadFromHash failed:', e)
+		}
+	},
+
+	onHash: function() {
+		this.loadFromHash()
 	},
 
 	onTick: function(t, dt) {
