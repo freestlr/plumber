@@ -28,13 +28,13 @@ Gate.prototype = {
 	},
 
 	check: function(force) {
-		var value
+		var value = Gate.UNSET
 		for(var pin in this.inputs) {
-			if(undefined === value) value = this.inputs[pin]
+			if(Gate.UNSET === value) value = this.inputs[pin]
 			else value = this.method(value, this.inputs[pin])
 		}
 
-		if(undefined === value) {
+		if(Gate.UNSET === value) {
 			value = this.value
 		}
 
@@ -50,6 +50,8 @@ Gate.prototype = {
 
 	constructor: Gate
 }
+
+Gate.UNSET = {}
 
 Gate.MULTIPLY = function(a, b) { return a *  b }
 Gate.ADD      = function(a, b) { return a +  b }
