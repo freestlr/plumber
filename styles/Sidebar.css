@@ -11,7 +11,7 @@
 
 .sample-item {
 	position: relative;
-	height: 156px;
+	height: 44px;
 	font-size: 13px;
 	font-weight: bold;
 	text-align: center;
@@ -19,6 +19,9 @@
 	border-bottom: 1px solid #eee;
 	background-color: white;
 	white-space: nowrap;
+}
+.sample-item.thumbed {
+	height: 156px;
 }
 .sample-item:last-child {
 	border-bottom: none;
@@ -33,13 +36,15 @@
 .sample-name {
 	position: absolute;
 	width: 100%;
-	height: 18px;
-	bottom: 18px;
+	bottom: 14px;
+}
+.thumbed .sample-name {
+	bottom: 14px;
 }
 
 .sample-remove {
 	position: absolute;
-	top: 8px;
+	top: 10px;
 	right: 8px;
 	width: 24px;
 	height: 24px;

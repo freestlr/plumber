@@ -57,7 +57,7 @@ function changeSample(sample) {
 }
 
 function onImportElement(sample) {
-	sidebar.addSample(sample, sample.id, sample.thumb, true)
+	sidebar.addSample(sample, sample.id, sample.thumb, true, true)
 	sidebar.setSample(sample)
 }
 

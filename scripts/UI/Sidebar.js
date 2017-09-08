@@ -26,12 +26,14 @@ UI.Sidebar = f.unit(Block, {
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
 	},
 
-	addSample: function(data, name, thumb, removable) {
+	addSample: function(data, name, thumb, removable, start) {
 		var menu = this.sampleMenu
 
 		this.remSample(data)
 
 		var block = menu.addItem({ data: data })
+
+		if(start) dom.prepend(menu.element, block.element)
 
 		block.element.setAttribute('draggable', true)
 
@@ -40,6 +42,7 @@ UI.Sidebar = f.unit(Block, {
 
 
 		if(thumb) {
+			dom.addclass(block.element, 'thumbed')
 			dom.img(thumb, 'sample-thumb', block.element)
 		}
 
@@ -61,7 +64,13 @@ UI.Sidebar = f.unit(Block, {
 	remSample: function(data) {
 		var menu = this.sampleMenu
 
-		menu.removeBlock(menu.blocks[menu.getIndex(data)])
+		for(var i = menu.blocks.length -1; i >= 0; i--) {
+			var block = menu.blocks[i]
+
+			if(block.data.id === data.id) {
+				menu.removeBlock(block)
+			}
+		}
 	},
 
 	setSample: function(data) {

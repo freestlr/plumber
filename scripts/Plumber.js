@@ -788,15 +788,15 @@ Plumber = f.unit({
 		}
 	},
 
-	importFile: function(file, id) {
-		return this.sampler.readFile(file, id)
+	importFile: function(file) {
+		return this.sampler.readFile(file)
 			.then(this.onSampleImport, this.onSampleImportFail, this)
 	},
 
 
 
 	onSampleImport: function(sample) {
-		this.displayFigure(sample.id)
+		// this.displayFigure(sample.id)
 		this.events.emit('onImportElement', sample)
 		return sample
 	},

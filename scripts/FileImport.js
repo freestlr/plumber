@@ -4,6 +4,7 @@ function FileImport() {
 
 	this.input = dom.input('file')
 	this.input.setAttribute('accept', '.json')
+	this.input.setAttribute('multiple', 'multiple')
 
 
 	Atlas.set(this.element, 'i-file-load', 'absmid')
@@ -14,10 +15,10 @@ function FileImport() {
 
 FileImport.prototype = {
 	onInputChange: function() {
-		var file = this.input.files[0]
-		if(!file) return
+		for(var i = 0; i < this.input.files.length; i++) {
+			this.events.emit('import', this.input.files[i])
+		}
 
-		this.events.emit('import', file)
 		this.input.value = null
 	}
 }

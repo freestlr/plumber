@@ -25,7 +25,7 @@ Sampler.prototype = {
 		return sample
 	},
 
-	readFile: function(file, id) {
+	readFile: function(file) {
 		var reader = new FileReader
 
 		var defer = new Defer(function() {
@@ -44,7 +44,7 @@ Sampler.prototype = {
 
 		}).then(function(object) {
 			return this.addSample({
-				id: id,
+				id: file.name,
 				src: file.name,
 				object: object
 			})
