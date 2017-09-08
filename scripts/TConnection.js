@@ -14,6 +14,7 @@ TConnection = f.unit({
 		this.events = new EventEmitter
 		this.point  = new THREE.Vector3
 		this.normal = new THREE.Vector3
+		this.up     = new THREE.Vector3
 		this.matrix = new THREE.Matrix4
 		this.object = new THREE.Object3D
 
@@ -175,7 +176,8 @@ TConnection = f.unit({
 	setPosition: function(matrix) {
 		this.matrix.copy(matrix)
 		this.point.setFromMatrixPosition(matrix)
-		this.normal.set(1, 0, 0).applyMatrix4(matrix).sub(this.point)
+		this.normal.set(1, 0, 0).applyMatrix4(matrix).sub(this.point).normalize()
+		this.up.set(0, 1, 0).applyMatrix4(matrix).sub(this.point)
 
 		this.objectInner.position.copy(this.point)
 		this.objectOuter.position.copy(this.normal).setLength(this.depth).add(this.point)
@@ -239,10 +241,7 @@ TConnection = f.unit({
 	 */
 	connect: function(slave) {
 		var normal = new THREE.Vector3
-		,   quat   = new THREE.Quaternion
 
-		normal.copy(slave.normal).negate()
-		quat.setFromUnitVectors(normal, this.normal)
 
 
 		this.node.object.add(this.object)
@@ -250,7 +249,12 @@ TConnection = f.unit({
 		this.object.add(slave.object)
 
 		slave.object.position.set(0, 0, 0)
-		slave.object.quaternion.copy(quat)
+
+		normal.copy(slave.normal).negate()
+		slave.object.quaternion.setFromUnitVectors(normal, this.normal)
+		slave.object.rotateOnAxis(normal, -this.up.angleTo(slave.up))
+
+
 		slave.object.add(slave.node.object)
 
 		slave.node.object.position.copy(slave.point).negate()
