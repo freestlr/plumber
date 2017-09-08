@@ -4,7 +4,7 @@ function Defer() {
 }
 
 Defer.all = function(list) {
-	var defer  = new Defer(check, check)
+	var defer  = new Defer
 	,   length = list && list.length || 0
 	,   result = new Array(list.length)
 	,   loaded = 0
@@ -18,7 +18,7 @@ Defer.all = function(list) {
 	for(var i = 0; i < length; i++) {
 		var item = list[i]
 		if(item instanceof Defer) {
-			item.push(defer)
+			item.then(check, check)
 
 		} else {
 			result[i] = item
@@ -31,12 +31,8 @@ Defer.all = function(list) {
 
 		result[list.indexOf(item)] = value
 
-		if(loaded + failed < length) {
-			defer.pending = true
-
-		} else {
-			if(failed) throw result
-			else      return result
+		if(loaded + failed >= length) {
+			defer.transition(!failed, result)
 		}
 	}
 
@@ -88,7 +84,7 @@ Defer.prototype = {
 	},
 
 	push: function(defer) {
-		if(this.head) {
+		if(this.tail) {
 			this.tail = this.tail.next = defer
 		} else {
 			this.head = this.tail = defer
@@ -143,6 +139,7 @@ Defer.prototype = {
 
 		var defer = this.head
 		delete this.head
+		delete this.tail
 
 		if(defer) {
 			if(this.value instanceof Defer) {
