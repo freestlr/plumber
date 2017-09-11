@@ -566,6 +566,42 @@ Plumber = f.unit({
 		}
 	},
 
+	connectRandomNode: function() {
+		var samples = f.sort(this.sampler.samples.slice(), Math.random)
+
+		if(!this.tree) {
+			return this.constructNode(samples[0], this.view).then(this.setTree1, this)
+		}
+
+		var cons = this.tree.retrieveConnections({ connected: false }, true)
+		f.sort(cons, Math.random)
+
+		for(var i = 0; i < cons.length; i++) {
+			var conA = cons[i]
+			,   jointA = conA.joint
+
+			for(var j = 0; j < samples.length; j++) {
+				var sample = samples[j]
+
+				if(!sample.object) {
+					sample.load()
+					continue
+				}
+
+				for(var k = 0; k < sample.joints.length; k++) {
+					var jointB = sample.joints[k]
+					if(!jointA.canConnect(jointB)) continue
+
+					this.constructNode(sample, this.view).then(function(node) {
+						this.makeViewConnection(conA, node.connections[k])
+					}, this)
+
+					return
+				}
+			}
+		}
+	},
+
 	connectNode: function(node) {
 		if(!node) return
 
@@ -586,8 +622,6 @@ Plumber = f.unit({
 
 				this.makeViewConnection(conA, conB)
 
-				// conA.node.connect(conA.index, node, conB.index)
-				// this.view.setTree(this.tree)
 
 				break loop_cons
 			}
@@ -636,11 +670,6 @@ Plumber = f.unit({
 				this.onViewClear()
 			break
 
-			case 't':
-				// var sample = f.any(this.sampler.samples)
-				// this.constructNode(sample, this.view).then(this.connectNode)
-			break
-
 			case 'v':
 				this.gui.closed ? this.gui.open() : this.gui.close()
 			return
@@ -650,10 +679,37 @@ Plumber = f.unit({
 		this.view2.onKey(e)
 	},
 
-	rotateNode: function(node) {
-		if(!node || !node.upcon) return
+	issueReplace: function(node) {
+		this.events.emit('onIssueNodeReplace', node)
+	},
 
-		node.upcon.rotate(Math.PI / 6)
+	replaceElement: function(node, sid) {
+		if(!node) return
+
+		var sample = f.apick(this.sampler.samples, 'src', sid)
+		if(!sample || !sample.canReplace(node)) return
+
+		var root = !node.upcon
+		this.constructNode(sample).then(function(replacer) {
+			replacer.replace(node)
+
+			if(root) this.view.setTree(replacer)
+			else this.view.setTree(this.view.tree)
+		}, this)
+	},
+
+
+
+	rotateNode: function(node) {
+		if(!node) return
+
+		var angle = Math.PI / 6
+		if(node.upcon) {
+			node.upcon.rotate(angle)
+		} else {
+			node.object.rotateOnAxis(new THREE.Vector3(1, 0, 0), angle)
+		}
+
 		this.view.needsRedraw = true
 	},
 
@@ -837,13 +893,19 @@ Plumber = f.unit({
 			dom.remclass(m.content, 'marker-interactive')
 
 
+			m.bRep = dom.div('marker-action', m.content)
 			m.bRot = dom.div('marker-action', m.content)
-			m.watchEvents.push(new EventHandler(this.rotateNode, this, node).listen('tap', m.bRot))
-			m.watchAtlas.push(Atlas.set(m.bRot, 'i-rotate'))
-
 			m.bDel = dom.div('marker-action', m.content)
-			m.watchEvents.push(new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel))
-			m.watchAtlas.push(Atlas.set(m.bDel, 'i-delete'))
+
+			m.watchEvents.push(
+				new EventHandler(this.issueReplace, this, node).listen('tap', m.bRep),
+				new EventHandler(this.rotateNode, this, node).listen('tap', m.bRot),
+				new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel))
+
+			m.watchAtlas.push(
+				Atlas.set(m.bRep, 'i-move-forward'),
+				Atlas.set(m.bRot, 'i-rotate'),
+				Atlas.set(m.bDel, 'i-delete'))
 
 			if(node.sample.link) {
 				m.bInfo = dom.a(node.sample.link, 'marker-action out-02', m.content)
@@ -858,6 +920,8 @@ Plumber = f.unit({
 				this.view.focusOnNode(node)
 			}
 		}
+
+		this.events.emit('onNodeSelect', [node, prev])
 	},
 
 	onConnectionSelect: function(view, index, con) {
@@ -954,8 +1018,7 @@ Plumber = f.unit({
 	onTick: function(t, dt) {
 
 		if(kbd.state.t) {
-			var sample = f.any(this.sampler.samples)
-			this.constructNode(sample, this.view).then(this.connectNode, this)
+			this.connectRandomNode()
 		}
 
 		TWEEN.update()

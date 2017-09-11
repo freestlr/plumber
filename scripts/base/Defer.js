@@ -60,6 +60,7 @@ Defer.prototype = {
 		this.onreject  = typeof onreject  === 'function' ? onreject  : null
 		this.scope  = this.onreject ? scope  : onreject || scope
 		this.unsafe = !!unsafe
+		this.unsafe = 1
 		return this
 	},
 

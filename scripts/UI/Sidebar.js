@@ -8,6 +8,26 @@ UI.Sidebar = f.unit(Block, {
 		this.file = new FileImport
 		dom.append(this.element, this.file.element)
 
+		this.modeMenu = new Block.Menu({
+			eroot: this.element,
+			ename: 'mode-menu',
+			options: {
+				factory: Block.Toggle,
+				deselect: false,
+				visibleMethod: dom.visible,
+				ename: 'mode-item'
+			},
+			items: [{
+				data: 'connect',
+				text: 'CONNECT'
+			}, {
+				data: 'replace',
+				text: 'REPLACE'
+			}]
+		})
+		this.modeMenu.set(0)
+		this.modeMenu.events.on('change', this.onModeChange, this)
+
 
 		this.sampleMenu = new Block.Menu({
 			eroot: this.element,
@@ -73,6 +93,19 @@ UI.Sidebar = f.unit(Block, {
 		}
 	},
 
+	setMode: function(mode) {
+		this.modeMenu.setItem(mode)
+	},
+
+	setVisibleSamples: function(sids) {
+
+		for(var i = 0; i < this.sampleMenu.blocks.length; i++) {
+			var block = this.sampleMenu.blocks[i]
+
+			block.visible.set(!sids || sids.indexOf(block.data.id) !== -1, 'type')
+		}
+	},
+
 	setSample: function(data) {
 		this.sampleMenu.setItem(data)
 	},
@@ -84,6 +117,10 @@ UI.Sidebar = f.unit(Block, {
 	},
 
 	onSampleDrag: function(block, e) {
-		e.dataTransfer.setData('text/sid', block.data)
+		e.dataTransfer.setData('text/sid', block.data.id)
+	},
+
+	onModeChange: function(mode) {
+		console.log('onModeChange', mode)
 	}
 })

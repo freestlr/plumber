@@ -9,7 +9,6 @@ TNode = f.unit({
 		this.boxCenter = new THREE.Vector3
 		this.boxSize   = new THREE.Vector3
 		this.boxLength = 1
-		this.sphere    = new THREE.Sphere
 
 
 		this.localBox    = new THREE.Box3
@@ -112,6 +111,107 @@ TNode = f.unit({
 
 	remConnection: function() {
 
+	},
+
+
+	getConnectedList: function() {
+		var joints = []
+		for(var i = 0; i < this.connections.length; i++) {
+			var con = this.connections[i]
+			if(con.connected) joints.push(con.connected)
+		}
+
+		return joints
+	},
+
+	canReplace: function(node) {
+		var used = []
+		for(var i = 0; i < node.connections.length; i++) {
+			var con = node.connections[i]
+			if(!con.connected) continue
+
+			used.push(con.joint.id)
+		}
+
+		for(var i = 0; i < this.connections.length; i++) {
+			var con = this.connections[i]
+
+			var index = used.indexOf(con.joint.id)
+			if(index !== -1) used.splice(index, 1)
+		}
+
+		return used.length === 0
+	},
+
+	replace: function(nodeB) {
+		var nodeA = this
+
+		var cons = nodeB.getConnectedList()
+		for(var i = 0; i < cons.length; i++) {
+
+			var conC = cons[i]
+			,   nodeC = conC.node
+			,   masterC = conC.master
+
+			conC.disconnect()
+
+			for(var j = 0; j < nodeA.connections.length; j++) {
+				var conA = nodeA.connections[j]
+
+				if(!conA.connected && conC.canConnect(conA)) {
+					if(masterC) nodeC.connect(conC.index, nodeA, conA.index)
+					else        nodeA.connect(conA.index, nodeC, conC.index)
+				}
+			}
+		}
+	},
+
+	replaceA: function(nodeB) {
+		var cons = this.getConnectedList()
+		for(var i = 0; i < cons.length; i++) {
+
+			var conA = cons[i]
+			var nodeA = conA.node
+			var masterA = conA.master
+
+			conA.disconnect()
+
+			for(var j = 0; j < nodeB.connections.length; j++) {
+				var conB = nodeB.connections[j]
+
+				if(!conB.connected && conA.canConnect(conB)) {
+					if(masterA) conA.connect(conB)
+					else conB.connect(conA)
+
+					if(masterA) nodeA.connect(conA.index, nodeB, conB.index)
+					else        nodeB.connect(conB.index, nodeA, conA.index)
+				}
+			}
+		}
+	},
+
+	canBeReplacedBy: function(sample) {
+		var used = []
+		for(var i = 0; i < this.connections.length; i++) {
+			var con = this.connections[i]
+			if(!con.connected) continue
+
+			used.push(con.joint.id)
+		}
+
+		var connected = []
+		for(var i = 0; i < node.connections.length; i++) {
+			if(node.connections[i].connected) connected.push(i)
+		}
+
+		for(var i = 0; i < sample.joints.length; i++) {
+			var joint = sample.joints[i]
+
+			var index = used.indexOf(joint.id)
+			if(index !== -1) used.splice(index, 1)
+		}
+
+		return used.length === 0
 	},
 
 
@@ -223,38 +323,28 @@ TNode = f.unit({
 
 	sizeUnion: function(node) {
 		if(node.sample) {
-			node.localBox.copy(node.sample.box)
-			node.localBox.applyMatrix4(node.object.matrixWorld)
-			node.localBox.getCenter(node.localCenter)
-			node.localBox.getSize(node.localSize)
-			node.localLength = node.localSize.length()
+			node.updateBox()
 			this.box.union(node.localBox)
 
-			node.localSphere.copy(node.sample.sphere)
-			node.localSphere.center.applyMatrix4(node.object.matrixWorld)
-			this.sphere.union(node.localSphere)
-
 		} else {
-			this.box.expandByPoint(node.object.position)
-			this.sphere.expandByPoint(node.object.position)
+			// this.box.expandByPoint(node.object.position)
 		}
+	},
+
+	updateBox: function() {
+		this.localBox.copy(this.sample.box).applyMatrix4(this.object.matrixWorld)
+		this.localBox.getSize(this.localSize)
+		this.localCenter.copy(this.sample.boxCenter).applyMatrix4(this.object.matrixWorld)
+		this.localLength = this.localSize.length()
 	},
 
 	updateSize: function() {
 		this.object.updateMatrixWorld()
 
+
 		this.box.makeEmpty()
-		this.sphere.radius = -1
-
-
-		if(this.sample) {
-			this.sphere.copy(this.sample.sphere)
-		}
 		this.traverse(this.sizeUnion, this)
 
-		// console.log('box:',
-		// 	this.box.min.toArray().map(f.hround),
-		// 	this.box.max.toArray().map(f.hround))
 
 		if(this.box.isEmpty()) {
 			this.boxCenter.set(0, 0, 0)

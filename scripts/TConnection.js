@@ -12,16 +12,16 @@ TConnection = f.unit({
 		this.inactive = new Gate(Gate.AND, false)
 
 		this.events = new EventEmitter
-		this.point  = new THREE.Vector3
-		this.normal = new THREE.Vector3
-		this.up     = new THREE.Vector3
-		this.matrix = new THREE.Matrix4
+		// this.point  = new THREE.Vector3
+		// this.normal = new THREE.Vector3
+		// this.up     = new THREE.Vector3
+		// this.matrix = new THREE.Matrix4
 		this.object = new THREE.Object3D
 
-		this.data = joint
+		this.joint = joint.clone()
 
-		this.depth = parseFloat(this.data.depth) || 0
-		this.screw = this.data.extra === 'screw'
+		this.depth = parseFloat(this.joint.depth) || 0
+		this.screw = this.joint.extra === 'screw'
 
 		this.makeTween()
 
@@ -35,8 +35,12 @@ TConnection = f.unit({
 		this.node.object.add(this.objectInner)
 		this.node.object.add(this.objectOuter)
 
-		// this.node.object.add(this.object)
-		this.setPosition(joint.object.matrix)
+		this.updatePosition()
+	},
+
+	updatePosition: function() {
+		this.objectInner.position.copy(this.joint.point)
+		this.objectOuter.position.copy(this.joint.normal).setLength(this.depth).add(this.joint.point)
 	},
 
 	makeTween: function() {
@@ -113,7 +117,7 @@ TConnection = f.unit({
 
 		var depth = this.depth + this.connected.depth
 		,   screw = this.screw || this.connected.screw ? Math.PI * 2 : 0
-		,   distance = (this.node.sample.length + this.connected.node.sample.length) /2
+		,   distance = (this.node.sample.boxLength + this.connected.node.sample.boxLength) /2
 
 
 		var par_distance = 0
@@ -144,10 +148,10 @@ TConnection = f.unit({
 
 
 		this.connected.object.position
-			.copy(this.normal)
+			.copy(this.joint.normal)
 			.setLength(par_distance)
 
-		this.object.quaternion.setFromAxisAngle(this.normal, par_screw)
+		this.object.quaternion.setFromAxisAngle(this.joint.normal, par_screw)
 	},
 
 	playConnection: function(state, timeScale) {
@@ -173,19 +177,6 @@ TConnection = f.unit({
 	},
 
 
-	setPosition: function(matrix) {
-		this.matrix.copy(matrix)
-		this.point.setFromMatrixPosition(matrix)
-		this.normal.set(1, 0, 0).applyMatrix4(matrix).sub(this.point).normalize()
-		this.up.set(0, 1, 0).applyMatrix4(matrix).sub(this.point)
-
-		this.objectInner.position.copy(this.point)
-		this.objectOuter.position.copy(this.normal).setLength(this.depth).add(this.point)
-
-		if(!this.connected) {
-			// this.object.position.copy(this.point)
-		}
-	},
 
 	getPosition: function(target) {
 		if(!target) target = new THREE.Vector3
@@ -202,29 +193,8 @@ TConnection = f.unit({
 	},
 
 
-	paramPairsAllow: [
-		['f', 'm'],
-		['u', 'u'],
-		['u', 'f'],
-		['u', 'm'],
-		['FP', 'MP'],
-		['female', 'male'],
-		['uniform', 'uniform'],
-		['uniform', 'female'],
-		['uniform', 'male'],
-		['in', 'out'],
-		['inner', 'outer'],
-		['internal', 'external']
-	],
-
-	paramPairsEqual: function(pair) {
-		return f.seq(pair, this)
-	},
-
 	canConnect: function(con) {
-		if(this.data.id !== con.data.id) return false
-
-		return this.paramPairsAllow.some(this.paramPairsEqual, [this.data.param, con.data.param])
+		return this.joint.canConnect(con.joint)
 	},
 
 	canConnectList: function(list) {
@@ -245,19 +215,19 @@ TConnection = f.unit({
 
 
 		this.node.object.add(this.object)
-		this.object.position.copy(this.point)
+		this.object.position.copy(this.joint.point)
 		this.object.add(slave.object)
 
 		slave.object.position.set(0, 0, 0)
 
-		normal.copy(slave.normal).negate()
-		slave.object.quaternion.setFromUnitVectors(normal, this.normal)
-		slave.object.rotateOnAxis(normal, -this.up.angleTo(slave.up))
+		normal.copy(slave.joint.normal).negate()
+		slave.object.quaternion.setFromUnitVectors(normal, this.joint.normal)
+		slave.object.rotateOnAxis(normal, -this.joint.up.angleTo(slave.joint.up))
 
 
 		slave.object.add(slave.node.object)
 
-		slave.node.object.position.copy(slave.point).negate()
+		slave.node.object.position.copy(slave.joint.point).negate()
 
 
 
@@ -296,7 +266,7 @@ TConnection = f.unit({
 	rotate: function(angle) {
 		if(!this.connected || this.master) return
 
-		this.object.rotateOnAxis(this.normal, angle)
+		this.object.rotateOnAxis(this.joint.normal, angle)
 	},
 
 	destroy: function() {
@@ -311,10 +281,11 @@ TConnection = f.unit({
 		this.control = control
 		this.controlObject = new THREE.Object3D
 
-		this.matrix.decompose(
+		this.joint.matrix.decompose(
 			this.controlObject.position,
 			this.controlObject.rotation,
 			this.controlObject.scale)
+
 
 		this.node.object.add(this.controlObject)
 
@@ -324,7 +295,8 @@ TConnection = f.unit({
 	updateControl: function() {
 		if(!this.controlObject) return
 
-		this.setPosition(this.controlObject.matrix)
+		this.joint.setFromMatrix(this.controlObject.matrix)
+		this.updatePosition()
 
 
 		var con = this.connected

@@ -3,9 +3,35 @@
 	background-color: #546f7a;
 }
 
+
+.mode-menu {
+	position: relative;
+	margin: 20px 20px 0;
+	border-radius: 2px 2px 0 0;
+	overflow: hidden;
+}
+.mode-item {
+	width: 50%;
+	display: inline-block;
+	vertical-align: middle;
+	padding: 14px 0;
+	font-size: 14px;
+	text-align: center;
+	color: white;
+	background-color: #34a592;
+	box-sizing: border-box;
+}
+.mode-item:hover {
+	background-color: #47c3ae;
+}
+.mode-item.active {
+	color: #546f7a;
+	background-color: white;
+}
+
 .sample-menu {
-	margin: 20px;
-	border-radius: 2px;
+	margin: 0 20px 20px;
+	border-radius: 0 0 2px 2px;
 	overflow: hidden;
 }
 

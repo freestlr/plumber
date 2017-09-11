@@ -22,6 +22,8 @@ get.json('configs/samples.json').defer.then(function(list) {
 
 function eventmap() {
 	main.events.when({
+		'onIssueNodeReplace': onIssueNodeReplace,
+		'onNodeSelect': onNodeSelect,
 		'onAddElement': onAddElement,
 		'onImportElement': onImportElement
 	})
@@ -36,11 +38,14 @@ function eventmap() {
 function addSample(item) {
 	if(!item || item.hide) return
 
-	if(!main.isComplexFigure(item)) {
-		main.addSample(item.id, item.src, item.link)
-	}
+	if(main.isComplexFigure(item)) {
+		sidebar.addSample(item, item.id, item.thumb, false)
 
-	sidebar.addSample(item, item.id, item.thumb, false)
+	} else {
+		var sample = main.addSample(item.id || item.src, item.src, item.link)
+
+		sidebar.addSample(sample, sample.id, item.thumb, false)
+	}
 }
 
 function changeSample(sample) {
@@ -52,13 +57,22 @@ function changeSample(sample) {
 		main.displayFigure(sample)
 
 	} else {
-		main.displayFigure(sample.id)
+		var mode = sidebar.modeMenu.activeItem
+		switch(mode) {
+			case 'connect':
+				main.displayFigure(sample.id)
+			break
+
+			case 'replace':
+				main.replaceElement(sidebar.issuedNode, sample.src)
+			break
+		}
 	}
 }
 
 function onImportElement(sample) {
 	sidebar.addSample(sample, sample.id, sample.thumb, true, true)
-	sidebar.setSample(sample)
+	// sidebar.setSample(sample)
 }
 
 function onAddElement(e) {
@@ -78,4 +92,24 @@ function onAddElement(e) {
 			sidebar.sampleMenu.set(-1)
 		break
 	}
+}
+
+function onNodeSelect(node) {
+	sidebar.issuedNode = null
+	sidebar.setMode('connect')
+	sidebar.setVisibleSamples(null)
+}
+
+function onIssueNodeReplace(node) {
+	var connected = node.getConnectedList().map(f.prop('joint'))
+
+	var samples = main.sampler.samples.filter(function(sample) {
+		return sample !== node.sample && sample.canReplace(connected)
+	})
+
+	var sids = samples.map(f.prop('id'))
+
+	sidebar.issuedNode = node
+	sidebar.setMode('replace')
+	sidebar.setVisibleSamples(sids)
 }

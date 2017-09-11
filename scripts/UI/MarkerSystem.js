@@ -113,7 +113,7 @@ UI.Marker = f.unit(Block.Tip, {
 		}
 
 		if(this.connection) {
-			dom.text(this.elemInfo, this.connection.data.object.name)
+			dom.text(this.elemInfo, this.connection.joint.name)
 
 			this.connection.events.when({
 				'connect': this.updateState,

@@ -87,8 +87,10 @@ function View3(options) {
 
 	this.camera.position.set(1, 1, 1)
 
+	this.treeBox    = new THREE.Box3
 	this.treeCenter = new THREE.Vector3
-	this.treeSize = 1
+	this.treeSize   = new THREE.Vector3
+	this.treeLength = 1
 	this.focusOnTree(0)
 
 
@@ -354,13 +356,15 @@ View3.prototype = {
 	},
 
 	focusOnTree: function(time) {
+		// return this.focusOnNode(null, time)
+
 		if(isNaN(time)) {
 			time = this.focusDuration
 		}
 
 		this.updateTreeSize()
 
-		var distance = Math.sqrt(this.treeSize) * 30
+		var distance = Math.sqrt(this.treeLength) * 30
 		this.orbitTo(this.treeCenter, time, distance)
 	},
 
@@ -369,9 +373,43 @@ View3.prototype = {
 			time = this.focusDuration
 		}
 
-		var distance = node.sample.size.y * 4 * this.focusDistance
+		var distance = node.sample.boxSize.y * 4 * this.focusDistance
 
 		this.orbitTo(node.localCenter, time)
+		return
+
+		this.updateTreeSize()
+
+		if(isNaN(time)) {
+			time = this.focusDuration
+		}
+
+		var distance
+		,   center
+
+		if(node) {
+			center = node.boxCenter
+
+		} else {
+			distance = this.getFitDistance(this.treeSize, this.treeLength, 1.8, 1.8)
+			center = this.treeCenter
+
+		}
+
+		this.orbitTo(center, time, distance)
+	},
+
+	getFitDistance: function(size, length, factorX, factorY) {
+		var fov = this.camera.fov * f.xrad / 2
+		,   asp = this.camera.aspect
+
+		var half = Math.max(size.x, size.y, size.z) / 2
+		,   near = Math.sqrt(this.treeLength) / Math.sqrt(length)
+
+		var fitH = (factorX || 1) / Math.tan(fov * asp)
+		,   fitV = (factorY || 1) / Math.tan(fov)
+
+		return half * near * Math.max(fitH, fitV)
 	},
 
 
@@ -430,12 +468,16 @@ View3.prototype = {
 		if(this.tree) {
 			this.tree.updateSize()
 
+			this.treeBox.copy(this.tree.box)
+			this.treeSize.copy(this.tree.boxSize)
 			this.treeCenter.copy(this.tree.boxCenter)
-			this.treeSize = this.tree.boxLength
+			this.treeLength = this.tree.boxLength
 
 		} else {
+			this.treeBox.makeEmpty()
 			this.treeCenter.set(0, 0, 0)
-			this.treeSize = 100
+			this.treeSize.set(1, 1, 1).normalize()
+			this.treeLength = 1
 		}
 	},
 
@@ -468,8 +510,8 @@ View3.prototype = {
 	updateProjection: function() {
 		this.camera.fov    = 70
 		this.camera.aspect = this.width / this.height
-		this.camera.far    = this.treeSize * 100
-		this.camera.near   = this.treeSize * 0.01
+		this.camera.far    = this.treeLength * 100
+		this.camera.near   = this.treeLength * 0.01
 		this.camera.updateProjectionMatrix()
 
 		this.needsRetrace = true

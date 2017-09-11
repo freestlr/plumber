@@ -62,10 +62,10 @@ function Sample(def, parent) {
 	this.parent = parent
 	this.joints = []
 
-	this.box    = new THREE.Box3
-	this.size   = new THREE.Vector3
-	this.length = 1
-	this.sphere = new THREE.Sphere
+	this.box       = new THREE.Box3
+	this.boxSize   = new THREE.Vector3
+	this.boxCenter = new THREE.Vector3
+	this.boxLength = 1
 
 	if(!this.id) {
 		this.id = f.range(10).map(f.randchar).join('')
@@ -163,14 +163,6 @@ Sample.prototype = {
 			break
 		}
 
-		// if(this.awg) {
-		// 	if(window.config) {
-		// 		this.config = config.awg[this.awg]
-		// 	} else {
-		// 		this.get.json(this.folder + this.awg, { saveTo: this, saveAs: 'config' })
-		// 	}
-		// }
-
 		this.deferLoad = defer.then(this.configure, this.loadError, this)
 		return this.deferLoad
 	},
@@ -202,45 +194,37 @@ Sample.prototype = {
 		this.parts = []
 
 		this.box.makeEmpty()
-		this.sphere.radius = -1
+		this.object.updateMatrixWorld()
 		this.traverse(this.object, this.configureObject)
-		this.box.getSize(this.size)
-		this.length = this.size.length()
+		this.box.getCenter(this.boxCenter)
+		this.box.getSize(this.boxSize)
+		this.boxLength = this.boxSize.length()
 
 		return this
 	},
 
-	configureJoint: function(object) {
-		var parts = object.name.slice(1).split('_')
+	canReplace: function(connected) {
+		var available = this.joints.slice()
 
-		var joint = {
-			id     : parts[0],
-			param  : parts[1],
-			extra  : parts[2],
-			depth  : parts[3],
-			parts  : parts,
-			point  : new THREE.Vector3,
-			normal : new THREE.Vector3,
-			object : object
+		loop_connected:
+		for(var i = 0; i < connected.length; i++) {
+			var jointA = connected[i]
+
+			for(var j = available.length -1; j >= 0; j--) {
+				var jointB = available[j]
+
+				if(jointA.canConnect(jointB)) {
+					available.splice(j, 1)
+					continue loop_connected
+				}
+			}
+
+			return false
 		}
 
-		joint.point.setFromMatrixPosition(object.matrix)
-		joint.normal.set(1, 0, 0).applyMatrix4(object.matrix).sub(joint.point)
-
-
-		var normalMaterial = this.parent.imagery && this.parent.imagery.materials.norcon
-
-		var line = new THREE.Line(new THREE.Geometry, normalMaterial)
-		line.geometry.vertices.push(new THREE.Vector3, joint.normal.clone().setLength(20))
-		line.geometry.colors.push(new THREE.Color(0, 0, 0), new THREE.Color(1, 0, 0))
-		line.position.copy(joint.point)
-		line.name = 'debug-connection-normal'
-
-		object.visible = false
-
-		this.object.add(line)
-		this.joints.push(joint)
+		return true
 	},
+
 
 	configureSubtract: function(mesh) {
 		mesh.parent.remove(mesh)
@@ -259,12 +243,24 @@ Sample.prototype = {
 	},
 
 	configureObject: function(mesh) {
-		if(this.parent.imagery) {
-			this.parent.imagery.configureSampleMaterial(mesh)
+		var imagery = this.parent.imagery
+
+		if(imagery) {
+			imagery.configureSampleMaterial(mesh)
 		}
 
-		if(/^:/.test(mesh.name)) {
-			this.configureJoint(mesh)
+		if(mesh.name.indexOf(':') === 0) {
+			mesh.visible = false
+
+			var joint = new SampleJoint(mesh)
+
+			if(joint.makeDebugLine) {
+				var line = joint.makeDebugLine()
+				if(imagery) line.material = imagery.materials.norcon
+				this.object.add(line)
+			}
+
+			this.joints.push(joint)
 			return
 		}
 
@@ -283,24 +279,12 @@ Sample.prototype = {
 			mesh.geometry.computeBoundingBox()
 		}
 
-		if(!mesh.geometry.boundingSphere) {
-			mesh.geometry.computeBoundingSphere()
-		}
 
-		if(this.sphere.radius > 0) {
-			this.sphere.union(mesh.geometry.boundingSphere)
-		} else {
-			this.sphere.copy(mesh.geometry.boundingSphere)
-		}
 		this.box.union(mesh.geometry.boundingBox)
 
 
 		// mesh.geometry = this.smoothShadeGeometry(mesh.geometry)
 		// mesh.geometry.computeVertexNormals()
-
-
-
-		// this.configureAnchors(mesh)
 	},
 
 	smoothShadeGeometry: function(geometry) {
@@ -319,104 +303,6 @@ Sample.prototype = {
 		return g
 	},
 
-	configureAnchors: function(mesh) {
-		var sx = this.width
-		,   sy = this.height
-		,   sz = this.depth
-
-		var size = mesh.geometry.vertices.length
-		,   conf = f.apick(this.meshes, 'name', mesh.name) || {}
-
-		var part = {
-			ax: conf.anchorX || [],
-			ay: conf.anchorY || [],
-			az: conf.anchorZ || [],
-
-			anchors: [],
-			offsets: [],
-
-			size: size,
-			mesh: mesh
-		}
-
-		var AX = part.ax.length
-		,   AY = part.ay.length
-		,   AZ = part.az.length
-
-		var useAX = AX === size
-		,   useAY = AY === size
-		,   useAZ = AZ === size
-
-		for(var j = 0; j < size; j++) {
-			var v = mesh.geometry.vertices[j]
-
-			,   ax = useAX ? conf.anchorX[j] : v.x / sx
-			,   ay = useAY ? conf.anchorY[j] : v.y / sy
-			,   az = useAZ ? conf.anchorZ[j] : v.z / sz
-
-			,   ox = v.x - ax * sx
-			,   oy = v.y - ay * sy
-			,   oz = v.z - az * sz
-
-			part.anchors.push(new THREE.Vector3(ax, ay, az))
-			part.offsets.push(new THREE.Vector3(ox, oy, oz))
-		}
-
-		this.parts.push(part)
-
-		if((AX && !useAX)
-		|| (AY && !useAY)
-		|| (AZ && !useAZ)) {
-			this.dirty = true
-		}
-	},
-
-	mold: function(object, options) {
-		if(!object) return
-
-		if(!options) options = {}
-
-		var width  = options.width  || this.width
-		,   height = options.height || this.height
-		,   depth  = options.depth  || this.depth
-
-		for(var i = 0; i < this.parts.length; i++) {
-			var part = this.parts[i]
-			,   mesh = object.children[i]
-
-			for(var j = 0; j < mesh.geometry.vertices.length; j++) {
-				var v = mesh.geometry.vertices[j]
-				,   a = part.anchors[j]
-				,   o = part.offsets[j]
-
-				v.x = o.x + a.x * width
-				v.y = o.y + a.y * height
-				v.z = o.z + a.z * depth
-			}
-
-			mesh.geometry.verticesNeedUpdate = true
-		}
-
-		object.userData.width  = width
-		object.userData.height = height
-		object.userData.depth  = depth
-
-		return object
-	},
-
-	raw: function() {
-		if(!this.object) return
-
-		var object = this.clone()
-		for(var i = 0; i < object.children.length; i++) {
-			var mesh = object.children[i]
-
-			mesh.geometry = mesh.geometry.clone()
-		}
-
-		return object
-	},
-
 	clone: function() {
 		if(!this.object) return
 
@@ -429,10 +315,6 @@ Sample.prototype = {
 		}
 
 		return object
-	},
-
-	bake: function(options) {
-		return this.mold(this.raw(), options)
 	},
 
 	describeObject: function(object, data, level) {
@@ -472,5 +354,91 @@ Sample.prototype = {
 	describe: function() {
 		console.log('sample id: {'+ this.id +'} src: {'+ (this.src || '') +'}')
 		this.traverse(this.object, this.describeObject, this, null, true)
+	}
+}
+
+
+
+function SampleJoint(object) {
+	var parts = object.name.slice(1).split('_')
+
+	this.object = object
+	this.name   = object.name
+
+	this.parts  = parts
+	this.id     = parts[0]
+	this.param  = parts[1]
+	this.extra  = parts[2]
+	this.depth  = parts[3]
+
+	this.point  = new THREE.Vector3
+	this.normal = new THREE.Vector3
+	this.up     = new THREE.Vector3
+	this.matrix = new THREE.Matrix4
+
+	this.setFromMatrix(object.matrixWorld)
+}
+
+SampleJoint.prototype = {
+
+	setFromMatrix: function(matrix) {
+		this.matrix.copy(matrix)
+		this.point.setFromMatrixPosition(this.matrix)
+		this.normal.set(1, 0, 0).applyMatrix4(this.matrix).sub(this.point)
+		this.up.set(0, 1, 0).applyMatrix4(this.matrix).sub(this.point)
+	},
+
+	clone: function() {
+		return new SampleJoint(this.object)
+	},
+
+	paramPairsAllow: [
+		['f', 'm'],
+		['u', 'u'],
+		['u', 'f'],
+		['u', 'm'],
+		['FP', 'MP'],
+		['female', 'male'],
+		['uniform', 'uniform'],
+		['uniform', 'female'],
+		['uniform', 'male'],
+		['in', 'out'],
+		['inner', 'outer'],
+		['internal', 'external']
+	],
+
+	paramPairsEqual: function(pair) {
+		return f.seq(pair, this)
+	},
+
+	canConnect: function(joint) {
+		if(this.id !== joint.id) return false
+
+		return this.paramPairsAllow.some(this.paramPairsEqual, [this.param, joint.param])
+	},
+
+	canConnectList: function(list) {
+		return list.filter(this.canConnect, this)
+	},
+
+
+
+
+	makeDebugLine: function() {
+		var debugLine = new THREE.Line(new THREE.Geometry)
+
+		debugLine.name = 'debug-connection-normal'
+
+		debugLine.geometry.vertices.push(
+			new THREE.Vector3,
+			this.normal.clone().setLength(20))
+
+		debugLine.geometry.colors.push(
+			new THREE.Color(0, 0, 0),
+			new THREE.Color(1, 0, 0))
+
+		debugLine.position.copy(this.point)
+
+		return debugLine
 	}
 }
