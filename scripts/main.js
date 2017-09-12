@@ -29,6 +29,7 @@ function eventmap() {
 	})
 
 	sidebar.events.when({
+		'mode_change': onModeChange,
 		'sample_change': changeSample,
 		'sample_remove': main.removeSample,
 		'file_import': main.importFile
@@ -94,7 +95,21 @@ function onAddElement(e) {
 	}
 }
 
+function onModeChange(mode) {
+	switch(mode) {
+		case 'connect':
+			sidebar.setVisibleSamples(null)
+		break
+
+		case 'replace':
+			if(sidebar.selectedNode) onIssueNodeReplace(sidebar.selectedNode)
+			else sidebar.setVisibleSamples([])
+		break
+	}
+}
+
 function onNodeSelect(node) {
+	sidebar.selectedNode = node
 	sidebar.issuedNode = null
 	sidebar.setMode('connect')
 	sidebar.setVisibleSamples(null)

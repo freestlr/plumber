@@ -121,6 +121,6 @@ UI.Sidebar = f.unit(Block, {
 	},
 
 	onModeChange: function(mode) {
-		console.log('onModeChange', mode)
+		this.events.emit('mode_change', mode)
 	}
 })
