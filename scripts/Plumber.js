@@ -670,6 +670,12 @@ Plumber = f.unit({
 				this.onViewClear()
 			break
 
+			case 'e':
+				this.sampler.samples.forEach(f.func('load'))
+				this.view.setPreloader(this.sampler.samples)
+				dom.addclass(this.emptyViewMessage, 'hidden')
+			break
+
 			case 'v':
 				this.gui.closed ? this.gui.open() : this.gui.close()
 			return
