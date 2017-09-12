@@ -48,15 +48,15 @@
 		"id": "heavy 1",
 		"thumb": "images/thumbs/heavy 1.png",
 		"types": [
-			"Weld plate SP4.json",
 			"Clamp_428_PP.json",
+			"Weld plate SP4.json",
 			"CoverPlateaDP_AS_4.json",
 			"bolt_m12.json"
 		],
 		"nodes": [
-			{"t": 1, "a": 0, "ai": 0, "bi": 3},
-			{"t": 1, "a": 0, "ai": 5, "bi": 3},
-			{"t": 2, "a": 2, "ai": 2, "bi": 1},
+			{"t": 1, "a": 0, "ai": 3, "bi": 0},
+			{"t": 0, "a": 1, "ai": 1, "bi": 3},
+			{"t": 2, "a": 2, "ai": 2, "bi": 0},
 			{"t": 3, "a": 3, "ai": 2, "bi": 0},
 			{"t": 3, "a": 3, "ai": 3, "bi": 0},
 			{"t": 3, "a": 3, "ai": 4, "bi": 0},
@@ -67,16 +67,16 @@
 		"id": "Standard set 1 v2 #A",
 		"thumb": "images/thumbs/Standard set 1 v2 A.png",
 		"types": [
-			"Clamp 219 PP.json",
 			"Weld plate SP.json",
+			"Clamp 219 PP.json",
 			"CoverPlateBolts - DP-AS.json",
 			"bolt_m6.json"
 		],
 		"nodes": [
-			{"t": 1, "a": 0, "ai": 0, "bi": 2},
-			{"t": 2, "a": 0, "ai": 4, "bi": 0},
-			{"t": 3, "a": 2, "ai": 1, "bi": 0},
-			{"t": 3, "a": 2, "ai": 2, "bi": 0}
+			{"t": 1, "a": 0, "ai": 2, "bi": 0},
+			{"t": 2, "a": 1, "ai": 4, "bi": 0},
+			{"t": 3, "a": 2, "ai": 2, "bi": 0},
+			{"t": 3, "a": 2, "ai": 3, "bi": 0}
 		]
 	},
 	{
