@@ -312,7 +312,7 @@ Block.Menu = f.unit(Block.List, {
 	},
 
 	setItem: function(data, emitEvent) {
-		this.set(this.getIndex(data), emitEvent)
+		return this.set(this.getIndex(data), emitEvent)
 	},
 
 	unsetBlocks: function(except, emitEvent) {

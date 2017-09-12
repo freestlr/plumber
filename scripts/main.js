@@ -16,6 +16,7 @@ var sidebar = new UI.Sidebar({
 
 get.json('configs/samples.json').defer.then(function(list) {
 	list.forEach(addSample)
+	sidebar.setVisibleSamples(null)
 
 }).then(eventmap)
 
@@ -45,7 +46,9 @@ function addSample(item) {
 	} else {
 		var sample = main.addSample(item.id || item.src, item.src, item.link)
 
-		sidebar.addSample(sample, sample.id, item.thumb, false)
+		var block = sidebar.addSample(sample, sample.id, item.thumb, false)
+
+		block.replacer = item.replacer
 	}
 }
 
@@ -65,7 +68,7 @@ function changeSample(sample) {
 			break
 
 			case 'replace':
-				main.replaceElement(sidebar.issuedNode, sample.src)
+				main.replaceElement(sidebar.selectedNode, sample.src)
 			break
 		}
 	}
@@ -96,35 +99,43 @@ function onAddElement(e) {
 }
 
 function onModeChange(mode) {
+	updateVisibleSamples()
+}
+
+function onNodeSelect(node) {
+	sidebar.selectedNode = node
+	sidebar.setMode('connect')
+	updateVisibleSamples()
+}
+
+function onIssueNodeReplace(node) {
+	sidebar.selectedNode = node
+	sidebar.setMode('replace')
+	updateVisibleSamples()
+}
+
+function updateVisibleSamples() {
+	var mode = sidebar.modeMenu.activeItem
+
 	switch(mode) {
 		case 'connect':
 			sidebar.setVisibleSamples(null)
 		break
 
 		case 'replace':
-			if(sidebar.selectedNode) onIssueNodeReplace(sidebar.selectedNode)
-			else sidebar.setVisibleSamples([])
+			sidebar.setVisibleSamples(getNodeReplacers(sidebar.selectedNode))
 		break
 	}
 }
 
-function onNodeSelect(node) {
-	sidebar.selectedNode = node
-	sidebar.issuedNode = null
-	sidebar.setMode('connect')
-	sidebar.setVisibleSamples(null)
-}
+function getNodeReplacers(node) {
+	if(!node) return []
 
-function onIssueNodeReplace(node) {
 	var connected = node.getConnectedList().map(f.prop('joint'))
 
 	var samples = main.sampler.samples.filter(function(sample) {
 		return sample !== node.sample && sample.canReplace(connected)
 	})
 
-	var sids = samples.map(f.prop('id'))
-
-	sidebar.issuedNode = node
-	sidebar.setMode('replace')
-	sidebar.setVisibleSamples(sids)
+	return samples.map(f.prop('id'))
 }

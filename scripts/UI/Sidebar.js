@@ -79,6 +79,8 @@ UI.Sidebar = f.unit(Block, {
 			block.watchEvents.push(
 				new EventHandler(this.onSampleRemove, this, block).listen('tap', block.remove))
 		}
+
+		return block
 	},
 
 	remSample: function(data) {
@@ -94,7 +96,9 @@ UI.Sidebar = f.unit(Block, {
 	},
 
 	setMode: function(mode) {
-		this.modeMenu.setItem(mode)
+		if(this.modeMenu.setItem(mode)) {
+			this.mode = mode
+		}
 	},
 
 	setVisibleSamples: function(sids) {
@@ -102,7 +106,12 @@ UI.Sidebar = f.unit(Block, {
 		for(var i = 0; i < this.sampleMenu.blocks.length; i++) {
 			var block = this.sampleMenu.blocks[i]
 
-			block.visible.set(!sids || sids.indexOf(block.data.id) !== -1, 'type')
+			if(sids) {
+				block.visible.set(sids.indexOf(block.data.id) !== -1, 'type')
+			} else {
+				block.visible.set(!block.replacer, 'type')
+				// block.visible.set(true, 'type')
+			}
 		}
 	},
 
@@ -121,6 +130,7 @@ UI.Sidebar = f.unit(Block, {
 	},
 
 	onModeChange: function(mode) {
+		this.mode = mode
 		this.events.emit('mode_change', mode)
 	}
 })
