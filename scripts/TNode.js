@@ -161,6 +161,8 @@ TNode = f.unit({
 				if(!conA.connected && conC.canConnect(conA)) {
 					if(masterC) nodeC.connect(conC.index, nodeA, conA.index)
 					else        nodeA.connect(conA.index, nodeC, conC.index)
+
+					break
 				}
 			}
 		}
@@ -180,9 +182,6 @@ TNode = f.unit({
 				var conB = nodeB.connections[j]
 
 				if(!conB.connected && conA.canConnect(conB)) {
-					if(masterA) conA.connect(conB)
-					else conB.connect(conA)
-
 					if(masterA) nodeA.connect(conA.index, nodeB, conB.index)
 					else        nodeB.connect(conB.index, nodeA, conA.index)
 				}
