@@ -369,7 +369,8 @@ View3.prototype = {
 
 		this.updateTreeSize()
 
-		var distance = Math.sqrt(this.treeLength) * 30
+		var distance = this.getFitDistance(this.treeSize, 1.5, 1.5)
+
 		this.orbitTo(this.treeCenter, time, distance)
 	},
 
@@ -404,17 +405,15 @@ View3.prototype = {
 		this.orbitTo(center, time, distance)
 	},
 
-	getFitDistance: function(size, length, factorX, factorY) {
+	getFitDistance: function(size, factorX, factorY) {
 		var fov = this.camera.fov * f.xrad / 2
 		,   asp = this.camera.aspect
 
 		var half = Math.max(size.x, size.y, size.z) / 2
-		,   near = Math.sqrt(this.treeLength) / Math.sqrt(length)
+		,   fitH = half * (factorX || 1) / Math.tan(fov * asp)
+		,   fitV = half * (factorY || 1) / Math.tan(fov)
 
-		var fitH = (factorX || 1) / Math.tan(fov * asp)
-		,   fitV = (factorY || 1) / Math.tan(fov)
-
-		return half * near * Math.max(fitH, fitV)
+		return asp ? Math.max(fitH, fitV) : fitV
 	},
 
 
@@ -516,7 +515,7 @@ View3.prototype = {
 	},
 
 	updateProjection: function() {
-		this.camera.fov    = 70
+		this.camera.fov    = 30
 		this.camera.aspect = this.width / this.height
 		this.camera.far    = this.treeLength * 100
 		this.camera.near   = this.treeLength * 0.01

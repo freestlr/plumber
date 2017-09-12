@@ -701,6 +701,8 @@ Plumber = f.unit({
 
 			if(root) this.view.setTree(replacer)
 			else this.view.setTree(this.view.tree)
+
+			this.view.focusOnNode(replacer)
 		}, this)
 	},
 
