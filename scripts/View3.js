@@ -69,6 +69,10 @@ function View3(options) {
 	this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
 
 
+	this.debugBox = new THREE.Mesh(
+		new THREE.BoxGeometry(1, 1, 1),
+		new THREE.MeshBasicMaterial({ color: 0xFF00FF, transparent: true, opacity: 0.2 }))
+	this.debugBox.visible = false
 
 
 	this.cameraTween = new TWEEN.Tween({ x: 0, y: 0, z: 0 })
@@ -98,6 +102,7 @@ function View3(options) {
 	this.root.add(this.dirLight)
 	this.scene.add(this.root)
 	this.scene.add(this.grid)
+	// this.scene.add(this.debugBox)
 	this.scene.add(this.transform)
 
 	dom.on('tap',       this.element, this)
@@ -479,6 +484,9 @@ View3.prototype = {
 			this.treeSize.set(1, 1, 1).normalize()
 			this.treeLength = 1
 		}
+
+		this.debugBox.position.copy(this.treeCenter)
+		this.debugBox.scale.copy(this.treeSize)
 	},
 
 	updateConnectionTree: function() {
@@ -543,6 +551,7 @@ View3.prototype = {
 				this.enableWireframe = this.debug
 				this.needsRedraw = true
 
+				this.debugBox.visible = this.debug
 				dom.togclass(this.markers.element, 'debug', this.debug)
 				this.markers.debug = this.debug
 				this.markers.update(true)
