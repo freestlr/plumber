@@ -3,6 +3,7 @@ Plumber = f.unit({
 
 	mode: 'constructor',
 	explode: 0,
+	explodeStepped: false,
 
 	catchFiles: false,
 	catchSamples: true,
@@ -311,6 +312,7 @@ Plumber = f.unit({
 
 
 		this.gui.add(this, 'explode').min(0).max(1).name('Explode').onChange(explode)
+		this.gui.add(this, 'explodeStepped').name('Explode Step')
 
 		var self = this
 		function redraw() {
@@ -367,12 +369,7 @@ Plumber = f.unit({
 		}
 
 
-		if(enabled) {
-			this.tree.traverseConnections(function(con) {
-				if(con.connected && con.master) con.playConnection(0)
-			})
-
-		} else {
+		if(this.explodeStepped) {
 			var list = []
 			,   level = 0
 
@@ -396,7 +393,7 @@ Plumber = f.unit({
 
 					var defer = new Defer
 					con.events.once('connect_end', defer.resolve, defer)
-					con.playConnection(1, 0.4)
+					con.playConnection(enabled ? 0 : 1, 0.4)
 
 					defers.push(defer)
 				}
@@ -405,6 +402,11 @@ Plumber = f.unit({
 			}
 
 			runStep.call(this)
+
+		} else {
+			this.tree.traverseConnections(function(con) {
+				if(con.connected && con.master) con.playConnection(enabled ? 0 : 1)
+			})
 		}
 	},
 
