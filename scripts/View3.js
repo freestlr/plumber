@@ -1,116 +1,7 @@
-function View3(options) {
-	for(var name in options) this[name] = options[name]
+View3 = f.unit({
+	unitName: 'View3',
+	ename: 'view-3',
 
-	this.element   = dom.div('view-3', this.eroot)
-	this.events    = new EventEmitter
-	this.scene     = new THREE.Scene
-	this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
-	this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 1.0)
-	this.camera    = new THREE.PerspectiveCamera
-	this.orbit     = new THREE.OrbitControls(this.camera, this.element)
-	this.raycaster = new THREE.Raycaster
-	this.root      = new THREE.Object3D
-	this.grid      = new THREE.Object3D
-	this.lastcam   = new THREE.Matrix4
-
-	this.animatedConnections = []
-
-	this.scene.autoUpdate = false
-
-	this.mouse  = new THREE.Vector2
-	this.mouse2 = new THREE.Vector3
-	this.mouse3 = new THREE.Vector3
-
-	this.mouse.set(Infinity, Infinity)
-
-
-	if(!this.renderer) {
-		this.renderer = new THREE.WebGLRenderer({ antialias: true })
-		this.renderer.autoClear = false
-		this.renderer.clear()
-
-		dom.append(this.element, this.renderer.domElement)
-	}
-
-
-	this.srScene  = new THREE.Scene
-	this.srPlane  = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2))
-	this.srCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1)
-	this.srCamera.updateProjectionMatrix()
-	this.srScene.add(this.srPlane)
-
-	this.smCopy    = this.makeShader(THREE.CopyShader)
-	this.smFill    = this.makeShader(THREE.FillShader)
-	this.smOverlay = this.makeShader(THREE.OverlayShader)
-	this.smHBlur   = this.makeShader(THREE.HorizontalBlurShader)
-	this.smVBlur   = this.makeShader(THREE.VerticalBlurShader)
-	this.smFXAA    = this.makeShader(THREE.FXAAShader)
-
-	this.clearButton = dom.div('view-clear out-02 hand', this.element)
-	Atlas.set(this.clearButton, 'i-cross', 'absmid')
-	dom.on('tap', this.clearButton, this.events.will('view_clear'))
-
-
-
-
-	this.transform = new THREE.TransformControls(this.camera, this.element)
-	this.transform.addEventListener('change', f.binds(this.onTransformControlsChange, this))
-
-	this.projector = new PointProjector(this.camera)
-
-	this.markers = new UI.MarkerSystem({
-		eroot: this.element,
-		projector: this.projector
-	})
-	this.markers.events.on('marker_tap', this.onMarkerTap, this)
-
-
-
-	this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
-
-
-	this.debugBox = new THREE.Mesh(
-		new THREE.BoxGeometry(1, 1, 1),
-		new THREE.MeshBasicMaterial({ color: 0xFF00FF, transparent: true, opacity: 0.2 }))
-	this.debugBox.visible = false
-
-
-	this.cameraTween = new TWEEN.Tween({ x: 0, y: 0, z: 0 })
-		.easing(TWEEN.Easing.Cubic.Out)
-
-	this.orbitTween = new TWEEN.Tween({ x: 0, y: 0, z: 0 })
-		.easing(TWEEN.Easing.Cubic.Out)
-
-
-	this.makeGridSystem()
-	this.makePreloader()
-
-
-	this.dirLight.position.set(-100, 100, 100)
-	this.dirLight.target.position.set(0, 0, 0)
-
-	this.camera.position.set(1, 1, 1)
-
-	this.treeBox    = new THREE.Box3
-	this.treeCenter = new THREE.Vector3
-	this.treeSize   = new THREE.Vector3
-	this.treeLength = 1
-	this.focusOnTree(0)
-
-
-	this.root.add(this.ambLight)
-	this.root.add(this.dirLight)
-	this.scene.add(this.root)
-	this.scene.add(this.grid)
-	// this.scene.add(this.debugBox)
-	this.scene.add(this.transform)
-
-	dom.on('tap',       this.element, this)
-	dom.on('mousemove', this.element, this)
-	dom.on('mouseout',  this.element, this)
-}
-
-View3.prototype = {
 
 	enableGrid: false,
 	enableRender: true,
@@ -120,50 +11,177 @@ View3.prototype = {
 	enableFXAA: true,
 	enableBloom: true,
 
+	// enableWarningPulse: false,
+	// enableSelectMarker: true,
+	// enableSelectNode: true,
+	// enableFocusMarker: false,
+
+
 	renderTarget: null,
 
-	clearColor: '#EEEEEE',
+	clearColor: '#f4f4f4',
 
 	focusThetaMin: 0.5,
 	focusThetaMax: 2.2,
 	focusDistance: 1.0,
-	focusDuration: 300,
+	focusDuration: 500,
+
+	stencilRaycastMask: ~0,
 
 	stencilNone: {
-		value: 0,
+		value: 1,
 		params: {}
 	},
 
-	stencilHover: {
-		value: 1,
+	stencilLit: {
+		value: 2,
 		params: {
-			drawColor: '#00FF77',
-			drawAlpha: 1.0,
-			lineAlpha: 0.0,
-			edgeAlpha: 1.0,
-			fillAlpha: 0.03
+			drawColor: '#00f0ff',
+			drawAlpha: 1,
+			lineAlpha: 0.11,
+			lineAngle: 0,
+			edgeAlpha: 0.8,
+			fillAlpha: 0.2
+		}
+	},
+
+	stencilHover: {
+		value: 4,
+		params: {
+			drawColor: '#00ffb3',
+			drawAlpha: 1,
+			lineAlpha: 0.2,
+			lineAngle: 0,
+			edgeAlpha: 0.8,
+			fillAlpha: 0.11
 		}
 	},
 
 	stencilSelect: {
-		value: 2,
+		value: 8,
 		params: {
 			drawColor: '#00FF77',
-			drawAlpha: 1.0,
+			drawAlpha: 1,
 			lineAlpha: 0.4,
+			lineAngle: 0,
 			edgeAlpha: 0.9,
-			fillAlpha: 0.1
+			fillAlpha: 0.2
 		}
 	},
 
 
-	handleEvent: function(e) {
-		switch(e.type) {
-			case 'mousemove':  return this.onMouseMove(e)
-			case 'mouseout':   return this.onMouseOut(e)
-			case 'tap':        return this.onTap(e)
+	init: function(options) {
+		for(var name in options) this[name] = options[name]
+
+		this.element   = dom.div('view-3', this.eroot)
+		this.events    = new EventEmitter
+		this.scene     = new THREE.Scene
+		this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
+		this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 1.0)
+		this.camera    = new THREE.PerspectiveCamera
+		this.orbit     = new THREE.OrbitControls(this.camera, this.element)
+		this.raycaster = new THREE.Raycaster
+		this.root      = new THREE.Object3D
+		this.grid      = new THREE.Object3D
+		this.lastcam   = new THREE.Matrix4
+
+		this.animatedConnections = []
+
+		this.scene.autoUpdate = false
+
+		this.mouse  = new THREE.Vector2
+		this.mouse2 = new THREE.Vector3
+		this.mouse3 = new THREE.Vector3
+
+		this.mouse.set(Infinity, Infinity)
+
+
+		if(!this.renderer) {
+			this.renderer = new THREE.WebGLRenderer({ antialias: true })
+			this.renderer.autoClear = false
+			this.renderer.clear()
+
+			dom.append(this.element, this.renderer.domElement)
 		}
+
+
+		this.srScene  = new THREE.Scene
+		this.srPlane  = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2))
+		this.srCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1)
+		this.srCamera.updateProjectionMatrix()
+		this.srScene.add(this.srPlane)
+
+		this.smCopy    = this.makeShader(THREE.CopyShader)
+		this.smFill    = this.makeShader(THREE.FillShader)
+		this.smOverlay = this.makeShader(THREE.OverlayShader)
+		this.smHBlur   = this.makeShader(THREE.HorizontalBlurShader)
+		this.smVBlur   = this.makeShader(THREE.VerticalBlurShader)
+		this.smFXAA    = this.makeShader(THREE.FXAAShader)
+
+		this.clearButton = dom.div('view-clear out-02 hand', this.element)
+		Atlas.set(this.clearButton, 'i-cross', 'absmid')
+		new EventHandler(this.events.will('view_clear')).listen('tap', this.clearButton)
+
+
+
+
+		this.transform = new THREE.TransformControls(this.camera, this.element)
+		this.transform.addEventListener('change', f.binds(this.onTransformControlsChange, this))
+
+		this.projector = new PointProjector(this.camera)
+
+		this.markers = new UI.MarkerSystem({
+			eroot: this.element,
+			projector: this.projector
+		})
+		this.markers.events.on('marker_tap', this.onMarkerTap, this)
+
+
+
+		this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
+
+
+		this.debugBox = new THREE.Mesh(
+			new THREE.BoxGeometry(1, 1, 1),
+			new THREE.MeshBasicMaterial({ color: 0xFF00FF, transparent: true, opacity: 0.2 }))
+		this.debugBox.visible = false
+
+
+		this.cameraTween = new TWEEN.Tween({ x: 0, y: 0, z: 0 })
+			.easing(TWEEN.Easing.Cubic.Out)
+
+		this.orbitTween = new TWEEN.Tween({ x: 0, y: 0, z: 0 })
+			.easing(TWEEN.Easing.Cubic.Out)
+
+
+		this.makeGridSystem()
+		this.makePreloader()
+
+
+		this.dirLight.position.set(-100, 100, 100)
+		this.dirLight.target.position.set(0, 0, 0)
+
+		this.camera.position.set(1, 1, 1)
+
+		this.treeBox    = new THREE.Box3
+		this.treeCenter = new THREE.Vector3
+		this.treeSize   = new THREE.Vector3
+		this.treeLength = 1
+		this.focusOnTree(0)
+
+
+		this.root.add(this.ambLight)
+		this.root.add(this.dirLight)
+		this.scene.add(this.root)
+		this.scene.add(this.grid)
+		// this.scene.add(this.debugBox)
+		this.scene.add(this.transform)
+
+		new EventHandler(this.onMouseMove, this).listen('mousemove', this.element)
+		new EventHandler(this.onMouseOut,  this).listen('mouseout',  this.element)
+		new EventHandler(this.onTap,       this).listen('tap',       this.element)
 	},
+
 
 	makeShader: function(source) {
 		if(source) return new THREE.ShaderMaterial({
@@ -602,6 +620,7 @@ View3.prototype = {
 	updateNodeStencil: function(node) {
 		var value = node.selected ? this.stencilSelect.value
 		          : node.hovered  ? this.stencilHover .value
+		          : node.lit      ? this.stencilLit   .value
 		          :                 this.stencilNone  .value
 
 		node.sample.traverse(node.sampleObject, this.updateMeshStencil, this, value)
@@ -637,6 +656,10 @@ View3.prototype = {
 		if(prev) {
 			prev.selected = false
 			this.updateNodeStencil(prev)
+			// if(prev.upnode) {
+			// 	prev.upnode.lit = false
+			// 	this.updateNodeStencil(prev.upnode)
+			// }
 		}
 
 		this.nodeSelected = node
@@ -644,6 +667,10 @@ View3.prototype = {
 		if(node) {
 			node.selected = true
 			this.updateNodeStencil(node)
+			// if(node.upnode) {
+			// 	node.upnode.lit = true
+			// 	this.updateNodeStencil(node.upnode)
+			// }
 		}
 
 		this.events.emit('node_select', [node, prev])
@@ -908,7 +935,11 @@ View3.prototype = {
 			gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP)
 
 
-			var stencilPasses = [this.stencilHover, this.stencilSelect]
+			var stencilPasses = [
+				this.stencilLit,
+				this.stencilHover,
+				this.stencilSelect
+			]
 			for(var i = 0; i < stencilPasses.length; i++) {
 				var pass = stencilPasses[i]
 
@@ -1012,7 +1043,7 @@ View3.prototype = {
 			this.markers.update()
 		}
 	}
-}
+})
 
 
 THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geometry, material, group) {

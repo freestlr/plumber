@@ -7,6 +7,7 @@ THREE.OverlayShader = {
 		'drawColor': { value: new THREE.Color(1, 1, 1) },
 		'drawAlpha': { value: 1.0 },
 		'lineAlpha': { value: 1.0 },
+		'lineAngle': { value: 0.0 },
 		'fillAlpha': { value: 0.0 },
 		'edgeAlpha': { value: 1.0 }
 	},
@@ -27,6 +28,7 @@ THREE.OverlayShader = {
 		'uniform vec3  drawColor;',
 		'uniform float drawAlpha;',
 		'uniform float lineAlpha;',
+		'uniform float lineAngle;',
 		'uniform float fillAlpha;',
 		'uniform float edgeAlpha;',
 
@@ -133,8 +135,8 @@ THREE.OverlayShader = {
 			'vec2 pixel = gl_FragCoord.xy * resolution;',
 
 			'float fill = texture2D(tDiffuse, pixel).r;',
-			'float line1 = drawLine(-30.0, 10.0, 2.0);',
-			'float line2 = drawLine(80.0, 20.0, 2.0);',
+			'float line1 = drawLine(-30.0 + lineAngle, 10.0, 2.0);',
+			'float line2 = drawLine( 80.0 + lineAngle, 20.0, 2.0);',
 
 			'float level = 0.0;',
 			'level += edgeAlpha * edgeBasic(tDiffuse, pixel);',

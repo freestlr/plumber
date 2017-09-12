@@ -283,11 +283,33 @@ Plumber = f.unit({
 			hideable: false
 		})
 
+		var params = {
+			stencilSlot: 'stencilHover'
+		}
+
+		var slots = [
+			'stencilLit',
+			'stencilHover',
+			'stencilSelect'
+		]
+
 		this.gui.closed = true
 
 		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
-		this.gui.addColor(this.view.stencilSelect.params, 'drawColor').name('Select').onChange(redraw)
-		this.gui.addColor(this.view.stencilHover.params, 'drawColor').name('Hover').onChange(redraw)
+
+		slots.forEach(function(slot) {
+			var fd = this.gui.addFolder(slot)
+			var params = this.view[slot].params
+
+			fd.addColor(params, 'drawColor').onChange(redraw)
+			fd.add(params, 'drawAlpha').min(0).max(1).onChange(redraw)
+			fd.add(params, 'lineAlpha').min(0).max(1).onChange(redraw)
+			fd.add(params, 'lineAngle').min(0).max(360).onChange(redraw)
+			fd.add(params, 'edgeAlpha').min(0).max(1).onChange(redraw)
+			fd.add(params, 'fillAlpha').min(0).max(1).onChange(redraw)
+		}, this)
+
+
 		this.gui.add(this, 'explode').min(0).max(1).name('Explode').onChange(explode)
 
 		var self = this
