@@ -352,6 +352,8 @@ Plumber = f.unit({
 		if(this.splitView) {
 			this.splitView.position = values.position
 			this.tiles.update()
+			this.view.focusOnTree(0)
+			this.view2.focusOnTree(0)
 		}
 	},
 
