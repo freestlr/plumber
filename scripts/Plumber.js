@@ -901,6 +901,11 @@ Plumber = f.unit({
 			dom.remclass(m.content, 'marker-interactive')
 
 
+			// m.label = dom.div('marker-info', m.content)
+			// dom.text(m.label, node.sample.src)
+			dom.text(m.elemInfo, node.sample.src)
+			dom.addclass(m.elemInfo, 'marker-label')
+
 			m.bRep = dom.div('marker-action', m.content)
 			m.bRot = dom.div('marker-action', m.content)
 			m.bDel = dom.div('marker-action', m.content)

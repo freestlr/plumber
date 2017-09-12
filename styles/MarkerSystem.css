@@ -44,6 +44,15 @@
 	stroke: rgba(0, 0, 0, 0.4);
 }
 
+
+.marker-label {
+	padding: 4px;
+	font-size: 14px;
+	color: #546f7a;
+	background-color: white;
+	text-align: center;
+}
+
 .marker-group {
 	width: 64px;
 	height: 64px;
