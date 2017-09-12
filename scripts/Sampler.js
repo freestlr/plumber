@@ -279,8 +279,9 @@ Sample.prototype = {
 			mesh.geometry.computeBoundingBox()
 		}
 
-
-		this.box.union(mesh.geometry.boundingBox)
+		var tempBox = new THREE.Box3
+		tempBox.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld)
+		this.box.union(tempBox)
 
 
 		// mesh.geometry = this.smoothShadeGeometry(mesh.geometry)
