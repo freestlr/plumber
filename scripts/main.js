@@ -17,6 +17,7 @@ var sidebar = new UI.Sidebar({
 get.json('configs/samples.json').defer.then(function(list) {
 	list.forEach(addSample)
 	sidebar.setVisibleSamples(null)
+	main.preloadAllSamples()
 
 }).then(eventmap)
 
@@ -45,10 +46,11 @@ function addSample(item) {
 
 	} else {
 		var sample = main.addSample(item.id || item.src, item.src, item.link)
+		if(sample) {
+			var block = sidebar.addSample(sample, sample.id, item.thumb, false)
 
-		var block = sidebar.addSample(sample, sample.id, item.thumb, false)
-
-		block.replacer = item.replacer
+			block.replacer = item.replacer
+		}
 	}
 }
 
@@ -104,7 +106,7 @@ function onModeChange(mode) {
 
 function onNodeSelect(node) {
 	sidebar.selectedNode = node
-	sidebar.setMode('connect')
+	// if(!node || !node.lit) sidebar.setMode('connect')
 	updateVisibleSamples()
 }
 
@@ -119,13 +121,31 @@ function updateVisibleSamples() {
 
 	switch(mode) {
 		case 'connect':
+			if(main.tree) main.tree.traverse(function(node) {
+				node.lit = false
+				main.view.updateNodeStencil(node)
+			})
 			sidebar.setVisibleSamples(null)
 		break
 
 		case 'replace':
-			sidebar.setVisibleSamples(getNodeReplacers(sidebar.selectedNode))
+			var visibleAll  = []
+			,   visibleNode = null
+
+			if(main.tree) main.tree.traverse(function(node) {
+				var nodeSamples = getNodeReplacers(node)
+				node.lit = nodeSamples.length
+				main.view.updateNodeStencil(node)
+
+				if(node === sidebar.selectedNode) visibleNode = nodeSamples
+				visibleAll = f.sor(visibleAll, nodeSamples)
+			})
+
+			sidebar.setVisibleSamples(visibleNode || visibleAll)
 		break
 	}
+
+	main.view.needsRedraw = true
 }
 
 function getNodeReplacers(node) {

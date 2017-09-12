@@ -693,8 +693,7 @@ Plumber = f.unit({
 			break
 
 			case 'e':
-				this.sampler.samples.forEach(f.func('load'))
-				this.view.setPreloader(this.sampler.samples)
+				this.preloadAllSamples()
 				dom.addclass(this.emptyViewMessage, 'hidden')
 			break
 
@@ -724,10 +723,15 @@ Plumber = f.unit({
 			if(root) this.view.setTree(replacer)
 			else this.view.setTree(this.view.tree)
 
-			this.view.focusOnNode(replacer)
+			// this.view.focusOnNode(replacer)
+			this.view.selectNode(replacer)
 		}, this)
 	},
 
+	preloadAllSamples: function() {
+		this.sampler.samples.forEach(f.func('load'))
+		this.view.setPreloader(this.sampler.samples)
+	},
 
 
 	rotateNode: function(node) {
