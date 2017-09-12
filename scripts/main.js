@@ -24,7 +24,6 @@ get.json('configs/samples.json').defer.then(function(list) {
 
 function eventmap() {
 	main.events.when({
-		'onIssueNodeReplace': onIssueNodeReplace,
 		'onNodeSelect': onNodeSelect,
 		'onAddElement': onAddElement,
 		'onImportElement': onImportElement
@@ -71,6 +70,7 @@ function changeSample(sample) {
 
 			case 'replace':
 				main.replaceElement(sidebar.selectedNode, sample.src)
+				sidebar.sampleMenu.set(-1)
 			break
 		}
 	}
@@ -107,12 +107,6 @@ function onModeChange(mode) {
 function onNodeSelect(node) {
 	sidebar.selectedNode = node
 	// if(!node || !node.lit) sidebar.setMode('connect')
-	updateVisibleSamples()
-}
-
-function onIssueNodeReplace(node) {
-	sidebar.selectedNode = node
-	sidebar.setMode('replace')
 	updateVisibleSamples()
 }
 

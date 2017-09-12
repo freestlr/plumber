@@ -706,10 +706,6 @@ Plumber = f.unit({
 		this.view2.onKey(e)
 	},
 
-	issueReplace: function(node) {
-		this.events.emit('onIssueNodeReplace', node)
-	},
-
 	replaceElement: function(node, sid) {
 		if(!node) return
 
@@ -934,17 +930,14 @@ Plumber = f.unit({
 			dom.text(m.elemInfo, node.sample.src)
 			dom.addclass(m.elemInfo, 'marker-label')
 
-			m.bRep = dom.div('marker-action', m.content)
 			m.bRot = dom.div('marker-action', m.content)
 			m.bDel = dom.div('marker-action', m.content)
 
 			m.watchEvents.push(
-				new EventHandler(this.issueReplace, this, node).listen('tap', m.bRep),
 				new EventHandler(this.rotateNode, this, node).listen('tap', m.bRot),
 				new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel))
 
 			m.watchAtlas.push(
-				Atlas.set(m.bRep, 'i-move-forward'),
 				Atlas.set(m.bRot, 'i-rotate'),
 				Atlas.set(m.bDel, 'i-delete'))
 
