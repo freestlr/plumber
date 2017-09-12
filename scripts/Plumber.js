@@ -843,7 +843,6 @@ Plumber = f.unit({
 
 			if(this.catchFiles) {
 				this.importFile(dt.files[0])
-				e.preventDefault()
 			}
 
 		} else {
@@ -851,10 +850,13 @@ Plumber = f.unit({
 				var sid = dt.getData('text/sid')
 				,   sample = f.apick(this.sampler.samples, 'id', sid)
 
-				this.constructNode(sample, this.view).then(this.connectNode, this)
-				e.preventDefault()
+				if(sample) {
+					this.constructNode(sample, this.view).then(this.connectNode, this)
+				}
 			}
 		}
+
+		e.preventDefault()
 	},
 
 	importFile: function(file) {
