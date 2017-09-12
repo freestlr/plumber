@@ -28,7 +28,11 @@
 		"link": "https://shop.eriks.nl/en/bsp-t-piece-b240-12-11483749/"
 	},
 
-	{ "replacer": true, "src": "24-K-S12.json" },
+	{
+		"_src": "set_tower.json"
+	},
+
+	{ "replacer": true, "_src": "24-K-S12.json" },
 	{ "replacer": true, "src": "Clamp 219 PP.json" },
 	{ "replacer": true, "src": "Clamp_428_PP.json" },
 	{ "replacer": true, "src": "CoverPlateBolts - DP-AS.json" },
@@ -41,7 +45,7 @@
 	{ "replacer": true, "src": "bolt_m12.json" },
 	{ "replacer": true, "src": "bolt_m6.json" },
 	{ "replacer": true, "src": "bolts_m6.json" },
-	{ "replacer": true, "src": "bolts_m6_invert.json" },
+	{ "replacer": true, "_src": "bolts_m6_invert.json" },
 	{ "replacer": true, "src": "bolts_m6_in.json" },
 	{ "replacer": true, "src": "clamp_216.json" },
 
