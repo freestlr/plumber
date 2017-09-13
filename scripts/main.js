@@ -56,9 +56,11 @@ function addSample(item) {
 function changeSample(sample) {
 	if(!sample) {
 		main.displayFigure(null)
+		updateVisibleSamples()
 
 	} else if(main.isComplexFigure(sample)) {
 		main.clear()
+		updateVisibleSamples()
 		main.displayFigure(sample)
 
 	} else {
@@ -69,8 +71,13 @@ function changeSample(sample) {
 			break
 
 			case 'replace':
-				main.replaceElement(sidebar.selectedNode, sample.src)
-				sidebar.sampleMenu.set(-1)
+				if(sidebar.selectedNode) {
+					sidebar.sampleMenu.set(-1)
+					main.replaceElement(sample.src, sidebar.selectedNode)
+
+				} else {
+					main.replaceElement(sample.src, 0)
+				}
 			break
 		}
 	}
@@ -105,13 +112,14 @@ function onModeChange(mode) {
 }
 
 function onNodeSelect(node) {
+	sidebar.sampleMenu.set(-1)
 	sidebar.selectedNode = node
-	// if(!node || !node.lit) sidebar.setMode('connect')
 	updateVisibleSamples()
 }
 
 function updateVisibleSamples() {
 	var mode = sidebar.modeMenu.activeItem
+	var lit = false
 
 	switch(mode) {
 		case 'connect':
@@ -126,12 +134,19 @@ function updateVisibleSamples() {
 			var visibleAll  = []
 			,   visibleNode = null
 
-			if(main.tree) main.tree.traverse(function(node) {
-				var nodeSamples = getNodeReplacers(node)
-				node.lit = nodeSamples.length
-				main.view.updateNodeStencil(node)
+			lit = !sidebar.sampleMenu.activeBlock
 
-				if(node === sidebar.selectedNode) visibleNode = nodeSamples
+			if(main.tree) main.tree.traverse(function(node) {
+				var nodeSamples = main.getNodeReplacers(node)
+
+				if(lit) {
+					node.lit = sidebar.selectedNode ? false : nodeSamples.length
+					main.view.updateNodeStencil(node)
+				}
+
+				if(node === sidebar.selectedNode) {
+					visibleNode = nodeSamples
+				}
 				visibleAll = f.sor(visibleAll, nodeSamples)
 			})
 
@@ -139,17 +154,7 @@ function updateVisibleSamples() {
 		break
 	}
 
+	if(lit) main.litModeStart()
+	else    main.litModeClear()
 	main.view.needsRedraw = true
-}
-
-function getNodeReplacers(node) {
-	if(!node) return []
-
-	var connected = node.getConnectedList().map(f.prop('joint'))
-
-	var samples = main.sampler.samples.filter(function(sample) {
-		return sample !== node.sample && sample.canReplace(connected)
-	})
-
-	return samples.map(f.prop('id'))
 }

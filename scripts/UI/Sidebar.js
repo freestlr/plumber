@@ -101,13 +101,13 @@ UI.Sidebar = f.unit(Block, {
 		}
 	},
 
-	setVisibleSamples: function(sids) {
+	setVisibleSamples: function(samples) {
 
 		for(var i = 0; i < this.sampleMenu.blocks.length; i++) {
 			var block = this.sampleMenu.blocks[i]
 
-			if(sids) {
-				block.visible.set(sids.indexOf(block.data.id) !== -1, 'type')
+			if(samples) {
+				block.visible.set(samples.indexOf(block.data) !== -1, 'type')
 			} else {
 				block.visible.set(!block.replacer, 'type')
 				// block.visible.set(true, 'type')

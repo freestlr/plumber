@@ -208,6 +208,82 @@ Plumber = f.unit({
 		return this.importJSON(TSerial.fromString(string), animate)
 	},
 
+
+	replaceElement: function(sid, param) {
+		var sample =
+			f.apick(this.sampler.samples, 'src', sid) ||
+			f.apick(this.sampler.samples,  'id', sid)
+
+		if(!sample || !this.tree) return
+
+		switch(param) {
+			case -1:
+				this.tree.traverse(function(node) {
+					if(node.canBeReplacedBy(sample)) {
+						this.replaceNode(node, sample)
+					}
+
+				}, this)
+			break
+
+			case 0:
+				var replaceable = []
+				this.tree.traverse(function(node) {
+					node.lit = node.canBeReplacedBy(sample)
+					this.view.updateNodeStencil(node)
+
+					if(node.lit) replaceable.push(node)
+				}, this)
+
+
+				switch(replaceable.length) {
+					case 0:
+						return false
+					break
+
+					case 1:
+						var node = replaceable[0]
+
+						node.lit = false
+						this.view.updateNodeStencil(node)
+						this.replaceNode(node, sample, true)
+					break
+
+					default:
+						this.issuedReplace = sample
+						this.litModeStart()
+					break
+				}
+			break
+
+			default:
+				// param === node
+				if(param instanceof TNode) {
+					this.replaceNode(param, sample, true)
+				}
+			break
+		}
+
+		this.view.needsRedraw = true
+	},
+
+	litModeStart: function() {
+		this.view.stencilRaycastMask =
+			this.view.stencilLit    .value |
+			this.view.stencilHover  .value |
+			this.view.stencilSelect .value
+	},
+
+	litModeClear: function() {
+		if(this.tree) this.tree.traverse(function(node) {
+			node.lit = false
+			this.view.updateNodeStencil(node)
+		}, this)
+
+		this.view.needsRedraw = true
+		this.view.stencilRaycastMask = ~0
+	},
+
 	addElement: function(id, src, link) {
 		var sample =
 			f.apick(this.sampler.samples, 'src', src) ||
@@ -415,6 +491,11 @@ Plumber = f.unit({
 	displayFigure: function(figure) {
 		if(typeof figure === 'string') {
 			figure = f.apick(this.sampler.samples, 'id', figure)
+		}
+
+		if(this.issuedReplace) {
+			delete this.issuedReplace
+			this.litModeClear()
 		}
 
 		if(this.sampleView2 === figure) return
@@ -710,22 +791,34 @@ Plumber = f.unit({
 		this.view2.onKey(e)
 	},
 
-	replaceElement: function(node, sid) {
-		if(!node) return
-
-		var sample = f.apick(this.sampler.samples, 'src', sid)
-		if(!sample || !sample.canReplace(node)) return
+	replaceNode: function(node, sample, select) {
+		if(!node || !sample || !node.canBeReplacedBy(sample)) return
 
 		var root = !node.upcon
-		this.constructNode(sample).then(function(replacer) {
+		return this.constructNode(sample).then(function(replacer) {
 			replacer.replace(node)
 
 			if(root) this.view.setTree(replacer)
 			else this.view.setTree(this.view.tree)
 
-			// this.view.focusOnNode(replacer)
-			this.view.selectNode(replacer)
+			if(select) this.view.selectNode(replacer)
+
+			return replacer
 		}, this)
+	},
+
+	getNodeReplacers: function(node) {
+
+		var replacers = []
+		if(node) for(var i = 0; i < this.sampler.samples.length; i++) {
+			var sample = this.sampler.samples[i]
+
+			if(node.canBeReplacedBy(sample)) {
+				replacers.push(sample)
+			}
+		}
+
+		return replacers
 	},
 
 	preloadAllSamples: function() {
@@ -908,6 +1001,14 @@ Plumber = f.unit({
 			system.removeMarker(prev.nodeMarker)
 			prev.nodeMarker.destroy()
 			prev.nodeMarker = null
+		}
+
+		if(node && node.lit && this.issuedReplace) {
+			this.replaceNode(node, this.issuedReplace, true)
+			this.litModeClear()
+			delete this.issuedReplace
+
+			return
 		}
 
 		if(node) {

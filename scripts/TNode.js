@@ -24,6 +24,7 @@ TNode = f.unit({
 		this.object.add(this.objectCenter)
 
 		if(sample) this.setSample(sample)
+		else console.warn('new TNode with no sample')
 	},
 
 	traverse: function(func, scope, data) {
@@ -124,23 +125,38 @@ TNode = f.unit({
 		return joints
 	},
 
-	canReplace: function(node) {
-		var used = []
-		for(var i = 0; i < node.connections.length; i++) {
-			var con = node.connections[i]
-			if(!con.connected) continue
+	canBeReplacedBy: function(sample) {
+		if(!sample || this.sample === sample) return false
 
-			used.push(con.joint.id)
-		}
-
+		var connected = []
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
 
-			var index = used.indexOf(con.joint.id)
-			if(index !== -1) used.splice(index, 1)
+			if(con.connected) connected.push(con.connected.joint)
 		}
 
-		return used.length === 0
+		if(!connected.length) return true
+
+
+		var available = sample.joints.slice()
+
+		loop_connected:
+		for(var i = 0; i < connected.length; i++) {
+			var jointA = connected[i]
+
+			for(var j = available.length -1; j >= 0; j--) {
+				var jointB = available[j]
+
+				if(jointA.canConnect(jointB)) {
+					available.splice(j, 1)
+					continue loop_connected
+				}
+			}
+
+			return false
+		}
+
+		return true
 	},
 
 	replace: function(nodeB) {
@@ -166,51 +182,6 @@ TNode = f.unit({
 				}
 			}
 		}
-	},
-
-	replaceA: function(nodeB) {
-		var cons = this.getConnectedList()
-		for(var i = 0; i < cons.length; i++) {
-
-			var conA = cons[i]
-			var nodeA = conA.node
-			var masterA = conA.master
-
-			conA.disconnect()
-
-			for(var j = 0; j < nodeB.connections.length; j++) {
-				var conB = nodeB.connections[j]
-
-				if(!conB.connected && conA.canConnect(conB)) {
-					if(masterA) nodeA.connect(conA.index, nodeB, conB.index)
-					else        nodeB.connect(conB.index, nodeA, conA.index)
-				}
-			}
-		}
-	},
-
-	canBeReplacedBy: function(sample) {
-		var used = []
-		for(var i = 0; i < this.connections.length; i++) {
-			var con = this.connections[i]
-			if(!con.connected) continue
-
-			used.push(con.joint.id)
-		}
-
-		var connected = []
-		for(var i = 0; i < node.connections.length; i++) {
-			if(node.connections[i].connected) connected.push(i)
-		}
-
-		for(var i = 0; i < sample.joints.length; i++) {
-			var joint = sample.joints[i]
-
-			var index = used.indexOf(joint.id)
-			if(index !== -1) used.splice(index, 1)
-		}
-
-		return used.length === 0
 	},
 
 

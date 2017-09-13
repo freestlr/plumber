@@ -726,7 +726,16 @@ View3 = f.unit({
 		this.raycaster.setFromCamera(this.mouse2, this.camera)
 
 		var inter = this.raycaster.intersectObject(this.scene, true)
-		this.hoverNode(inter.length && inter[0].object.node)
+		for(var i = 0; i < inter.length; i++) {
+			var object = inter[i].object
+
+			if(object.stencilValue &= this.stencilRaycastMask) {
+				this.hoverNode(object.node)
+				return
+			}
+		}
+
+		this.hoverNode(null)
 	},
 
 	onMouseMove: function(e) {
