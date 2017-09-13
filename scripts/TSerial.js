@@ -1,5 +1,10 @@
 TSerial = {
 
+	round: function(value) {
+		// return f.mround(value, 6)
+		return f.pround(value, 9)
+	},
+
 	toJSON: function(tree) {
 		var types = []
 		,   typei = []
@@ -26,7 +31,10 @@ TSerial = {
 				t: typei[i],
 				a: nodes.indexOf(upcon.connected.node),
 				ai: upcon.connected.index,
-				bi: upcon.index
+				bi: upcon.index,
+				// divisible / divisor
+				r: new THREE.Vector3().copy(upcon.object.rotation).toArray().map(TSerial.round)
+				// r: upcon.getRotation()
 			})
 		}
 
@@ -57,7 +65,9 @@ TSerial = {
 
 			var nodes = [root]
 			for(var i = 0; i < json.nodes.length; i++) {
-				nodes.push(new TNode(samples[json.nodes[i].t]))
+				var n = json.nodes[i]
+
+				nodes.push(new TNode(samples[n.t]))
 			}
 
 			for(var i = 0; i < json.nodes.length; i++) {
@@ -70,6 +80,11 @@ TSerial = {
 				,   conB = nodeB.connections[n.bi]
 
 				nodeA.connect(n.ai, nodeB, n.bi)
+
+				if(n.r) {
+					conB.object.rotation.fromArray(n.r)
+					// node.rotate(json.node.r)
+				}
 
 				if(animate) {
 					conA.playConnection()

@@ -737,12 +737,7 @@ Plumber = f.unit({
 	rotateNode: function(node) {
 		if(!node) return
 
-		var angle = Math.PI / 6
-		if(node.upcon) {
-			node.upcon.rotate(angle)
-		} else {
-			node.object.rotateOnAxis(new THREE.Vector3(1, 0, 0), angle)
-		}
+		node.rotate(Math.PI / 6)
 
 		this.view.needsRedraw = true
 	},

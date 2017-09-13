@@ -320,6 +320,19 @@ TNode = f.unit({
 		}
 	},
 
+	rotate: function(angle) {
+		if(this.upcon) {
+			this.upcon.rotate(angle)
+
+		} else {
+			this.object.rotateOnAxis(this.object.up, angle)
+		}
+	},
+
+	getRotation: function() {
+		// TODO
+	},
+
 	sizeUnion: function(node) {
 		if(node.sample) {
 			node.updateBox()

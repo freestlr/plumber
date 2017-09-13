@@ -264,9 +264,18 @@ TConnection = f.unit({
 	},
 
 	rotate: function(angle) {
-		if(!this.connected || this.master) return
+		if(!this.connected) return
 
-		this.object.rotateOnAxis(this.joint.normal, angle)
+		if(this.master) {
+			this.connected.rotate(angle)
+
+		} else {
+			this.object.rotateOnAxis(this.joint.normal, angle)
+		}
+	},
+
+	getRotation: function() {
+		// TODO
 	},
 
 	destroy: function() {
