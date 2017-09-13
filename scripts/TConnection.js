@@ -114,10 +114,13 @@ TConnection = f.unit({
 		}
 
 
+		var d0 = this.depth
+		,   d1 = this.connected.depth
 
-		var depth = this.depth + this.connected.depth
+		var depth = d0 && d1 ? Math.min(d0, d1) : d0 + d1
+		var depth = d0 + d1
 		,   screw = this.screw || this.connected.screw ? Math.PI * 2 : 0
-		,   distance = (this.node.sample.boxLength + this.connected.node.sample.boxLength) /2
+		,   distance = (this.node.sample.boxLength + this.connected.node.sample.boxLength) /4
 
 
 		var par_distance = 0
@@ -201,46 +204,59 @@ TConnection = f.unit({
 		return list.filter(this.canConnect, this)
 	},
 
-	/**
+	/**             |--- d ----|
 	 *
-	 * node --- master --||-- slave
-	 *                           \
-	 *                            \
-	 *                           node
+	 * node --- master --||-- slave  -
+	 *                      \    \    \ d
+	 *                       r -  \    \
+	 *                           node  -
 	 *
 	 */
-	connect: function(slave) {
+	connect: function(node) {
 		var normal = new THREE.Vector3
 
+		var master = this
+		,   slave = node
 
 
-		this.node.object.add(this.object)
-		this.object.position.copy(this.joint.point)
-		this.object.add(slave.object)
 
-		slave.object.position.set(0, 0, 0)
 
 		normal.copy(slave.joint.normal).negate()
-		slave.object.quaternion.setFromUnitVectors(normal, this.joint.normal)
-		slave.object.rotateOnAxis(normal, -this.joint.up.angleTo(slave.joint.up))
 
 
+
+
+		master.node.object.add(master.object)
+
+		master.object.position.copy(master.joint.point)
+		master.object.add(slave.object)
+
+		slave.object.position.set(0, 0, 0)
+		slave.object.quaternion.setFromUnitVectors(normal, master.joint.normal)
+		slave.object.rotateOnAxis(normal, -master.joint.up.angleTo(slave.joint.up))
 		slave.object.add(slave.node.object)
 
 		slave.node.object.position.copy(slave.joint.point).negate()
 
 
 
-		this.connected = slave
-		this.target = slave.node
-		this.master = true
 
-		slave.connected = this
-		slave.target = this.node
+		master.connected = slave
+		master.target = slave.node
+		master.master = true
+
+		// master.master = master
+		// master.slave = slave
+
+		// slave.master = master
+		// slave.slave = slave
+
+		slave.connected = master
+		slave.target = master.node
 		slave.master = false
 
-		this.events.emit('connect', [this, slave])
-		slave.events.emit('connect', [slave, this])
+		master.events.emit('connect', [master, slave])
+		slave.events.emit('connect', [slave, master])
 	},
 
 	disconnect: function() {
