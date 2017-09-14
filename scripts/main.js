@@ -137,7 +137,7 @@ function updateVisibleSamples() {
 			lit = !sidebar.sampleMenu.activeBlock
 
 			if(main.tree) main.tree.traverse(function(node) {
-				var nodeSamples = main.getNodeReplacers(node)
+				var nodeSamples = main.getNodeReplacers(node, main.sampler.samples)
 
 				if(lit) {
 					node.lit = sidebar.selectedNode ? false : nodeSamples.length

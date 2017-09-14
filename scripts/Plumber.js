@@ -809,11 +809,11 @@ Plumber = f.unit({
 		}, this)
 	},
 
-	getNodeReplacers: function(node) {
+	getNodeReplacers: function(node, list) {
 
 		var replacers = []
-		if(node) for(var i = 0; i < this.sampler.samples.length; i++) {
-			var sample = this.sampler.samples[i]
+		if(node) for(var i = 0; i < list.length; i++) {
+			var sample = list[i]
 
 			if(node.canBeReplacedBy(sample)) {
 				replacers.push(sample)
