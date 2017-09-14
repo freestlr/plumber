@@ -455,6 +455,7 @@ View3 = f.unit({
 			this.root.add(this.tree.object)
 			this.root.updateMatrixWorld()
 
+			this.tree.traverse(this.updateNodeStencil, this)
 			this.tree.events.on('connect_start', this.onConnectStart, this)
 		}
 
@@ -612,8 +613,6 @@ View3 = f.unit({
 	},
 
 	updateMeshStencil: function(mesh, value) {
-		if(!mesh.userData.stencilWrite) return
-
 		mesh.stencilValue = value
 	},
 
@@ -729,7 +728,7 @@ View3 = f.unit({
 		for(var i = 0; i < inter.length; i++) {
 			var object = inter[i].object
 
-			if(object.stencilValue &= this.stencilRaycastMask) {
+			if(object.stencilValue & this.stencilRaycastMask) {
 				this.hoverNode(object.node)
 				return
 			}
@@ -832,7 +831,6 @@ View3 = f.unit({
 		}
 
 		this.updateProjection()
-		this.needsRetrace = true
 	},
 
 	draw: function() {
@@ -926,12 +924,14 @@ View3 = f.unit({
 		if(this.enableStencil && this.smFill && this.smCopy && this.smOverlay) {
 			gl.enable(gl.STENCIL_TEST)
 			gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
+			THREE.Object3D.prototype.stencilWrite = true
 
 
 			this.scene.overrideMaterial = this.smFill
 			clear(this.rtStencil)
 			draw(this.rtStencil, this.scene, this.camera)
 			this.scene.overrideMaterial = null
+			THREE.Object3D.prototype.stencilWrite = false
 
 
 
@@ -1031,16 +1031,17 @@ View3 = f.unit({
 		if(!this.lastcam.equals(this.camera.matrixWorld)) {
 			this.lastcam.copy(this.camera.matrixWorld)
 
+			this.projector.updateMatrices()
+			this.updateLights()
+			this.updateGrid()
+
 			this.needsRetrace = true
+			this.needsRedraw = true
 		}
 
 		if(this.needsRetrace) {
 			this.needsRetrace = false
-			this.needsRedraw = true
 
-			this.projector.updateMatrices()
-			this.updateLights()
-			this.updateGrid()
 			this.retrace()
 		}
 
@@ -1055,8 +1056,10 @@ View3 = f.unit({
 })
 
 
+THREE.Object3D.prototype.stencilWrite = false
+
 THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geometry, material, group) {
-	if(!this.userData.stencilWrite) return
+	if(!this.stencilWrite) return
 
 	var gl = renderer.context
 
@@ -1064,7 +1067,7 @@ THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geom
 }
 
 THREE.Object3D.prototype.onAfterRender = function(renderer, scene, camera, geometry, material, group) {
-	if(!this.userData.stencilWrite) return
+	if(!this.stencilWrite) return
 
 	var gl = renderer.context
 }

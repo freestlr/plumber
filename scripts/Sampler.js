@@ -61,6 +61,7 @@ function Sample(def, parent) {
 	this.progress = 0
 	this.parent = parent
 	this.joints = []
+	this.meshes = []
 
 	this.box       = new THREE.Box3
 	this.boxSize   = new THREE.Vector3
@@ -242,17 +243,13 @@ Sample.prototype = {
 		mesh.visible = true
 	},
 
-	configureObject: function(mesh) {
+	configureObject: function(object) {
 		var imagery = this.parent.imagery
 
-		if(imagery) {
-			imagery.configureSampleMaterial(mesh)
-		}
+		if(object.name.indexOf(':') === 0) {
+			object.visible = false
 
-		if(mesh.name.indexOf(':') === 0) {
-			mesh.visible = false
-
-			var joint = new SampleJoint(mesh)
+			var joint = new SampleJoint(object)
 
 			if(joint.makeDebugLine) {
 				var line = joint.makeDebugLine()
@@ -264,28 +261,30 @@ Sample.prototype = {
 			return
 		}
 
-		if(mesh.name === 'subtract') {
-			this.configureSubtract(mesh)
+		if(object.name === 'subtract') {
+			this.configureSubtract(object)
 			return
 		}
 
 
-		if(!mesh.geometry) return
+		if(object.geometry) {
+			if(imagery) imagery.configureSampleMaterial(object)
 
-		mesh.userData.stencilWrite = true
-		mesh.geometry.persistent = true
 
-		if(!mesh.geometry.boundingBox) {
-			mesh.geometry.computeBoundingBox()
+			object.geometry.persistent = true
+
+			if(!object.geometry.boundingBox) {
+				object.geometry.computeBoundingBox()
+			}
+
+			var tempBox = new THREE.Box3
+			tempBox.copy(object.geometry.boundingBox).applyMatrix4(object.matrixWorld)
+			this.box.union(tempBox)
+
+
+			// object.geometry = this.smoothShadeGeometry(object.geometry)
+			// object.geometry.computeVertexNormals()
 		}
-
-		var tempBox = new THREE.Box3
-		tempBox.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld)
-		this.box.union(tempBox)
-
-
-		// mesh.geometry = this.smoothShadeGeometry(mesh.geometry)
-		// mesh.geometry.computeVertexNormals()
 	},
 
 	smoothShadeGeometry: function(geometry) {
