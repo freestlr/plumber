@@ -67,7 +67,7 @@ function Sample(def, parent) {
 	this.boxCenter = new THREE.Vector3
 	this.boxLength = 1
 
-	if(!this.id) {
+	if(this.id == null) {
 		this.id = f.range(10).map(f.randchar).join('')
 	}
 

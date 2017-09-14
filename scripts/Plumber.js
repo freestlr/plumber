@@ -489,9 +489,11 @@ Plumber = f.unit({
 	},
 
 	displayFigure: function(figure) {
-		if(typeof figure === 'string') {
-			figure = f.apick(this.sampler.samples, 'id', figure)
-		}
+		var sample =
+			f.apick(this.sampler.samples, 'src', figure) ||
+			f.apick(this.sampler.samples, 'id',  figure)
+
+		if(sample) figure = sample
 
 		if(this.issuedReplace) {
 			delete this.issuedReplace
@@ -500,7 +502,7 @@ Plumber = f.unit({
 
 		if(this.sampleView2 === figure) return
 
-		if(this.tree && this.mode !== 'viewer') {
+		if(this.tree || this.mode === 'viewer') {
 			this.sampleView2 = figure
 
 		} else {
