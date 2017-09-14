@@ -89,11 +89,10 @@ View3 = f.unit({
 
 		this.scene.autoUpdate = false
 
-		this.mouse  = new THREE.Vector2
+		this.mouse  = new THREE.Vector2(Infinity, Infinity)
 		this.mouse2 = new THREE.Vector3
 		this.mouse3 = new THREE.Vector3
-
-		this.mouse.set(Infinity, Infinity)
+		this.updatePointer()
 
 
 		if(!this.renderer) {
@@ -744,7 +743,9 @@ View3 = f.unit({
 	},
 
 	onMouseOut: function(e) {
-		this.updatePointer(e)
+		this.mouse.x = Infinity
+		this.mouse.y = Infinity
+		this.updatePointer()
 
 		this.needsRetrace = true
 	},
