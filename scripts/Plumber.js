@@ -446,12 +446,15 @@ Plumber = f.unit({
 			delete this.explodeStepDefer
 		}
 
+		var tree = this.view.tree || this.view2.tree
+		if(!tree) return
+
 
 		if(this.explodeStepped) {
 			var list = []
 			,   level = 0
 
-			this.tree.traverseConnections(function(con, data, level) {
+			tree.traverseConnections(function(con, data, level) {
 				if(!con.connected || !con.master) return
 
 				if(!list[level]) {
@@ -482,7 +485,7 @@ Plumber = f.unit({
 			runStep.call(this)
 
 		} else {
-			this.tree.traverseConnections(function(con) {
+			tree.traverseConnections(function(con) {
 				if(con.connected && con.master) con.playConnection(enabled ? 0 : 1)
 			})
 		}
