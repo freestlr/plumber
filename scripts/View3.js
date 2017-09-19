@@ -539,6 +539,8 @@ View3 = f.unit({
 		this.camera.near   = this.treeLength * 0.01
 		this.camera.updateProjectionMatrix()
 
+		this.projector.updateMatrices()
+
 		this.needsRetrace = true
 	},
 
@@ -832,6 +834,8 @@ View3 = f.unit({
 		}
 
 		this.updateProjection()
+
+		this.needsRedraw = true
 	},
 
 	draw: function() {
