@@ -8,7 +8,7 @@ Plumber = f.unit({
 	catchFiles: false,
 	catchSamples: true,
 
-	dirSamples: 'samples/',
+	dirSamples: '',
 	srcAtlas: 'plumber-atlas.svg',
 	srcCubemap: 'plumber-cubemap.png',
 
@@ -23,8 +23,9 @@ Plumber = f.unit({
 
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
-		if(this.dirSamples) {
-			this.sampler.folder = this.dirSamples
+
+		if(options && options.dirSamples) {
+			this.sampler.folder = options.dirSamples
 		}
 
 
