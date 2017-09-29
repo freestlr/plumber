@@ -644,7 +644,7 @@ Plumber = f.unit({
 		this.absolutelySetMainTree(node)
 
 		if(node) {
-			this.events.emit('onAddElement', { status: 'connected' })
+			this.events.emit('onAddElement', { status: 'connected', node: node })
 		}
 	},
 
