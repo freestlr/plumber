@@ -220,22 +220,49 @@ Plumber = f.unit({
 	replaceElement: function(sid, param) {
 		var sample =
 			f.apick(this.sampler.samples, 'src', sid) ||
-			f.apick(this.sampler.samples,  'id', sid)
+			f.apick(this.sampler.samples,  'id', sid) ||
+			this.addSample(sid, sid)
 
-		if(!sample || !this.tree) return
+		if(!this.tree || !sample) {
+			this.events.emit('onReplaceElement', {
+				status: 'rejected',
+				reason: sample ? 'no tree' : 'bad sample'
+			})
+
+			return
+		}
+
+		sample.load().then(function() {
+			this.replaceElementBySample(sample, param)
+		}, this)
+	},
+
+	replaceElementBySample: function(sample, param) {
+		if(!this.tree || !sample) {
+			return replaceBad(sample ? 'no tree' : 'bad sample')
+		}
 
 		switch(param) {
 			case -1:
-				this.tree.traverse(function(node) {
-					if(node.canBeReplacedBy(sample)) {
-						this.replaceNode(node, sample)
-					}
+				var replaceable = []
 
+				this.tree.traverse(function(node) {
+					if(node.canBeReplacedBy(sample)) replaceable.push(node)
 				}, this)
+
+				if(replaceable.length) {
+					var defers = replaceable.map(function(node) {
+						return this.replaceNode(node, sample)
+					}, this)
+
+					Defer.all(defers).then(replaceMany, replaceBad, this)
+
+				} else replaceBad('no suitable nodes')
 			break
 
 			case 0:
 				var replaceable = []
+
 				this.tree.traverse(function(node) {
 					node.lit = node.canBeReplacedBy(sample)
 					this.view.updateNodeStencil(node)
@@ -246,7 +273,7 @@ Plumber = f.unit({
 
 				switch(replaceable.length) {
 					case 0:
-						return false
+						return replaceBad('no suitable nodes')
 					break
 
 					case 1:
@@ -254,7 +281,8 @@ Plumber = f.unit({
 
 						node.lit = false
 						this.view.updateNodeStencil(node)
-						this.replaceNode(node, sample, true)
+
+						this.replaceNode(node, sample, true).then(replaceOne, replaceBad, this)
 					break
 
 					default:
@@ -265,11 +293,22 @@ Plumber = f.unit({
 			break
 
 			default:
-				// param === node
 				if(param instanceof TNode) {
-					this.replaceNode(param, sample, true)
-				}
+					this.replaceNode(param, sample, true).then(replaceOne, replaceBad, this)
+
+				} else replaceBad('invalid param')
 			break
+		}
+
+
+		function replaceOne(node) {
+			replaceMany.call(this, [node])
+		}
+		function replaceMany(nodes) {
+			this.events.emit('onReplaceElement', { status: 'replaced', nodes: nodes })
+		}
+		function replaceBad(e) {
+			this.events.emit('onReplaceElement', { status: 'rejected', reason: e })
 		}
 
 		this.view.needsRedraw = true
@@ -332,7 +371,7 @@ Plumber = f.unit({
 		this.get.image(this.srcCubemap).defer
 			.then(this.imagery.unwrapCubemap3x2, this.imagery)
 
-		this.get.ready().detach(this.run, this)
+		this.get.ready().then(this.run, this, null, true)
 	},
 
 
@@ -546,10 +585,10 @@ Plumber = f.unit({
 		if(!figure) {
 
 		} else if(this.sampleView2) {
-			this.constructNode(figure, this.view2).then(this.setTree2, this)
+			this.constructNode(figure, this.view2).then(this.setTree2, this.constructError, this)
 
 		} else {
-			this.constructNode(figure, this.view).then(this.setTree1, this)
+			this.constructNode(figure, this.view).then(this.setTree1, this.constructError, this)
 		}
 
 	},
@@ -569,7 +608,7 @@ Plumber = f.unit({
 		if(figure instanceof Sample) {
 			if(targetView) targetView.setPreloader([figure])
 
-			return figure.load().then(TNode.New, this.constructError, this)
+			return figure.load().then(TNode.New)
 
 
 		} else if(this.isComplexFigure(figure)) {
@@ -579,8 +618,10 @@ Plumber = f.unit({
 
 			return Defer.all(samples.map(f.func('load'))).then(function() {
 				return TSerial.constructJSON(figure, samples, false)
+			}, this)
 
-			}, this.constructError, this)
+		} else {
+			return Defer.complete(false, 'bad sample')
 		}
 	},
 
@@ -690,7 +731,8 @@ Plumber = f.unit({
 		var samples = f.sort(this.sampler.samples.slice(), Math.random)
 
 		if(!this.tree) {
-			return this.constructNode(samples[0], this.view).then(this.setTree1, this)
+			return this.constructNode(samples[0], this.view)
+				.then(this.setTree1, this.constructError, this)
 		}
 
 		var cons = this.tree.retrieveConnections({ connected: false }, true)
@@ -714,7 +756,7 @@ Plumber = f.unit({
 
 					this.constructNode(sample, this.view).then(function(node) {
 						this.makeViewConnection(conA, node.connections[k])
-					}, this)
+					}, this.constructError, this)
 
 					return
 				}
@@ -805,18 +847,26 @@ Plumber = f.unit({
 	},
 
 	replaceNode: function(node, sample, select) {
-		if(!node || !sample || !node.canBeReplacedBy(sample)) return
+		if(!node || !sample || !node.canBeReplacedBy(sample)) {
+			return Defer.complete(false, 'bad replacement')
+		}
 
-		var root = !node.upcon
 		return this.constructNode(sample).then(function(replacer) {
 			replacer.replace(node)
 
-			if(root) this.view.setTree(replacer)
-			else this.view.setTree(this.view.tree)
+			if(node.upcon) this.view.setTree(this.view.tree)
+			else this.view.setTree(replacer)
 
 			if(select) this.view.selectNode(replacer)
 
 			return replacer
+
+		}, function(e) {
+			this.events.emit('onReplaceElement', {
+				status: 'rejected',
+				reason: 'construct error',
+				error: e
+			})
 		}, this)
 	},
 
@@ -980,7 +1030,8 @@ Plumber = f.unit({
 				,   sample = f.apick(this.sampler.samples, 'id', sid)
 
 				if(sample) {
-					this.constructNode(sample, this.view).then(this.connectNode, this)
+					this.constructNode(sample, this.view)
+						.then(this.connectNode, this.constructError, this)
 				}
 			}
 		}
