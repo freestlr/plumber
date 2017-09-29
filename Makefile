@@ -33,6 +33,8 @@ build/plumber-engine.js: $(escripts)
 
 
 
+pack: all
+	cp build/plumber-* ../plumber-engine/
 
 clean:
 	rm -rf build/
@@ -42,4 +44,4 @@ fix:
 	sed -i '/metadata/ d' images/atlas.svg
 
 
-.PHONY: all fix package
+.PHONY: all build fix package
