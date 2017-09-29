@@ -39,6 +39,7 @@ Plumber = f.unit({
 			preserveDrawingBuffer: true
 		})
 		this.renderer.autoClear = false
+		this.canvas = this.renderer.domElement
 
 
 		this.tiles = new TileView
@@ -102,10 +103,11 @@ Plumber = f.unit({
 
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
 		dom.addclass(this.element, 'plumber')
-		dom.addclass(this.renderer.domElement, 'canvas-main')
-		dom.prepend(this.element, this.renderer.domElement)
+		dom.addclass(this.canvas, 'canvas-main')
+		dom.prepend(this.element, this.canvas)
 		dom.append(this.element, this.splitViewMessage)
 		dom.append(this.element, this.emptyViewMessage)
+		dom.display(this.canvas, false)
 
 
 		for(var name in options) switch(name) {
@@ -987,7 +989,7 @@ Plumber = f.unit({
 
 		return
 
-		var canvas = this.renderer.domElement
+		var canvas = this.canvas
 		,   frame  = this.splitView
 
 		if(canvas.width  !== frame.w
@@ -1183,6 +1185,7 @@ Plumber = f.unit({
 
 		this.view.events.on('node_select', this.onNodeSelect, this)
 
+		dom.display(this.canvas, true)
 		this.onresize()
 
 
