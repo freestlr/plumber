@@ -63,6 +63,7 @@ Plumber = f.unit({
 		this.viewTween = new TWEEN.Tween({ position: 1 })
 			.to({ position: 1 }, 400)
 			.easing(TWEEN.Easing.Cubic.Out)
+			.onStart(this.onViewTweenStart, this)
 			.onUpdate(this.onViewTweenUpdate, this)
 			.onComplete(this.onViewTweenComplete, this)
 
@@ -195,7 +196,9 @@ Plumber = f.unit({
 		this.view2.markers.markersVisible.set(!!this.modeis.ctr, 'g_m_mode')
 
 
-		this.tiles.update()
+		this.onViewTweenUpdate()
+		this.onViewTweenComplete()
+		// this.tiles.update()
 	},
 
 	getConnectionsArray: function() {
@@ -473,13 +476,18 @@ Plumber = f.unit({
 	},
 
 
-	onViewTweenUpdate: function(k, values) {
+	onViewTweenUpdate: function() {
 		if(this.splitView) {
-			this.splitView.position = values.position
+			this.splitView.position = this.viewTween.source.position
 			this.tiles.update()
+
 			this.view.focusOnTree(0)
 			this.view2.focusOnTree(0)
 		}
+	},
+
+	onViewTweenStart: function() {
+		dom.display(this.tiles.ehelpers, true)
 	},
 
 	onViewTweenComplete: function() {
@@ -487,6 +495,8 @@ Plumber = f.unit({
 			this.view2.setTree(null)
 			this.sampleView2 = null
 		}
+
+		dom.display(this.tiles.ehelpers, this.splitScreen)
 	},
 
 	onExplode: function(enabled) {
