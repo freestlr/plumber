@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<head>
+	<title>fit test</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+
+	<script src="build/three.js"></script>
+	<script src="build/plumber-engine.js"></script>
+	<link rel="stylesheet" href="build/plumber-engine.css">
+
+	<style>
+		body {
+			margin: 24px;
+		}
+		.view {
+			position: relative;
+		}
+		.item1 {
+			display: inline-block;
+			width: 640px;
+			height: 480px;
+			margin-right: 24px;
+		}
+		.button {
+			display: inline-block;
+			vertical-align: top;
+			padding: 8px 12px;
+			background-color: #eee;
+			user-select: none;
+		}
+		.button:hover {
+			color: #eee;
+			background-color: #333;
+			cursor: pointer;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="view item1"></div>
+</body>
+
+<script>
+	var plumber = new Plumber({
+		eroot: document.querySelector('.item1'),
+		srcAtlas: 'build/plumber-atlas.svg',
+		srcCubemap: 'build/plumber-cubemap.png',
+		dirSamples: 'samples/',
+		mode: 'constructor'
+	})
+
+	plumber.displayFigure({
+		"types": [
+			"10EFG6K.json",
+			"12G-12FBSPORX_v2.json",
+			"BSP T-piece B240-12.json",
+			"B100_12MP-12MP.json"
+		],
+		"nodes": [
+			{"t": 1, "a": 0, "ai": 0, "bi": 1},
+			{"t": 2, "a": 1, "ai": 0, "bi": 0},
+			{"t": 2, "a": 2, "ai": 1, "bi": 0},
+			{"t": 2, "a": 3, "ai": 1, "bi": 0},
+			{"t": 2, "a": 3, "ai": 2, "bi": 0},
+			{"t": 2, "a": 2, "ai": 2, "bi": 0},
+			{"t": 2, "a": 6, "ai": 1, "bi": 0},
+			{"t": 2, "a": 6, "ai": 2, "bi": 0},
+			{"t": 1, "a": 0, "ai": 1, "bi": 1},
+			{"t": 2, "a": 9, "ai": 0, "bi": 0},
+			{"t": 2, "a": 10, "ai": 1, "bi": 0},
+			{"t": 2, "a": 11, "ai": 1, "bi": 0},
+			{"t": 2, "a": 11, "ai": 2, "bi": 0},
+			{"t": 3, "a": 13, "ai": 1, "bi": 0},
+			{"t": 2, "a": 10, "ai": 2, "bi": 0},
+			{"t": 2, "a": 15, "ai": 1, "bi": 0},
+			{"t": 2, "a": 15, "ai": 2, "bi": 0}
+		]
+	})
+
+</script>
