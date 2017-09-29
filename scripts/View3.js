@@ -197,8 +197,7 @@ View3 = f.unit({
 		var color1 = new THREE.Color(0x333333)
 		,   color2 = new THREE.Color(0xBBBBBB)
 
-		var center = divisions / 2
-		,   step = (size * 2) / divisions
+		var step = (size * 2) / divisions
 		,   vertices = []
 		,   colors   = []
 
@@ -335,7 +334,6 @@ View3 = f.unit({
 		,   matrixTheta = new THREE.Matrix4
 
 		var distNow = camera.distanceTo(target)
-		,   distMay = camera.distanceTo(nextTarget)
 		,   distMin = this.orbit.minDistance
 		,   distMax = this.orbit.maxDistance
 		,   distGot = f.clamp(isNaN(distance) ? distNow : distance, distMin, distMax)
@@ -396,30 +394,29 @@ View3 = f.unit({
 			time = this.focusDuration
 		}
 
-		var distance = node.sample.boxSize.y * 4 * this.focusDistance
+		// var distance = node.sample.boxSize.y * 4 * this.focusDistance
 
 		this.orbitTo(node.localCenter, time)
-		return
 
-		this.updateTreeSize()
+		// this.updateTreeSize()
 
-		if(isNaN(time)) {
-			time = this.focusDuration
-		}
+		// if(isNaN(time)) {
+		// 	time = this.focusDuration
+		// }
 
-		var distance
-		,   center
+		// var distance
+		// ,   center
 
-		if(node) {
-			center = node.boxCenter
+		// if(node) {
+		// 	center = node.boxCenter
 
-		} else {
-			distance = this.getFitDistance(this.treeSize, this.treeLength, 1.8, 1.8)
-			center = this.treeCenter
+		// } else {
+		// 	distance = this.getFitDistance(this.treeSize, this.treeLength, 1.8, 1.8)
+		// 	center = this.treeCenter
 
-		}
+		// }
 
-		this.orbitTo(center, time, distance)
+		// this.orbitTo(center, time, distance)
 	},
 
 	getFitDistance: function(size, factorX, factorY) {
@@ -1072,7 +1069,7 @@ THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geom
 }
 
 THREE.Object3D.prototype.onAfterRender = function(renderer, scene, camera, geometry, material, group) {
-	if(!this.stencilWrite) return
+	// if(!this.stencilWrite) return
 
-	var gl = renderer.context
+	// var gl = renderer.context
 }

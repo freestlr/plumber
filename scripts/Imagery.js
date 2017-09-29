@@ -24,13 +24,13 @@ function Imagery() {
 
 
 
-	var baseImages = {
-		stripe   : this.makePattern(2/3,   64,   64, this.drawStripe, '#dadada', 6, '#666'),
-		stripe2  : this.makePattern(1,     64,   64, this.drawStripe, '#dadada', 6, '#666', true),
-		noise    : this.makePattern(1/9, 1024, 1024, this.drawCloud, 0.2, 0.4),
-		checker  : this.makePattern(1/3,   64,   64, this.drawChecker, '#aaa', '#333'),
-		checker2 : this.makePattern(2/3,   64,   64, this.drawChecker, '#777', '#666')
-	}
+	// var baseImages = {
+	// 	stripe   : this.makePattern(2/3,   64,   64, this.drawStripe, '#dadada', 6, '#666'),
+	// 	stripe2  : this.makePattern(1,     64,   64, this.drawStripe, '#dadada', 6, '#666', true),
+	// 	noise    : this.makePattern(1/9, 1024, 1024, this.drawCloud, 0.2, 0.4),
+	// 	checker  : this.makePattern(1/3,   64,   64, this.drawChecker, '#aaa', '#333'),
+	// 	checker2 : this.makePattern(2/3,   64,   64, this.drawChecker, '#777', '#666')
+	// }
 
 	this.baseMaps = {
 		// black : { color: 0x222222 },

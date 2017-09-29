@@ -109,8 +109,7 @@ Sample.prototype = {
 
 		if(this.deferLoad) return this.deferLoad
 
-		var sample = this
-		,   defer = new Defer
+		var defer = new Defer
 		,   url = this.parent.folder + this.src
 
 		if(!this.src) {
@@ -128,16 +127,6 @@ Sample.prototype = {
 				var loader = new THREE.FBXLoader
 				loader.load(url, function(data) {
 					defer.resolve(data)
-
-				}, undefined, function(err) {
-					defer.reject(err)
-				})
-			break
-
-			case 'dae':
-				var loader = new THREE.ColladaLoader
-				loader.load(url, function(data) {
-					defer.resolve(data.scene)
 
 				}, undefined, function(err) {
 					defer.reject(err)
@@ -304,17 +293,7 @@ Sample.prototype = {
 	},
 
 	clone: function() {
-		if(!this.object) return
-
-		return this.object.clone(true)
-
-		var object = new THREE.Object3D
-
-		for(var i = 0; i < this.parts.length; i++) {
-			object.add(this.parts[i].mesh.clone())
-		}
-
-		return object
+		if(this.object) return this.object.clone(true)
 	},
 
 	describeObject: function(object, data, level) {

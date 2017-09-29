@@ -677,11 +677,9 @@
 
 			case 'Mesh':
 				return parseMeshGeometry( geometryNode, relationships, deformers );
-				break;
 
 			case 'NurbsCurve':
 				return parseNurbsGeometry( geometryNode );
-				break;
 
 		}
 
@@ -3998,6 +3996,8 @@
 			var propertyListLen = ( version >= 7500 ) ? reader.getUint64() : reader.getUint32();
 			var nameLen = reader.getUint8();
 			var name = reader.getString( nameLen );
+
+			this.propertyListLen = propertyListLen
 
 			// Regards this node as NULL-record if endOffset is zero
 			if ( endOffset === 0 ) return null;

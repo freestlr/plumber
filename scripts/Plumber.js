@@ -94,6 +94,7 @@ Plumber = f.unit({
 		,   frame  = dom.div('empty-view-message-frame absmid', this.emptyViewMessage)
 		,   text   = dom.div('empty-view-message-text absmid', this.emptyViewMessage)
 
+		f.nop(center, frame)
 		dom.html(text, ['please', 'add', 'any product'].join('<br/>'))
 
 
@@ -413,9 +414,9 @@ Plumber = f.unit({
 			hideable: false
 		})
 
-		var params = {
-			stencilSlot: 'stencilHover'
-		}
+		// var params = {
+		// 	stencilSlot: 'stencilHover'
+		// }
 
 		var slots = [
 			'stencilLit',
@@ -998,18 +999,16 @@ Plumber = f.unit({
 			this.updateSplitViewMessagePosition()
 		}
 
-		return
+		// var canvas = this.canvas
+		// ,   frame  = this.splitView
 
-		var canvas = this.canvas
-		,   frame  = this.splitView
+		// if(canvas.width  !== frame.w
+		// || canvas.height !== frame.h) {
+		// 	this.renderer.setSize(frame.w, frame.h)
+		// }
 
-		if(canvas.width  !== frame.w
-		|| canvas.height !== frame.h) {
-			this.renderer.setSize(frame.w, frame.h)
-		}
-
-		canvas.style.left = frame.x +'px'
-		canvas.style.top  = frame.y +'px'
+		// canvas.style.left = frame.x +'px'
+		// canvas.style.top  = frame.y +'px'
 	},
 
 	onTap: function(e) {

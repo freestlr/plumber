@@ -94,7 +94,6 @@ Loader.extend('obj', {
 			addMesh()
 		}
 
-		var length = text.length
 		var lineNo = -1
 		var index = 0
 		while(index !== -1) {
