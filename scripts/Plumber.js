@@ -260,7 +260,7 @@ Plumber = f.unit({
 						return this.replaceNode(node, sample)
 					}, this)
 
-					Defer.all(defers).then(replaceMany, replaceBad, this)
+					Defer.all(defers).then(replaceMany, replaceBad)
 
 				} else replaceBad('no suitable nodes')
 			break
@@ -278,8 +278,8 @@ Plumber = f.unit({
 
 				switch(replaceable.length) {
 					case 0:
-						return replaceBad('no suitable nodes')
-					break
+						replaceBad('no suitable nodes')
+					return
 
 					case 1:
 						var node = replaceable[0]
@@ -287,7 +287,7 @@ Plumber = f.unit({
 						node.lit = false
 						this.view.updateNodeStencil(node)
 
-						this.replaceNode(node, sample, true).then(replaceOne, replaceBad, this)
+						this.replaceNode(node, sample, true).then(replaceOne, replaceBad)
 					break
 
 					default:
@@ -299,21 +299,22 @@ Plumber = f.unit({
 
 			default:
 				if(param instanceof TNode) {
-					this.replaceNode(param, sample, true).then(replaceOne, replaceBad, this)
+					this.replaceNode(param, sample, true).then(replaceOne, replaceBad)
 
 				} else replaceBad('invalid param')
 			break
 		}
 
 
+		var events = this.events
 		function replaceOne(node) {
-			replaceMany.call(this, [node])
+			replaceMany([node])
 		}
 		function replaceMany(nodes) {
-			this.events.emit('onReplaceElement', { status: 'replaced', nodes: nodes })
+			events.emit('onReplaceElement', { status: 'replaced', nodes: nodes })
 		}
 		function replaceBad(e) {
-			this.events.emit('onReplaceElement', { status: 'rejected', reason: e })
+			events.emit('onReplaceElement', { status: 'rejected', reason: e })
 		}
 
 		this.view.needsRedraw = true
