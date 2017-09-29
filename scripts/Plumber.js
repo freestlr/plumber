@@ -12,6 +12,8 @@ Plumber = f.unit({
 	srcAtlas: 'plumber-atlas.svg',
 	srcCubemap: 'plumber-cubemap.png',
 
+	initFromHash: false,
+
 	init: function(options) {
 		this.get   = new Loader
 		this.timer = new Timer(this.onTick, this)
@@ -24,9 +26,6 @@ Plumber = f.unit({
 		this.sampler = new Sampler
 		this.sampler.setImagery(this.imagery)
 
-		if(options && options.dirSamples) {
-			this.sampler.folder = options.dirSamples
-		}
 
 
 		this.connectionParts = []
@@ -121,6 +120,14 @@ Plumber = f.unit({
 			case 'clearButton':
 				dom.display(this.view.clearButton, options.clearButton)
 				dom.display(this.view2.clearButton, options.clearButton)
+			break
+
+			case 'dirSamples':
+				this.sampler.folder = options.dirSamples
+			break
+
+			case 'initFromHash':
+				this.initFromHash = true
 			break
 
 			default:
@@ -1135,7 +1142,10 @@ Plumber = f.unit({
 		if(typeof bootProgress === 'function') bootProgress(1)
 
 		this.ready.resolve(true)
-		this.loadFromHash()
+
+		if(this.initFromHash) {
+			this.loadFromHash()
+		}
 
 		this.timer.play()
 	},

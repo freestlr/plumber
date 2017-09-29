@@ -6,6 +6,7 @@ var main = new Plumber({
 	srcAtlas: 'images/atlas.svg',
 	srcCubemap: 'images/cubemap.png',
 	dirSamples: 'samples/',
+	initFromHash: true,
 	catchFiles: true
 })
 
