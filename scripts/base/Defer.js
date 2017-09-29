@@ -18,7 +18,7 @@ Defer.all = function(list) {
 	for(var i = 0; i < length; i++) {
 		var item = list[i]
 		if(item instanceof Defer) {
-			item.then(check, check)
+			item.then(check, check, item)
 
 		} else {
 			result[i] = item
@@ -26,30 +26,48 @@ Defer.all = function(list) {
 		}
 	}
 
-	function check(value, success, item) {
-		success ? ++loaded : ++failed
+	function check(value, success) {
+		var index = list.indexOf(this)
 
-		result[list.indexOf(item)] = value
+		if(value instanceof Defer) {
+			list[index] = value
+			value.then(check, check)
+			return
+		}
+
+		success ? ++loaded : ++failed
+		result[index] = value
 
 		if(loaded + failed >= length) {
-			defer.transition(!failed, result)
+			setTimeout(function() {
+				defer.transition(!failed, result)
+			}, 0)
 		}
 	}
 
 	return defer
 }
 
-Defer.wait = function(duration) {
-	return function(value) {
-		return Defer.timer(duration, value)
-	}
-}
-Defer.timer = function(duration, value) {
+Defer.complete = function(success, value) {
 	var defer = new Defer
-
-	setTimeout(function() { defer.resolve(value) }, duration)
+	defer.success = success
+	defer.value = value
 
 	return defer
+}
+
+Defer.timer = function(duration) {
+	function func(value, success) {
+		var defer = new Defer
+
+		setTimeout(function() {
+			defer.transition(value, success)
+		}, duration || 0)
+
+		return defer
+	}
+
+	return new Defer(func, func)
 }
 
 Defer.prototype = {
@@ -78,10 +96,8 @@ Defer.prototype = {
 		return this.push(new Defer(func, func, scope, unsafe))
 	},
 
-	detach: function(func, scope) {
-		return this.push(new Defer(function(value) {
-			setTimeout(function() { func.call(scope, value) }, 0)
-		}))
+	delay: function(duration) {
+		return this.push(Defer.timer(duration))
 	},
 
 	push: function(defer) {
@@ -103,7 +119,7 @@ Defer.prototype = {
 		return this.transition(false, value, defer)
 	},
 
-	transition: function(success, value, defer) {
+	transition: function(success, value) {
 		if(this.debug) {
 			console.log('defer', this.debug, success ? 'resolve' : 'reject', this.pending ? 'ok' : 'no', value)
 		}
@@ -114,11 +130,11 @@ Defer.prototype = {
 		var func = success ? this.onresolve : this.onreject
 		if(func) {
 			if(this.unsafe) {
-				this.value   = func.call(this.scope, value, success, defer)
+				this.value   = func.call(this.scope, value, success)
 				this.success = true
 
 			} else try {
-				this.value   = func.call(this.scope, value, success, defer)
+				this.value   = func.call(this.scope, value, success)
 				this.success = true
 
 			} catch(e) {
