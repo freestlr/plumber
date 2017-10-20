@@ -244,6 +244,18 @@ Plumber = f.unit({
 	},
 
 	replaceElementBySample: function(sample, param) {
+		var events = this.events
+		function replaceOne(node) {
+			replaceMany([node])
+		}
+		function replaceMany(nodes) {
+			events.emit('onReplaceElement', { status: 'replaced', nodes: nodes })
+		}
+		function replaceBad(e) {
+			events.emit('onReplaceElement', { status: 'rejected', reason: e })
+		}
+
+
 		if(!this.tree || !sample) {
 			return replaceBad(sample ? 'no tree' : 'bad sample')
 		}
@@ -304,18 +316,6 @@ Plumber = f.unit({
 
 				} else replaceBad('invalid param')
 			break
-		}
-
-
-		var events = this.events
-		function replaceOne(node) {
-			replaceMany([node])
-		}
-		function replaceMany(nodes) {
-			events.emit('onReplaceElement', { status: 'replaced', nodes: nodes })
-		}
-		function replaceBad(e) {
-			events.emit('onReplaceElement', { status: 'rejected', reason: e })
 		}
 
 		this.view.needsRedraw = true
