@@ -33,8 +33,11 @@ build/plumber-engine.js: $(escripts)
 
 
 
+packagedir="$$HOME/web/plumber-engine/"
+
 pack: all
-	cp build/plumber-* ../plumber-engine/
+	cp build/plumber-* $(packagedir)
+	cd $(packagedir) && git commit -a && git push
 
 clean:
 	rm -rf build/
