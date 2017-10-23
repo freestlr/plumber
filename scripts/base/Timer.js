@@ -19,6 +19,10 @@ Timer.prototype = {
 		,   frameTime  = 0
 		,   frameDelta = 0
 
+		document.addEventListener('visibilitychange', function() {
+			frameLast = performance.now()
+		})
+
 		!function loop() {
 			timer.id = requestAnimationFrame(loop)
 
