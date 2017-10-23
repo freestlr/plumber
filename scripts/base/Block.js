@@ -117,7 +117,7 @@ Block.Toggle = f.unit(Block, {
 	unitName: 'Block_Toggle',
 	ename: 'toggle',
 
-	active: true,
+	active: false,
 	reset: false,
 	disabled: false,
 	deselect: true,
@@ -126,7 +126,8 @@ Block.Toggle = f.unit(Block, {
 	create: function() {
 		this.watchEvents.push(
 			new EventHandler(this.ontap, this).listen('tap', this.element),
-			new EventHandler(this.onover, this).listen('mouseenter', this.element))
+			new EventHandler(this.onenter, this).listen('mouseenter', this.element),
+			new EventHandler(this.onleave, this).listen('mouseleave', this.element))
 	},
 
 	createPost: function() {
@@ -137,8 +138,12 @@ Block.Toggle = f.unit(Block, {
 		if(this.auto) this.toggle(true)
 	},
 
-	onover: function() {
-		this.events.emit('hover', this)
+	onenter: function() {
+		this.events.emit('enter', this)
+	},
+
+	onleave: function() {
+		this.events.emit('leave', this)
 	},
 
 	toggle: function(emitEvent) {
@@ -251,7 +256,8 @@ Block.Menu = f.unit(Block.List, {
 	addBlock: function(block) {
 		block.events.when({
 			change: this.onitemchange,
-			hover: this.onitemhover
+			enter: this.onitementer,
+			leave: this.onitemleave
 		}, this, block)
 
 		block.set(0)
@@ -286,11 +292,15 @@ Block.Menu = f.unit(Block.List, {
 	onitemchange: function(block, active) {
 		this.unsetBlocks(block)
 		this.update()
-		this.events.emit('change', this.activeItem)
+		this.events.emit('change', [this.activeItem, this.activeBlock, this.active])
 	},
 
-	onitemhover: function(block) {
-		this.events.emit('hover', block)
+	onitementer: function(block) {
+		this.events.emit('enter', block)
+	},
+
+	onitemleave: function(block) {
+		this.events.emit('leave', block)
 	},
 
 	set: function(index, emitEvent) {

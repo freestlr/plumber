@@ -73,9 +73,7 @@ Plumber = f.unit({
 		this.explodeButton = new Block.Toggle({
 			eroot: this.element,
 			ename: 'button-explode out-01',
-			eicon: 'i-search',
-			active: false,
-			deselect: true
+			eicon: 'i-search'
 		})
 
 		this.explodeButton.events.on('change', this.onExplode, this)
