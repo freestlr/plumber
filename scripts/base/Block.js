@@ -41,10 +41,13 @@ Block = f.unit({
 		dom.addclass(this.element, this.ename)
 
 		this.visible.events.on('change', this.visibleMethod, this, this.element)
-		this.visible.check(true)
+		// this.visible.check(true)
 
 		if(this.text) {
 			dom.text(this.element, this.text)
+		}
+		if(this.title) {
+			this.element.setAttribute('title', this.title)
 		}
 		if(this.elabel) {
 			this.watchLocale.push(
@@ -253,6 +256,10 @@ Block.Menu = f.unit(Block.List, {
 		factory: Block.Toggle
 	},
 
+	createPost: function() {
+		this.set(this.active)
+	},
+
 	addBlock: function(block) {
 		block.events.when({
 			change: this.onitemchange,
@@ -360,6 +367,10 @@ Block.Tip = f.unit(Block, {
 			.onStart(this.onTransitionStart, this)
 			.onUpdate(this.onTransitionUpdate, this)
 			.onComplete(this.onTransitionEnd, this)
+	},
+
+	createPost: function() {
+		this.visible.check(true)
 	},
 
 	moveToElement: function(element, align, distance) {

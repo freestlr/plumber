@@ -57,29 +57,78 @@ body .dg .property-name {
 }
 
 
-.plumber .button-explode {
+.plumber .vp-button {
 	position: absolute;
-	right: 20px;
-	bottom: 20px;
-	width: 50px;
-	height: 50px;
+	width: 40px;
+	height: 40px;
+	line-height: 36px;
 	background-color: white;
 	fill: #9ba9b2;
-	border: 4px solid #9ba9b2;
+	color: #9ba9b2;
+	border: 2px solid #9ba9b2;
 	border-radius: 50%;
+	font-family: monospace;
+	font-size: 22px;
+	text-align: center;
+	box-sizing: border-box;
 }
-.plumber .button-explode svg {
-	width: 32px;
-	height: 32px;
+.plumber .vp-button svg {
+	width: 18px;
+	height: 18px;
 }
-.plumber .button-explode:hover {
+.plumber .vp-button:hover {
 	border-color: #546f7a;
 	fill: #546f7a;
+	color: #546f7a;
 }
-.plumber .button-explode.active {
+.plumber .vp-button.active {
 	background-color: #546f7a;
 	border-color: white;
 	fill: white;
+	color: white;
+}
+.plumber .vp-button-explode {
+	right: 70px;
+	bottom: 20px;
+}
+.plumber .vp-button-zoom-in {
+	right: 20px;
+	bottom: 120px;
+}
+.plumber .vp-button-zoom-out {
+	right: 20px;
+	bottom: 70px;
+}
+.plumber .vp-button-zoom-fit {
+	right: 20px;
+	bottom: 20px;
+}
+.plumber .vp-button-screenshot {
+	right: 120px;
+	bottom: 20px;
+}
+.plumber .vp-button-rotate {
+	left: 20px;
+	top: 20px;
+}
+
+
+.plumber .vp-menu {
+	position: absolute;
+}
+.plumber .vp-menu .vp-button {
+	position: static;
+	display: inline-block;
+	vertical-align: middle;
+	margin: 5px;
+}
+.plumber .vp-menu-display {
+	left: 15px;
+	top: 65px;
+}
+.plumber .vp-menu-projection {
+	left: 15px;
+	top: 115px;
 }
 
 

@@ -63,6 +63,7 @@ function Imagery() {
 		void      : {}
 	}
 
+	this.sampleMaterials = []
 	this.materials = {}
 	this.usedProducts = {}
 
@@ -257,6 +258,12 @@ Imagery.prototype = {
 
 		var m = mesh.material
 
+		if(this.sampleMaterials.indexOf(m) !== -1) {
+			return
+		}
+		this.sampleMaterials.push(m)
+
+
 		var maps = [
 			m.map,
 			m.bumpMap,
@@ -278,6 +285,7 @@ Imagery.prototype = {
 
 		m.envMap = this.skybox
 		m.needsUpdate = true
+
 
 
 

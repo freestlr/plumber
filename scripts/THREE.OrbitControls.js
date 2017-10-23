@@ -64,6 +64,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 	this.minPolarAngle = 0; // radians
 	this.maxPolarAngle = Math.PI; // radians
 
+	this.radiusChanged = true
+
 	this.borderBox = new THREE.Box3
 
 	var min = this.borderBox.min
@@ -294,13 +296,19 @@ THREE.OrbitControls = function ( object, domElement ) {
 		// restrict phi to be betwee EPS and PI-EPS
 		phi = Math.max( EPS, Math.min( Math.PI - EPS, phi ) );
 
-		this.radius = offset.length() * scale;
+		var radius = offset.length() * scale
 
 		// restrict radius to be between desired limits
 		if(!this.disableBorders) {
-			this.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this.radius ) );
+			radius = Math.max( this.minDistance, Math.min( this.maxDistance, radius ) );
 		}
-		
+
+		if(Math.abs(radius - this.radius) > EPS) {
+			this.radiusChanged = true
+		}
+
+		this.radius = radius
+
 		// move target to panned location
 		this.target.add( pan );
 

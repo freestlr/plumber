@@ -78,7 +78,7 @@ View3 = f.unit({
 		this.scene     = new THREE.Scene
 		this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
 		this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 1.0)
-		this.camera    = new THREE.PerspectiveCamera
+		this.camera    = new THREE.PerspectiveCamera(30)
 		this.orbit     = new THREE.OrbitControls(this.camera, this.element)
 		this.raycaster = new THREE.Raycaster
 		this.root      = new THREE.Object3D
@@ -375,10 +375,16 @@ View3 = f.unit({
 		}
 	},
 
+	zoom: function(scale, time) {
+		this.orbit.dollyIn(scale)
+		this.orbit.update()
+		this.needsRedraw = true
+	},
+
 	focusOnTree: function(time) {
 		// return this.focusOnNode(null, time)
 
-		if(isNaN(time)) {
+		if(time == null) {
 			time = this.focusDuration
 		}
 
@@ -420,6 +426,10 @@ View3 = f.unit({
 	},
 
 	getFitDistance: function(size, factorX, factorY) {
+		if(size    == null) size = this.treeSize
+		if(factorX == null) factorX = 1.5
+		if(factorY == null) factorY = 1.5
+
 		var fov = this.camera.fov * f.xrad / 2
 		,   asp = this.camera.aspect
 
@@ -530,15 +540,14 @@ View3 = f.unit({
 	},
 
 	updateProjection: function() {
-		this.camera.fov    = 30
+		var distance = this.getFitDistance(this.treeSize, 1.5, 1.5)
+
 		this.camera.aspect = this.width / this.height
-		this.camera.far    = this.treeLength * 100
-		this.camera.near   = this.treeLength * 0.01
+		this.camera.far    = Math.max(this.orbit.radius + this.treeLength, distance * 2)
+		this.camera.near   = Math.max(this.orbit.radius - this.treeLength, distance * 0.1)
 		this.camera.updateProjectionMatrix()
 
 		this.projector.updateMatrices()
-
-		this.needsRetrace = true
 	},
 
 	onTransformControlsChange: function() {
@@ -832,6 +841,7 @@ View3 = f.unit({
 
 		this.updateProjection()
 
+		this.needsRetrace = true
 		this.needsRedraw = true
 	},
 
@@ -906,7 +916,6 @@ View3 = f.unit({
 			this.grid.visible = false
 			this.root.visible = true
 
-			this.renderer.render(this.scene, this.camera, this.renderTarget)
 			draw(this.renderTarget, this.scene, this.camera)
 		}
 
@@ -1005,6 +1014,11 @@ View3 = f.unit({
 			this.updatePreloader()
 		}
 
+		if(this.orbit.autoRotate) {
+			this.orbit.update()
+			this.needsRedraw = true
+		}
+
 		this.transform.update()
 
 		if(this.animatedConnections.length) {
@@ -1026,7 +1040,18 @@ View3 = f.unit({
 
 		if(this.orbitTween.playing || this.cameraTween.playing) {
 			this.camera.lookAt(this.orbit.target)
+			this.orbit.update()
 			this.needsRedraw = true
+		}
+
+		if(this.orbitTween.ended || this.cameraTween.ended) {
+			this.orbit.update()
+		}
+
+		if(this.orbit.radiusChanged) {
+			this.orbit.radiusChanged = false
+
+			this.updateProjection()
 		}
 
 		this.camera.updateMatrixWorld()

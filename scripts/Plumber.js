@@ -72,11 +72,122 @@ Plumber = f.unit({
 
 		this.explodeButton = new Block.Toggle({
 			eroot: this.element,
-			ename: 'button-explode out-01',
-			eicon: 'i-search'
+			ename: 'vp-button vp-button-explode out-01',
+			eicon: 'i-search',
+			title: 'Exploded view',
+		})
+
+		this.zoomInButton = new Block.Toggle({
+			eroot: this.element,
+			ename: 'vp-button vp-button-zoom-in out-01',
+			reset: true,
+			title: 'Zoom in',
+			text: '+'
+		})
+
+		this.zoomOutButton = new Block.Toggle({
+			eroot: this.element,
+			ename: 'vp-button vp-button-zoom-out out-01',
+			reset: true,
+			title: 'Zoom out',
+			text: '-'
+		})
+
+		this.zoomFitButton = new Block.Toggle({
+			eroot: this.element,
+			ename: 'vp-button vp-button-zoom-fit out-01',
+			reset: true,
+			title: 'Fit screen',
+			text: 'fit'
+		})
+
+		this.screenshotButton = new Block.Toggle({
+			eroot: this.element,
+			ename: 'vp-button vp-button-screenshot out-01',
+			reset: true,
+			title: 'Screen shot',
+			text: 'S'
+		})
+
+		this.rotateButton = new Block.Toggle({
+			eroot: this.element,
+			ename: 'vp-button vp-button-rotate out-01',
+			title: 'Auto rotate',
+			text: '>'
+		})
+
+		this.displayMenu = new Block.Menu({
+			eroot: this.element,
+			ename: 'vp-menu vp-menu-display',
+			options: {
+				factory: Block.Toggle,
+				deselect: false,
+				ename: 'vp-button'
+			},
+			items: [{
+				data: 'transparent',
+				text: 'T',
+				title: 'Transparent view'
+			}, {
+				data: 'normal',
+				text: 'N',
+				title: 'Normal view'
+			}, {
+				data: 'wireframe',
+				text: 'W',
+				title: 'Wireframe view'
+			}],
+			active: 1
+		})
+
+		this.projectionMenu = new Block.Menu({
+			eroot: this.element,
+			ename: 'vp-menu vp-menu-projection',
+			options: {
+				factory: Block.Toggle,
+				deselect: false,
+				ename: 'vp-button'
+			},
+			items: [{
+				data: 'perspective',
+				text: 'P',
+				title: 'Perspective'
+			}, {
+				data: 'left',
+				text: 'L',
+				title: 'Left'
+			}, {
+				data: 'right',
+				text: 'R',
+				title: 'Right'
+			}, {
+				data: 'top',
+				text: 'U',
+				title: 'Top'
+			}, {
+				data: 'bottom',
+				text: 'D',
+				title: 'Bottom'
+			}, {
+				data: 'front',
+				text: 'F',
+				title: 'Front'
+			}, {
+				data: 'back',
+				text: 'B',
+				title: 'Back'
+			}],
+			active: 0
 		})
 
 		this.explodeButton.events.on('change', this.onExplode, this)
+		this.zoomInButton.events.on('change', this.onZoom, this, 'in')
+		this.zoomOutButton.events.on('change', this.onZoom, this, 'out')
+		this.zoomFitButton.events.on('change', this.onZoom, this, 'fit')
+		this.screenshotButton.events.on('change', this.onScreenshot, this)
+		this.rotateButton.events.on('change', this.onRotate, this)
+		this.displayMenu.events.on('change', this.onDisplayChange, this)
+		this.projectionMenu.events.on('change', this.onProjectionChange, this)
 
 
 		this.splitViewMessage = dom.div('split-view-message')
@@ -198,6 +309,122 @@ Plumber = f.unit({
 		this.onViewTweenUpdate()
 		this.onViewTweenComplete()
 		// this.tiles.update()
+	},
+
+	onZoom: function(zoom) {
+		switch(zoom) {
+			case 'in':
+				this.view.zoom(1.5)
+				this.view2.zoom(1.5)
+			break
+
+			case 'out':
+				this.view.zoom(1/1.5)
+				this.view2.zoom(1/1.5)
+			break
+
+			case 'fit':
+				this.view.focusOnTree()
+				this.view2.focusOnTree()
+			break
+		}
+	},
+
+	onRotate: function(rotate) {
+		this.view.orbit.autoRotate = rotate
+		this.view2.orbit.autoRotate = rotate
+	},
+
+	onDisplayChange: function(display) {
+		var isTransparent = display === 'transparent'
+		,   isNormal      = display === 'normal'
+		,   isWireframe   = display === 'wireframe'
+
+		this.imagery.sampleMaterials.forEach(function(m) {
+
+			if(isTransparent) {
+				m.__pl_display_set = true
+				m.__pl_transparent = m.transparent
+				m.__pl_opacity     = m.opacity
+				m.__pl_depthtest   = m.depthTest
+				m.__pl_depthwrite  = m.depthWrite
+
+				m.transparent = true
+				m.opacity     = 0.5
+				m.depthTest   = false
+				m.depthWrite  = false
+
+				m.needsUpdate = true
+
+			} else if(m.__pl_display_set) {
+				m.transparent = m.__pl_transparent
+				m.opacity     = m.__pl_opacity
+				m.depthTest   = m.__pl_depthtest
+				m.depthWrite  = m.__pl_depthwrite
+
+				delete m.__pl_transparent
+				delete m.__pl_opacity
+				delete m.__pl_depthtest
+				delete m.__pl_depthwrite
+				delete m.__pl_display_set
+
+				m.needsUpdate = true
+			}
+
+		}, this)
+
+		this.view.enableRender = isNormal || isTransparent
+		this.view.enableWireframe = isWireframe
+		this.view.needsRedraw = true
+
+		this.view2.enableRender = isNormal || isTransparent
+		this.view2.enableWireframe = isWireframe
+		this.view2.needsRedraw = true
+	},
+
+	onProjectionChange: function(projection) {
+		var pos = {
+			perspective : [ 1,  1,  1],
+			left        : [-1,  0,  0],
+			right       : [ 1,  0,  0],
+			top         : [ 0,  1,  0],
+			bottom      : [ 0, -1,  0],
+			front       : [ 0,  0,  1],
+			back        : [ 0,  0, -1]
+		}
+
+		this.view.camera.fov = projection === 'perspective' ? 30 : 0.5
+		this.view.camera.updateProjectionMatrix()
+
+		this.view2.camera.fov = projection === 'perspective' ? 30 : 0.5
+		this.view2.camera.updateProjectionMatrix()
+
+		this.view.camera.position
+			.fromArray(pos[projection])
+			.setLength(this.view.getFitDistance())
+			.add(this.view.treeCenter)
+
+		this.view2.camera.position
+			.fromArray(pos[projection])
+			.setLength(this.view2.getFitDistance())
+			.add(this.view2.treeCenter)
+
+		this.view.orbit.target.copy(this.view.treeCenter)
+		this.view2.orbit.target.copy(this.view2.treeCenter)
+
+		this.view.orbit.update()
+		this.view2.orbit.update()
+		this.view.needsRedraw = true
+		this.view2.needsRedraw = true
+	},
+
+	onScreenshot: function() {
+		var time = new Date().toISOString().split('.')[0].replace(/:/g, '.')
+
+		this.canvas.toBlob(function(blob) {
+			saveAs(blob, 'pb-screen-'+ time +'.jpg')
+
+		}, 'image/jpeg', 0.95)
 	},
 
 	getConnectionsArray: function() {

@@ -89,6 +89,7 @@ TWEEN.Tween = function(object) {
 	this.onStopScope = null
 
 	this.playing = false
+	this.ended = false
 
 	if(object) this.setSource(object)
 }
