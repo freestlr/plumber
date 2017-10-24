@@ -393,10 +393,12 @@ Plumber = f.unit({
 			back        : [ 0,  0, -1]
 		}
 
-		this.view.camera.fov = projection === 'perspective' ? 30 : 0.5
+		var isPerspective = projection === 'perspective'
+
+		this.view.camera.fov = isPerspective ? 30 : 0.5
 		this.view.camera.updateProjectionMatrix()
 
-		this.view2.camera.fov = projection === 'perspective' ? 30 : 0.5
+		this.view2.camera.fov = isPerspective ? 30 : 0.5
 		this.view2.camera.updateProjectionMatrix()
 
 		this.view.camera.position
@@ -411,6 +413,9 @@ Plumber = f.unit({
 
 		this.view.orbit.target.copy(this.view.treeCenter)
 		this.view2.orbit.target.copy(this.view2.treeCenter)
+
+		this.view.orbit.orthoMode = !isPerspective
+		this.view2.orbit.orthoMode = !isPerspective
 
 		this.view.orbit.update()
 		this.view2.orbit.update()

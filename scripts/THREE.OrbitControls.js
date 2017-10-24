@@ -156,10 +156,11 @@ THREE.OrbitControls = function ( object, domElement ) {
 	// pass in distance in world space to move left
 	this.panLeft = function ( distance ) {
 
-		var te = this.object.matrix.elements;
+		// var te = this.object.matrix.elements;
 
 		// get X column of matrix
-		panOffset.set( te[ 0 ], te[ 1 ], te[ 2 ] );
+		// panOffset.set( te[ 0 ], te[ 1 ], te[ 2 ] );
+		panOffset.setFromMatrixColumn(this.object.matrix, 0)
 
 		var length = panOffset.length();
 		panOffset.y = 0;
@@ -170,13 +171,25 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	};
 
+	this.panAbove = function ( distance ) {
+
+		panOffset.setFromMatrixColumn(this.object.matrix, 1)
+
+		var length = panOffset.length();
+		panOffset.setLength( length );
+		panOffset.multiplyScalar( distance );
+
+		pan.add( panOffset );
+	};
+
 	// pass in distance in world space to move up
 	this.panUp = function ( distance ) {
 
-		var te = this.object.matrix.elements;
+		// var te = this.object.matrix.elements;
 
 		// get Y column of matrix
-		panOffset.set( te[ 4 ], te[ 5 ], te[ 6 ] );
+		// panOffset.set( te[ 4 ], te[ 5 ], te[ 6 ] );
+		panOffset.setFromMatrixColumn(this.object.matrix, 1)
 
 		var length = panOffset.length();
 		panOffset.x = panOffset.z = 0;
@@ -189,10 +202,11 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	this.panForward = function ( distance ) {
 
-		var te = this.object.matrix.elements;
+		// var te = this.object.matrix.elements;
 
 		// get Z column of matrix
-		panOffset.set( te[ 8 ], te[ 9 ], te[ 10 ] );
+		// panOffset.set( te[ 8 ], te[ 9 ], te[ 10 ] );
+		panOffset.setFromMatrixColumn(this.object.matrix, 2)
 
 		var length = panOffset.length();
 		panOffset.y = 0;
@@ -219,9 +233,15 @@ THREE.OrbitControls = function ( object, domElement ) {
 			// half of the fov is center to top of screen
 			targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
+			var dx = 2 * deltaX * targetDistance / element.clientHeight
+			,   dy = 2 * deltaY * targetDistance / element.clientHeight
 			// we actually don't use screenWidth, since perspective camera is fixed to screen height
-			scope.panLeft( 2 * deltaX * targetDistance / element.clientHeight );
-			scope.panUp( 2 * deltaY * targetDistance / element.clientHeight );
+			scope.panLeft(dx)
+			if(scope.orthoMode) {
+				scope.panAbove(dy)
+			} else {
+				scope.panForward(dy)
+			}
 
 		} else if ( scope.object.top !== undefined ) {
 
@@ -383,27 +403,34 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		scope.down = true;
 
-		if ( event.button === 0 ) {
-			if ( scope.noRotate === true ) return;
+		var action = scope.orthoMode
+			? ['pan',  null,  null][event.button]
+			: ['rot', 'dol', 'pan'][event.button]
 
-			state = STATE.ROTATE;
+		switch(action) {
+			case 'rot':
+				if ( scope.noRotate === true ) return;
 
-			rotateStart.set( event.clientX, event.clientY );
+				state = STATE.ROTATE;
 
-		} else if ( event.button === 1 ) {
-			if ( scope.noZoom === true ) return;
+				rotateStart.set( event.clientX, event.clientY );
+			break
 
-			state = STATE.DOLLY;
+			case 'dol':
+				if ( scope.noZoom === true ) return;
 
-			dollyStart.set( event.clientX, event.clientY );
+				state = STATE.DOLLY;
 
-		} else if ( event.button === 2 ) {
-			if ( scope.noPan === true ) return;
+				dollyStart.set( event.clientX, event.clientY );
+			break
 
-			state = STATE.PAN;
+			case 'pan':
+				if ( scope.noPan === true ) return;
 
-			panStart.set( event.clientX, event.clientY );
+				state = STATE.PAN;
 
+				panStart.set( event.clientX, event.clientY );
+			break
 		}
 
 		document.addEventListener( 'mousemove', onMouseMove, false );
@@ -429,6 +456,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		if ( state === STATE.ROTATE ) {
 
+			if(scope.orthoMode) return
 			if ( scope.noRotate === true ) return;
 
 			rotateEnd.set( event.clientX, event.clientY );
@@ -444,6 +472,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		} else if ( state === STATE.DOLLY ) {
 
+			if(scope.orthoMode) return
 			if ( scope.noZoom === true ) return;
 
 			dollyEnd.set( event.clientX, event.clientY );
@@ -460,8 +489,15 @@ THREE.OrbitControls = function ( object, domElement ) {
 			panEnd.set( event.clientX, event.clientY );
 			panDelta.subVectors( panEnd, panStart );
 
-			scope.panLeft(2 * panDelta.x * targetDistance / width)
-			scope.panForward(2 * panDelta.y * targetDistance / height)
+			var dx = 2 * panDelta.x * targetDistance / width
+			,   dy = 2 * panDelta.y * targetDistance / height
+
+			scope.panLeft(dx)
+			if(scope.orthoMode) {
+				scope.panAbove(dy)
+			} else {
+				scope.panForward(dy)
+			}
 
 			panStart.copy( panEnd );
 
@@ -558,9 +594,13 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		if ( scope.enabled === false ) return;
 
-		switch ( event.touches.length ) {
+		var action = scope.orthoMode
+			? ['rot', 'dol', 'pan'][event.touches.length -1]
+			: ['pan',  null,  null][event.touches.length -1]
 
-			case 1:	// one-fingered touch: rotate
+		switch (action) {
+
+			case 'rot':	// one-fingered touch: rotate
 
 				if ( scope.noRotate === true ) return;
 
@@ -569,7 +609,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 				rotateStart.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
 				break;
 
-			case 2:	// two-fingered touch: dolly
+			case 'dol':	// two-fingered touch: dolly
 
 				if ( scope.noZoom === true ) return;
 
@@ -581,7 +621,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 				dollyStart.set( 0, distance );
 				break;
 
-			case 3: // three-fingered touch: pan
+			case 'pan': // three-fingered touch: pan
 
 				if ( scope.noPan === true ) return;
 
