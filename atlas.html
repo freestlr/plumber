@@ -26,11 +26,13 @@
 			main.atlas = data
 			main.div = dom.one('.atlas')
 
-			var list = main.atlas.getElementsByTagName('g')
+			var list = main.atlas.documentElement.childNodes
 			for(var i = 0; i < list.length; i++) {
+				var name = list[i].id
+				if(!name) continue
+
 				var icon = dom.div('icon', main.div)
 				,   label = dom.div('label')
-				,   name = list[i].id
 				,   image = getAtlasIcon(name)
 
 				dom.append(icon, image)
@@ -63,10 +65,11 @@
 
 			fill: black;
 			stroke: none;
-			stroke-width: 10px;
 		}
 		.icon:hover svg {
 			fill: lime;
+			stroke: tomato;
+			stroke-width: 10px;
 		}
 		.swap svg {
 			fill: none;

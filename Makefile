@@ -44,6 +44,7 @@ clean:
 
 fix:
 	sed -i 's/ visibility="hidden"//g' images/atlas.svg
+	sed -i 's/ display="none"//g' images/atlas.svg
 	sed -i '/metadata/ d' images/atlas.svg
 
 
