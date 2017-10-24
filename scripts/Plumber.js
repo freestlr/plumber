@@ -73,47 +73,47 @@ Plumber = f.unit({
 		this.explodeButton = new Block.Toggle({
 			eroot: this.element,
 			ename: 'vp-button vp-button-explode out-01',
-			eicon: 'i-search',
-			title: 'Exploded view',
+			eicon: 'i-explode',
+			title: 'Exploded view'
 		})
 
 		this.zoomInButton = new Block.Toggle({
 			eroot: this.element,
 			ename: 'vp-button vp-button-zoom-in out-01',
 			reset: true,
-			title: 'Zoom in',
-			text: '+'
+			eicon: 'i-zoom-in',
+			title: 'Zoom in'
 		})
 
 		this.zoomOutButton = new Block.Toggle({
 			eroot: this.element,
 			ename: 'vp-button vp-button-zoom-out out-01',
 			reset: true,
-			title: 'Zoom out',
-			text: '-'
+			eicon: 'i-zoom-out',
+			title: 'Zoom out'
 		})
 
 		this.zoomFitButton = new Block.Toggle({
 			eroot: this.element,
 			ename: 'vp-button vp-button-zoom-fit out-01',
 			reset: true,
-			title: 'Fit screen',
-			text: 'fit'
+			eicon: 'i-zoom-fit',
+			title: 'Fit screen'
 		})
 
 		this.screenshotButton = new Block.Toggle({
 			eroot: this.element,
 			ename: 'vp-button vp-button-screenshot out-01',
 			reset: true,
-			title: 'Screen shot',
-			text: 'S'
+			eicon: 'i-photo',
+			title: 'Screen shot'
 		})
 
 		this.rotateButton = new Block.Toggle({
 			eroot: this.element,
 			ename: 'vp-button vp-button-rotate out-01',
-			title: 'Auto rotate',
-			text: '>'
+			eicon: 'i-autorotate',
+			title: 'Auto rotate'
 		})
 
 		this.displayMenu = new Block.Menu({
@@ -126,15 +126,15 @@ Plumber = f.unit({
 			},
 			items: [{
 				data: 'transparent',
-				text: 'T',
+				eicon: 'i-dis-transparent',
 				title: 'Transparent view'
 			}, {
 				data: 'normal',
-				text: 'N',
+				eicon: 'i-dis-normal',
 				title: 'Normal view'
 			}, {
 				data: 'wireframe',
-				text: 'W',
+				eicon: 'i-dis-wireframe',
 				title: 'Wireframe view'
 			}],
 			active: 1
@@ -150,31 +150,31 @@ Plumber = f.unit({
 			},
 			items: [{
 				data: 'perspective',
-				text: 'P',
+				eicon: 'i-prj-perspective',
 				title: 'Perspective'
 			}, {
 				data: 'left',
-				text: 'L',
+				eicon: 'i-prj-left',
 				title: 'Left'
 			}, {
 				data: 'right',
-				text: 'R',
+				eicon: 'i-prj-right',
 				title: 'Right'
 			}, {
 				data: 'top',
-				text: 'U',
+				eicon: 'i-prj-top',
 				title: 'Top'
 			}, {
 				data: 'bottom',
-				text: 'D',
+				eicon: 'i-prj-bottom',
 				title: 'Bottom'
 			}, {
 				data: 'front',
-				text: 'F',
+				eicon: 'i-prj-front',
 				title: 'Front'
 			}, {
 				data: 'back',
-				text: 'B',
+				eicon: 'i-prj-back',
 				title: 'Back'
 			}],
 			active: 0
