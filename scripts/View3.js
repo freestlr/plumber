@@ -346,6 +346,10 @@ View3 = f.unit({
 		,   thetaMax = Math.min(this.focusThetaMax, this.orbit.maxPolarAngle)
 		,   thetaGot = f.clamp(isNaN(theta) ? thetaNow : theta, thetaMin, thetaMax)
 
+		if(this.orbit.orthoMode) {
+			thetaGot = thetaNow
+		}
+
 		if(Math.abs(thetaGot - thetaNow) > EPS) {
 			var axis = nextCamera
 			axis.set(-nextOffset.z, 0, nextOffset.x).normalize()
