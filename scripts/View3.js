@@ -544,9 +544,10 @@ View3 = f.unit({
 	},
 
 	updateProjection: function() {
+		this.camera.aspect = this.width / this.height
+
 		var distance = this.getFitDistance(this.treeSize, 1.5, 1.5)
 
-		this.camera.aspect = this.width / this.height
 		this.camera.far    = Math.max(this.orbit.radius + this.treeLength, distance * 2)
 		this.camera.near   = Math.max(this.orbit.radius - this.treeLength, distance * 0.1)
 		this.camera.updateProjectionMatrix()
@@ -832,6 +833,10 @@ View3 = f.unit({
 	onResize: function() {
 		this.width  = this.element.offsetWidth
 		this.height = this.element.offsetHeight
+		if(!this.width || !this.height) {
+			this.width  = 1
+			this.height = 1
+		}
 
 		this.elementOffset = dom.offset(this.element)
 		this.projector.resize(this.width, this.height)
