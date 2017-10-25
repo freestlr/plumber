@@ -72,7 +72,7 @@ Plumber = f.unit({
 		this.buttonRoot = dom.div('vp-button-root', this.element)
 
 		this.explodeButton = new Block.Toggle({
-			eroot: this.buttonRoot,
+			eroot: this.element,
 			ename: 'vp-button vp-button-explode out-01',
 			eicon: 'i-explode',
 			title: 'Exploded view'
@@ -277,9 +277,14 @@ Plumber = f.unit({
 			vwr: mode === 'viewer'
 		}
 
+		dom.setclass(this.element, {
+			'mode-constructor' : this.modeis.ctr,
+			'mode-viewer'      : this.modeis.vwr
+		})
+
 		dom.display(this.view.clearButton, this.modeis.ctr)
 		dom.display(this.view2.clearButton, this.modeis.ctr)
-		dom.display(this.buttonRoot, this.modeis.ctr)
+		dom.display(this.buttonRoot, this.modeis.vwr)
 
 		// this.view.setTree(null)
 		this.clearTree()

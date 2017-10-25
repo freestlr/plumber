@@ -112,6 +112,9 @@ body .dg .property-name {
 	left: 20px;
 	top: 20px;
 }
+.plumber.mode-constructor .vp-button-explode {
+	right: 20px;
+}
 .plumber .vp-button-rotate svg,
 .plumber .vp-button-explode svg {
 	width: 28px;
