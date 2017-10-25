@@ -71,6 +71,7 @@ body .dg .property-name {
 	font-size: 22px;
 	text-align: center;
 	box-sizing: border-box;
+	z-index: 4;
 }
 .plumber .vp-button svg {
 	width: 24px;
