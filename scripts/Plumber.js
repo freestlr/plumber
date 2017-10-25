@@ -1474,8 +1474,6 @@ Plumber = f.unit({
 			this.connectRandomNode()
 		}
 
-		TWEEN.update()
-
 		this.view.onTick(dt)
 		this.view2.onTick(dt)
 

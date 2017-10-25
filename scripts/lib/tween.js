@@ -59,6 +59,8 @@ var TWEEN = {
 	}
 }
 
+TWEEN.loop()
+
 TWEEN.Tween = function(object) {
 	this.source = {}
 	this.target = {}
