@@ -1,6 +1,8 @@
 Plumber = f.unit({
 	unitName: 'Plumber',
 
+	version: 0.01,
+
 	mode: 'constructor',
 	explode: 0,
 	explodeStepped: false,
@@ -15,6 +17,8 @@ Plumber = f.unit({
 	initFromHash: false,
 
 	init: function(options) {
+		console.log('PB version', this.version)
+
 		this.get   = new Loader
 		this.timer = new Timer(this.onTick, this)
 		this.ready = new Defer
@@ -1201,8 +1205,8 @@ Plumber = f.unit({
 
 	onresize: function() {
 		var e = this.tiles.element
-		,   w = e.offsetWidth
-		,   h = e.offsetHeight
+		,   w = e.offsetWidth  || 1
+		,   h = e.offsetHeight || 1
 
 		this.renderer.setSize(w, h)
 		this.tiles.autoresize()

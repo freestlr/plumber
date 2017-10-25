@@ -831,12 +831,8 @@ View3 = f.unit({
 	},
 
 	onResize: function() {
-		this.width  = this.element.offsetWidth
-		this.height = this.element.offsetHeight
-		if(!this.width || !this.height) {
-			this.width  = 1
-			this.height = 1
-		}
+		this.width  = this.element.offsetWidth  || 1
+		this.height = this.element.offsetHeight || 1
 
 		this.elementOffset = dom.offset(this.element)
 		this.projector.resize(this.width, this.height)
