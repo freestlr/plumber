@@ -69,16 +69,17 @@ Plumber = f.unit({
 
 
 
+		this.buttonRoot = dom.div('vp-button-root', this.element)
 
 		this.explodeButton = new Block.Toggle({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-button vp-button-explode out-01',
 			eicon: 'i-explode',
 			title: 'Exploded view'
 		})
 
 		this.zoomInButton = new Block.Toggle({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-button vp-button-zoom-in out-01',
 			reset: true,
 			eicon: 'i-zoom-in',
@@ -86,7 +87,7 @@ Plumber = f.unit({
 		})
 
 		this.zoomOutButton = new Block.Toggle({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-button vp-button-zoom-out out-01',
 			reset: true,
 			eicon: 'i-zoom-out',
@@ -94,7 +95,7 @@ Plumber = f.unit({
 		})
 
 		this.zoomFitButton = new Block.Toggle({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-button vp-button-zoom-fit out-01',
 			reset: true,
 			eicon: 'i-zoom-fit',
@@ -102,7 +103,7 @@ Plumber = f.unit({
 		})
 
 		this.screenshotButton = new Block.Toggle({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-button vp-button-screenshot out-01',
 			reset: true,
 			eicon: 'i-photo',
@@ -110,14 +111,14 @@ Plumber = f.unit({
 		})
 
 		this.rotateButton = new Block.Toggle({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-button vp-button-rotate out-01',
 			eicon: 'i-autorotate',
 			title: 'Auto rotate'
 		})
 
 		this.displayMenu = new Block.Menu({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-menu vp-menu-display',
 			options: {
 				factory: Block.Toggle,
@@ -141,7 +142,7 @@ Plumber = f.unit({
 		})
 
 		this.projectionMenu = new Block.Menu({
-			eroot: this.element,
+			eroot: this.buttonRoot,
 			ename: 'vp-menu vp-menu-projection',
 			options: {
 				factory: Block.Toggle,
@@ -230,11 +231,6 @@ Plumber = f.unit({
 				this.mode = options.mode
 			break
 
-			case 'clearButton':
-				dom.display(this.view.clearButton, options.clearButton)
-				dom.display(this.view2.clearButton, options.clearButton)
-			break
-
 			case 'dirSamples':
 				this.sampler.folder = options.dirSamples
 			break
@@ -280,6 +276,10 @@ Plumber = f.unit({
 			ctr: mode === 'constructor',
 			vwr: mode === 'viewer'
 		}
+
+		dom.display(this.view.clearButton, this.modeis.ctr)
+		dom.display(this.view2.clearButton, this.modeis.ctr)
+		dom.display(this.buttonRoot, this.modeis.ctr)
 
 		// this.view.setTree(null)
 		this.clearTree()
