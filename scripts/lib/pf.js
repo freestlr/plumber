@@ -14,7 +14,23 @@
 }()
 
 !function() {
-	var mstart, tstart, timelast
+	var mouse = {
+		startPoint: null,
+		startEvent: null,
+		endPoint: null,
+		endEvent: null,
+		touch: false,
+		moves: 0
+	}
+	var touch = {
+		startPoint: null,
+		startEvent: null,
+		endPoint: null,
+		endEvent: null,
+		touch: true,
+		moves: 0
+	}
+	var timelast
 
 	try {
 		new MouseEvent('tap')
@@ -33,60 +49,85 @@
 	}
 
 	function onmousedown(e) {
-		if(e.which === 1) mstart = e
+		if(e.which !== 1) return
+		mouse.moves = 0
+		mouse.startEvent = e
+		mouse.startPoint = e
+		document.addEventListener('mousemove', onmousemove, true)
+	}
+	function onmousemove(e) {
+		if(mouse.startPoint.pageX !== e.pageX
+		|| mouse.startPoint.pageY !== e.pageY) mouse.moves++
 	}
 	function onmouseup(e) {
-		ontap(mstart, e, e, false)
-		mstart = null
+		document.removeEventListener('mousemove', onmousemove, true)
+		mouse.endPoint = e
+		mouse.endEvent = e
+		ontap(mouse)
 	}
 
 	function ontouchstart(e) {
-		tstart = e.changedTouches[0]
+		touch.startPoint = e.changedTouches[0]
+		touch.startEvent = e
+		touch.moves = 0
+	}
+	function ontouchmove(e) {
+		if(touch.startPoint.pageX !== e.pageX
+		|| touch.startPoint.pageY !== e.pageY) touch.moves++
 	}
 	function ontouchend(e) {
-		ontap(tstart, e.changedTouches[0], e, true)
-		tstart = null
+		touch.endPoint = e.changedTouches[0]
+		touch.endEvent = e
+		ontap(touch)
 	}
 
-	function ontap(sp, ep, e, touch) {
-		if(!sp) return
+	function ontap(ptr) {
+		if(!ptr.startPoint || !ptr.endPoint || ptr.moves > 2) return
 
-		var dx = ep.pageX - sp.pageX
-		,   dy = ep.pageY - sp.pageY
-		,   ds = touch ? 64 : 25
+		var dx = ptr.endPoint.pageX - ptr.startPoint.pageX
+		,   dy = ptr.endPoint.pageY - ptr.startPoint.pageY
+		,   ds = ptr.touch ? 64 : 25
 
 		if(dx * dx + dy * dy > ds) return
 
 		var ct = window.performance.now()
-		if(ct - timelast < 50 && e.isTrusted) return
+		if(ct - timelast < 50 && ptr.endEvent.isTrusted) return
 
 		timelast = ct
-
 
 		var tap = new MouseEvent('tap', {
 			bubbles: true,
 			cancelable: true,
 
-			pageX: ep.pageX,
-			pageY: ep.pageY,
-			screenX: ep.screenX,
-			screenY: ep.screenY,
-			clientX: ep.clientX,
-			clientY: ep.clientY,
+			pageX: ptr.endPoint.pageX,
+			pageY: ptr.endPoint.pageY,
+			screenX: ptr.endPoint.screenX,
+			screenY: ptr.endPoint.screenY,
+			clientX: ptr.endPoint.clientX,
+			clientY: ptr.endPoint.clientY,
 
-			altKey: e.altKey,
-			ctrlKey: e.ctrlKey,
-			shiftKey: e.shiftKey,
-			metaKey: e.metaKey,
-			view: e.view
+			altKey: ptr.endEvent.altKey,
+			ctrlKey: ptr.endEvent.ctrlKey,
+			shiftKey: ptr.endEvent.shiftKey,
+			metaKey: ptr.endEvent.metaKey,
+			view: ptr.endEvent.view
 		})
 
-		tap.touch = touch
+		tap.touch = ptr.touch
+		tap.timeDelta = ptr.endEvent.timeStamp - ptr.startEvent.timeStamp
 
-		e.target.dispatchEvent(tap)
+		var target = ptr.endEvent.target
+
+		ptr.startPoint = null
+		ptr.endPoint = null
+		ptr.startEvent = null
+		ptr.endEvent = null
+
+		target.dispatchEvent(tap)
 	}
 
 	document.addEventListener('touchstart', ontouchstart, true)
+	document.addEventListener('touchmove',  ontouchmove,  true)
 	document.addEventListener('touchend',   ontouchend,   true)
 	document.addEventListener('mousedown',  onmousedown,  true)
 	document.addEventListener('mouseup',    onmouseup,    true)
