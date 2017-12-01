@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<head>
+	<title>fit test</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+
+	<script src="build/three.js"></script>
+	<script src="build/plumber-engine.js"></script>
+	<link rel="stylesheet" href="build/plumber-engine.css">
+
+	<style>
+		body {
+			margin: 0;
+		}
+		.view {
+			float: left;
+			display: inline-block;
+			position: relative;
+			height: 480px;
+			overflow: hidden;
+			box-sizing: border-box;
+		}
+		.view1 {
+			width: 40%;
+			background-color: #dac0de;
+		}
+		.view2 {
+			width: 60%;
+			background-color: #bada55;
+		}
+		.view:before {
+			position: absolute;
+			width: 50px;
+			height: 50px;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			margin: auto;
+		}
+		.view1:before {
+			content: 'view 1';
+		}
+		.view2:before {
+			content: 'view 2';
+		}
+		fieldset {
+			display: inline-block;
+		}
+		.button {
+			display: inline-block;
+			vertical-align: top;
+			padding: 8px 12px;
+			background-color: #eee;
+			user-select: none;
+		}
+		.button:hover {
+			color: #eee;
+			background-color: #333;
+			cursor: pointer;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="view view1"></div>
+	<div class="view view2"></div>
+
+	<fieldset>
+		<legend>Parent 1</legend>
+		<div class="button button-view-11">switch 1 to view 1</div>
+		<div class="button button-view-12">switch 1 to view 2</div>
+		<div class="button button-view-1n">switch 1 to null</div>
+	</fieldset>
+
+	<fieldset>
+		<legend>Parent 2</legend>
+		<div class="button button-view-21">switch 2 to view 1</div>
+		<div class="button button-view-22">switch 2 to view 2</div>
+		<div class="button button-view-2n">switch 2 to null</div>
+	</fieldset>
+
+	<fieldset>
+		<legend>Model to 1</legend>
+		<div class="button button-model-11">model 1</div>
+		<div class="button button-model-12">model 2</div>
+		<div class="button button-model-13">model 3</div>
+	</fieldset>
+
+	<fieldset>
+		<legend>Model to 2</legend>
+		<div class="button button-model-21">model 1</div>
+		<div class="button button-model-22">model 2</div>
+		<div class="button button-model-23">model 3</div>
+	</fieldset>
+</body>
+
+<script>
+	var p1 = new Plumber({
+		srcAtlas: 'build/plumber-atlas.svg',
+		srcCubemap: 'build/plumber-cubemap.png',
+		dirSamples: 'samples/',
+		mode: 'viewer'
+	})
+
+	var p2 = new Plumber({
+		srcAtlas: 'build/plumber-atlas.svg',
+		srcCubemap: 'build/plumber-cubemap.png',
+		dirSamples: 'samples/',
+		mode: 'constructor'
+	})
+
+
+	var view1 = document.querySelector('.view1')
+	var view2 = document.querySelector('.view2')
+
+
+	document.querySelector('.button-view-11').addEventListener('click', function() {
+		view1.appendChild(p1.element)
+		p1.onresize()
+	})
+
+	document.querySelector('.button-view-12').addEventListener('click', function() {
+		view2.appendChild(p1.element)
+		p1.onresize()
+	})
+
+	document.querySelector('.button-view-1n').addEventListener('click', function() {
+		if(p1.element.parentNode) {
+			p1.element.parentNode.removeChild(p1.element)
+		}
+	})
+
+	document.querySelector('.button-model-11').addEventListener('click', function() {
+		p1.addElement('m1', '10EFG6K.json')
+	})
+
+	document.querySelector('.button-model-12').addEventListener('click', function() {
+		p1.addElement('m2', 'B100_12MP-12MP.json')
+	})
+
+	document.querySelector('.button-model-13').addEventListener('click', function() {
+		p1.addElement('m3', '12G-12FBSPORX_v2.json')
+	})
+
+
+
+	document.querySelector('.button-view-21').addEventListener('click', function() {
+		view1.appendChild(p2.element)
+		p2.onresize()
+	})
+
+	document.querySelector('.button-view-22').addEventListener('click', function() {
+		view2.appendChild(p2.element)
+		p2.onresize()
+	})
+
+	document.querySelector('.button-view-2n').addEventListener('click', function() {
+		if(p2.element.parentNode) {
+			p2.element.parentNode.removeChild(p2.element)
+		}
+	})
+
+	document.querySelector('.button-model-21').addEventListener('click', function() {
+		p2.addElement('m1', '10EFG6K.json')
+	})
+
+	document.querySelector('.button-model-22').addEventListener('click', function() {
+		p2.addElement('m2', 'B100_12MP-12MP.json')
+	})
+
+	document.querySelector('.button-model-23').addEventListener('click', function() {
+		p2.addElement('m3', '12G-12FBSPORX_v2.json')
+	})
+
+
+</script>
