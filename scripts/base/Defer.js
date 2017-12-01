@@ -36,7 +36,7 @@ Defer.all = function(list) {
 		}
 
 		success ? ++loaded : ++failed
-		result[index] = value
+		if(success) result[index] = value
 
 		if(loaded + failed >= length) {
 			setTimeout(function() {
