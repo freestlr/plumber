@@ -140,7 +140,7 @@ Sample.prototype = {
 					if(!this.broken) this.progress = loader.bytesLoaded / loader.bytesTotal
 				}, this)
 
-				loader.json(url).defer.then(function(data) {
+				loader.json(url).then(function(data) {
 					var loader = new THREE.ObjectLoader
 					// return loader.parse(data)
 					var defer = new Defer

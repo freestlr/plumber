@@ -39,7 +39,7 @@ Loader.prototype = {
 
 		unit.transport()
 
-		return unit
+		return unit.defer
 	},
 
 	progress: function() {
@@ -57,7 +57,7 @@ Loader.prototype = {
 		}
 
 		if(typeof this.onProgressCallback === 'function') {
-			this.onProgressCallback.call(this.onProgressScope, this)
+			this.onProgressCallback.call(this.onProgressScope, this.bytesLoaded, this.bytesTotal)
 		}
 	},
 

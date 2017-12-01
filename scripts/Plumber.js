@@ -611,10 +611,10 @@ Plumber = f.unit({
 	},
 
 	fetch: function() {
-		this.get.xml(this.srcAtlas).defer
+		this.get.xml(this.srcAtlas)
 			.then(Atlas.setSource)
 
-		this.get.image(this.srcCubemap).defer
+		this.get.image(this.srcCubemap)
 			.then(this.imagery.unwrapCubemap3x2, this.imagery)
 
 		this.get.ready().then(this.run, this, null, true)

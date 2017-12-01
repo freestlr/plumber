@@ -15,7 +15,7 @@ var sidebar = new UI.Sidebar({
 })
 
 
-get.json('configs/samples.json').defer.then(function(list) {
+get.json('configs/samples.json').then(function(list) {
 	list.forEach(addSample)
 	sidebar.setVisibleSamples(null)
 	main.preloadAllSamples()
