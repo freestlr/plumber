@@ -41,7 +41,6 @@ Block = f.unit({
 		dom.addclass(this.element, this.ename)
 
 		this.visible.events.on('change', this.visibleMethod, this, this.element)
-		// this.visible.check(true)
 
 		if(this.text) {
 			dom.text(this.element, this.text)
@@ -348,6 +347,9 @@ Block.Tip = f.unit(Block, {
 	ename: 'tip',
 
 	align: null,
+	tipRoot: null,
+	integerPosition: false,
+	hidden: true,
 	distance: 8,
 	arrowWidth: 12,
 	arrowPadding: 8,
@@ -507,6 +509,13 @@ Block.Tip = f.unit(Block, {
 			break
 		}
 
+		if(this.integerPosition) {
+			epl = Math.round(epl)
+			ept = Math.round(ept)
+			apl = Math.round(apl)
+			apt = Math.round(apt)
+			ao  = Math.round(ao)
+		}
 
 		if(this.arrowPoint.x === apl
 		&& this.arrowPoint.y === apt
