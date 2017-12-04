@@ -2,6 +2,7 @@ TNode = f.unit({
 	unitName: 'TNode',
 
 	init: function(sample) {
+		this.id        = ++TNode.count
 		this.object    = new THREE.Object3D
 		this.events    = new EventEmitter
 
@@ -86,6 +87,7 @@ TNode = f.unit({
 		}
 
 		this.sample = sample
+		this.type = sample.src
 		this.sampleObject = object
 		this.sample.traverse(this.sampleObject, this.setObjectParent, this)
 
@@ -186,64 +188,48 @@ TNode = f.unit({
 
 
 	pinch: function() {
-		var list   = []
-		,   roots  = []
-		,   counts = []
-		,   maxCount = 0
-		,   maxIndex = -1
-		,   maxNode  = null
-		,   maxRoot  = null
+		var rootNodes = []
+		,   thisNodes = []
 
 		var root = f.follow(this, 'upnode').pop()
-		,   tcount = 0
-		,   rcount = 0
 
-		root.traverse(function() { rcount++ })
-		this.traverse(function() { tcount++ })
+		root.traverse(function(n) { rootNodes.push(n.id) })
+		this.traverse(function(n) { thisNodes.push(n.id) })
+
+		var maxList = f.snot(rootNodes, thisNodes)
+		,   maxRoot = root
+		,   removeRoot = this
 
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
-			if(!con.connected) continue
+			if(!con.connected || !con.master) continue
 
 			var node = con.connected.node
-			,   count = 0
+			var nodes = []
+			node.traverse(function(n) { nodes.push(n.id) })
 
-			var nroot = node
-			while(nroot.upnode && nroot.upnode !== this) {
-				nroot = nroot.upnode
+			if(nodes.length > maxList.length) {
+				removeRoot = root
+				maxList = nodes
+				maxRoot = node
 			}
-
-
-			nroot.traverse(function() { count++ })
-			if(nroot === root) count -= tcount
-
-			if(count > maxCount) {
-				maxCount = count
-				maxIndex = list.length
-				maxNode  = node
-				maxRoot  = nroot
-			}
-
-			list.push(node)
-			roots.push(nroot)
-			counts.push(count)
 		}
 
 		return {
-			removeNode: this,
-			removeCount: rcount - maxCount,
-			maxRoot: maxRoot
+			removeRoot: removeRoot,
+			removeList: f.snot(rootNodes, maxList),
+			nextRoot: maxRoot
 		}
 	},
 
 	pinchr: function() {
-		var tcount = 0
-		this.traverse(function() { tcount++ })
+		var nodes = []
+		this.traverse(function(n) { nodes.push(n.id) })
 
 		return {
-			removeNode: this,
-			removeCount: tcount,
-			maxRoot: null
+			removeRoot: this,
+			removeList: nodes,
+			nextRoot: null
 		}
 	},
 
@@ -266,8 +252,6 @@ TNode = f.unit({
 
 		node.events.link(this.events)
 
-		node.upcon = conB
-		node.upnode = this
 		conA.connect(conB)
 	},
 
@@ -342,4 +326,5 @@ TNode = f.unit({
 	}
 })
 
+TNode.count = 0
 TNode.TRSTOP = {}

@@ -1154,14 +1154,14 @@ Plumber = f.unit({
 	promptDeleteNode: function(node) {
 		if(!node) return
 
-		this.deletePromptStat = node.pinch()
+		var stat = this.deletePromptStat = node.pinch()
 
-		if(this.deletePromptStat.removeCount < 2) {
+		if(stat.removeList.length < 2) {
 			this.deleteNode()
 
 		} else {
 			dom.text(this.deletePromptTipText,
-				['Do you want to delete', this.deletePromptStat.removeCount, 'nodes?'].join(' '))
+				['Do you want to delete', stat.removeList.length, 'nodes?'].join(' '))
 
 			this.deletePromptTip.visible.on()
 		}
@@ -1190,16 +1190,23 @@ Plumber = f.unit({
 
 
 	deleteNode: function() {
-		var stats = this.deletePromptStat
-		if(!stats) return
+		var stat = this.deletePromptStat
+		if(!stat) return
 
-		stats.removeNode.disconnect()
-		this.absolutelySetMainTree(stats.maxRoot)
+		stat.removeRoot.disconnect()
+		if(stat.removeRoot === stat.nextRoot) {
+			this.absolutelySetMainTree(null)
+
+		} else {
+			stat.nextRoot.upnode = null
+			stat.nextRoot.upcon = null
+			this.absolutelySetMainTree(stat.nextRoot)
+		}
 		this.view.selectNode(null)
 
 		this.closeDeletePrompt()
 
-		this.events.emit('onRemoveElement', stats)
+		this.events.emit('onRemoveElement', stat)
 	},
 
 
@@ -1486,7 +1493,7 @@ Plumber = f.unit({
 		}
 
 		if(this.deletePromptStat) {
-			var node = this.deletePromptStat.removeNode
+			var node = this.deletePromptStat.removeRoot
 			,   point = this.deletePromptTip.point
 
 			point.world.setFromMatrixPosition(node.objectCenter.matrixWorld)

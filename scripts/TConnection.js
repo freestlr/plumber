@@ -213,6 +213,8 @@ TConnection = f.unit({
 	 *
 	 */
 	connect: function(node) {
+		if(this.connected) return
+
 		var normal = new THREE.Vector3
 
 		var master = this
@@ -253,6 +255,8 @@ TConnection = f.unit({
 
 		slave.connected = master
 		slave.target = master.node
+		slave.node.upcon  = master
+		slave.node.upnode = master.node
 		slave.master = false
 
 		master.events.emit('connect', [master, slave])
@@ -272,6 +276,8 @@ TConnection = f.unit({
 		master.master = null
 
 		slave.connected = null
+		slave.target.upcon  = null
+		slave.target.upnode = null
 		slave.target = null
 		slave.master = null
 
