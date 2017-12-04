@@ -72,6 +72,7 @@ Defer.timer = function(duration) {
 
 Defer.prototype = {
 	unsafe: false,
+	soft: false,
 
 	set: function(onresolve, onreject, scope, unsafe) {
 		this.onresolve = typeof onresolve === 'function' ? onresolve : null
@@ -167,7 +168,7 @@ Defer.prototype = {
 				defer = defer.next
 			}
 
-		} else if(!this.success) {
+		} else if(!this.success && !this.soft) {
 			throw this.value
 		}
 
