@@ -1088,7 +1088,7 @@ Plumber = f.unit({
 		}
 	},
 
-	connectElement: function(src, indexA, id, indexB) {
+	connectElement: function(src, indexA, id, indexB, animate) {
 		var sample = this.getSample(src)
 		if(!sample) {
 			return this.connectElementError('src', { src: src })
@@ -1118,7 +1118,7 @@ Plumber = f.unit({
 				return this.connectElementError('match', { typeA: nodeA.type, indexA: indexA, typeB: nodeB.type, indexB: indexB })
 			}
 
-			this.makeViewConnection(conB, conA, false, 'onConnectElement')
+			this.makeViewConnection(conB, conA, animate, 'onConnectElement')
 
 		}, function(e) {
 			this.connectElementError('raw', e)
