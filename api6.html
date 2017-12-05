@@ -94,6 +94,11 @@
 		<div class="button button-model-22">model 2</div>
 		<div class="button button-model-23">model 3</div>
 	</fieldset>
+
+	<fieldset>
+		<legend>Actions</legend>
+		<div class="button button-action-1">export model 2 to 1</div>
+	</fieldset>
 </body>
 
 <script>
@@ -172,6 +177,12 @@
 
 	document.querySelector('.button-model-23').addEventListener('click', function() {
 		p2.addElement('m3', '12G-12FBSPORX_v2.json')
+	})
+
+
+
+	document.querySelector('.button-action-1').addEventListener('click', function() {
+		p1.importJSON(p2.exportJSON())
 	})
 
 
