@@ -139,6 +139,8 @@ EventEmitter.prototype = {
 	},
 
 	link: function(emitter, prefix, data) {
+		if(emitter === this) throw Error('EventEmitter can\'t link to itself')
+
 		this._add(this.links, {
 			emitter : emitter,
 			prefix  : prefix,
