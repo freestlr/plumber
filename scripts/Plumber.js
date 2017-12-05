@@ -1,7 +1,7 @@
 Plumber = f.unit({
 	unitName: 'Plumber',
 
-	version: 0.01,
+	version: 0.02,
 
 	mode: 'constructor',
 	explode: 0,
@@ -195,22 +195,30 @@ Plumber = f.unit({
 		this.projectionMenu.events.on('change', this.onProjectionChange, this)
 
 
-		this.splitViewMessage = dom.div('split-view-message')
-		dom.text(this.splitViewMessage, 'no compatible connections')
-		this.splitViewMessageVisible = new Gate(Gate.AND, true)
-		this.splitViewMessageVisible.events.on('change', dom.display, dom, this.splitViewMessage)
-		this.splitViewMessageVisible.events.on('opened', this.updateSplitViewMessagePosition, this)
-		this.splitViewMessageVisible.off('g_vm_cons')
+		splitViewMessage: {
+			this.splitViewMessage = dom.div('split-view-message')
+			dom.text(this.splitViewMessage, 'no compatible connections')
+			this.splitViewMessageVisible = new Gate(Gate.AND, true)
+			this.splitViewMessageVisible.events.on('change', dom.display, dom, this.splitViewMessage)
+			this.splitViewMessageVisible.events.on('opened', this.updateSplitViewMessagePosition, this)
+			this.splitViewMessageVisible.off('g_svm_cons')
+		}
 
 
-		this.emptyViewMessage = dom.div('empty-view-message out-03 absmid')
-		var center = dom.div('empty-view-message-center absmid', this.emptyViewMessage)
-		,   frame  = dom.div('empty-view-message-frame absmid', this.emptyViewMessage)
-		,   text   = dom.div('empty-view-message-text absmid', this.emptyViewMessage)
+		emptyViewMessage: {
+			this.emptyViewMessage = dom.div('empty-view-message out-03 absmid')
+			var center = dom.div('empty-view-message-center absmid', this.emptyViewMessage)
+			,   frame  = dom.div('empty-view-message-frame absmid', this.emptyViewMessage)
+			,   text   = dom.div('empty-view-message-text absmid', this.emptyViewMessage)
 
-		f.nop(center, frame)
-		dom.html(text, ['please', 'add', 'any product'].join('<br/>'))
+			f.nop(center, frame)
+			dom.html(text, ['please', 'add', 'any product'].join('<br/>'))
 
+			this.emptyViewMessageVisible = new Gate(Gate.AND, true)
+			this.emptyViewMessageVisible.events.on('change', function(visible) {
+				dom.togclass(this.emptyViewMessage, 'hidden', !visible)
+			}, this)
+		}
 
 
 
@@ -307,7 +315,7 @@ Plumber = f.unit({
 		}
 
 
-		this.splitViewMessageVisible.set(this.modeis.ctr, 'g_vm_mode')
+		this.splitViewMessageVisible.set(this.modeis.ctr, 'g_svm_mode')
 
 
 		this.updateMarkerVisibility()
@@ -462,11 +470,8 @@ Plumber = f.unit({
 	},
 
 
-	replaceElement: function(sid, param) {
-		var sample =
-			f.apick(this.sampler.samples, 'src', sid) ||
-			f.apick(this.sampler.samples,  'id', sid) ||
-			this.addSample(sid, sid)
+	replaceElement: function(src, param) {
+		var sample = this.getSample(src)
 
 		if(!this.tree || !sample) {
 			this.events.emit('onReplaceElement', {
@@ -474,12 +479,11 @@ Plumber = f.unit({
 				reason: sample ? 'no tree' : 'bad sample'
 			})
 
-			return
+		} else {
+			sample.load().then(function() {
+				this.replaceElementBySample(sample, param)
+			}, this)
 		}
-
-		sample.load().then(function() {
-			this.replaceElementBySample(sample, param)
-		}, this)
 	},
 
 	replaceElementBySample: function(sample, param) {
@@ -578,23 +582,22 @@ Plumber = f.unit({
 	},
 
 	addElement: function(id, src, link) {
-		var sample =
-			f.apick(this.sampler.samples, 'src', src) ||
-			f.apick(this.sampler.samples,  'id',  id) ||
-			this.addSample(id, src, link)
+		var sample = this.getSample(src, link)
 
-		if(!sample) return
+		if(sample) {
+			this.displayFigure(sample.src)
 
-		this.displayFigure(sample.id)
-		return this.deferSample
+		} else {
+			this.events.emit('onAddElement', {
+				status: 'error',
+				error: 'bad element source: "'+ src +'"'
+			})
+		}
 	},
 
-	addSample: function(id, src, link) {
-		return this.sampler.addSample({
-			id: id,
-			src: src,
-			link: link
-		})
+	getSample: function(src, link) {
+		return f.apick(this.sampler.samples, 'src', src)
+			|| this.sampler.addSample({ src: src, link: link })
 	},
 
 	addFigure: function(json) {
@@ -792,10 +795,7 @@ Plumber = f.unit({
 	},
 
 	displayFigure: function(figure) {
-		var sample =
-			f.apick(this.sampler.samples, 'src', figure) ||
-			f.apick(this.sampler.samples, 'id',  figure)
-
+		var sample = f.apick(this.sampler.samples, 'src', figure)
 		if(sample) figure = sample
 
 		if(this.issuedReplace) {
@@ -815,7 +815,8 @@ Plumber = f.unit({
 		this.splitScreen = !!this.sampleView2
 
 
-		this.splitViewMessageVisible.set(this.splitScreen, 'g_vm_screen')
+		this.splitViewMessageVisible.set(this.splitScreen, 'g_svm_screen')
+		this.emptyViewMessageVisible.set(!this.tree && !figure, 'g_evm_tree')
 
 		this.view.enableRaycast = !this.splitScreen
 
@@ -833,21 +834,22 @@ Plumber = f.unit({
 
 		this.updateMarkerVisibility()
 
-		dom.togclass(this.emptyViewMessage, 'hidden', this.tree || figure)
 
 		if(!figure) {
 
 		} else if(this.sampleView2) {
-			this.constructNode(figure, this.view2).then(this.setTree2, this.constructError, this)
+			this.constructNode(figure, this.view2)
+				.then(this.setTree2, this.constructError, this)
 
 		} else {
-			this.constructNode(figure, this.view).then(this.setTree1, this.constructError, this)
+			this.constructNode(figure, this.view)
+				.then(this.setTree1, this.constructError, this)
 		}
 
 	},
 
 	isComplexFigure: function(figure) {
-		return figure && figure.types instanceof Array
+		return figure && figure.types && figure.types.length
 	},
 
 	constructNode: function(figure, targetView) {
@@ -879,7 +881,10 @@ Plumber = f.unit({
 	},
 
 	constructError: function(e) {
-		this.events.emit('onAddElement', { status: 'error', error: e })
+		this.events.emit('onAddElement', {
+			status: 'error',
+			error: e
+		})
 	},
 
 
@@ -894,9 +899,40 @@ Plumber = f.unit({
 	setTree1: function(node) {
 		this.absolutelySetMainTree(node)
 
-		if(node) {
-			this.events.emit('onAddElement', { status: 'connected', node: node })
-		}
+		if(!node) return
+
+		var nodes = []
+		node.traverse(function(n) {
+			nodes.push(n.id)
+		})
+
+		this.events.emit('onAddElement', {
+			status: 'connected',
+			root: node,
+			nodes: nodes
+		})
+	},
+
+	getElementIdList: function() {
+		var list = []
+
+		this.tree.traverse(function(node) {
+			list.push(node.id)
+		}, this)
+
+		return list
+	},
+
+	getElementById: function(id) {
+		var found = null
+		this.tree.traverse(function(node) {
+			if(node.id === id) {
+				found = node
+				return TNode.TRSTOP
+			}
+		})
+
+		return found
 	},
 
 	updateMarkerVisibility: function() {
@@ -948,7 +984,7 @@ Plumber = f.unit({
 
 
 		this.hasAvailableConnections = groups2.length
-		this.splitViewMessageVisible.set(!this.hasAvailableConnections, 'g_vm_cons')
+		this.splitViewMessageVisible.set(!this.hasAvailableConnections, 'g_svm_cons')
 		this.updateSplitViewMessagePosition()
 		this.updateConnectionVisibilitySets()
 
@@ -1008,7 +1044,7 @@ Plumber = f.unit({
 					if(!jointA.canConnect(jointB)) continue
 
 					this.constructNode(sample, this.view).then(function(node) {
-						this.makeViewConnection(conA, node.connections[k])
+						this.makeViewConnection(conA, node.connections[k], true)
 					}, this.constructError, this)
 
 					return
@@ -1035,7 +1071,7 @@ Plumber = f.unit({
 				var conB = node.connections[j]
 				if(!conB.canConnect(conA)) continue
 
-				this.makeViewConnection(conA, conB)
+				this.makeViewConnection(conA, conB, true)
 
 
 				break loop_cons
@@ -1045,6 +1081,59 @@ Plumber = f.unit({
 		if(this.splitScreen) {
 			this.updateConnectionGroups(this.tree, this.view2.tree)
 		}
+	},
+
+	connectElement: function(src, indexA, id, indexB) {
+		var sample = this.getSample(src)
+		if(!sample) {
+			return this.connectElementError('src', { src: src })
+		}
+
+		var nodeB = this.getElementById(id)
+		if(!nodeB) {
+			return this.connectElementError('id', { id: id })
+		}
+
+		var conB = nodeB.connections[indexB]
+		if(!conB) {
+			return this.connectElementError('con', { type: nodeB.type, index: indexB })
+		}
+
+		if(conB.connected) {
+			return this.connectElementError('used', { type: nodeB.type, index: indexB })
+		}
+
+		this.constructNode(sample).then(function(nodeA) {
+			var conA = nodeA.connections[indexA]
+			if(!conA) {
+				return this.connectElementError('con', { type: nodeA.type, index: indexA })
+			}
+
+			if(!conB.canConnect(conA)) {
+				return this.connectElementError('match', { typeA: nodeA.type, indexA: indexA, typeB: nodeB.type, indexB: indexB })
+			}
+
+			this.makeViewConnection(conB, conA, false, 'onConnectElement')
+
+		}, function(e) {
+			this.connectElementError('raw', e)
+
+		}, this)
+	},
+
+	connectElementError: function(type, data) {
+		var messages = {
+			src: 'bad element src: [#{src}]',
+			id: 'invalid node id: [#{id}]',
+			con: 'node [#{type}] don\'t have connection: [#{index}]',
+			used: 'connection [#{type}][#{index}] already used',
+			match: 'connections [#{typeA}][#{indexA}] and [#{typeB}][#{indexB}] don\'t match'
+		}
+
+		this.events.emit('onConnectElement', {
+			status: 'error',
+			error: type === 'raw' ? data : f.implode(messages[type] || 'unknown error', data)
+		})
 	},
 
 
@@ -1087,7 +1176,7 @@ Plumber = f.unit({
 
 			case 'e':
 				this.preloadAllSamples()
-				dom.addclass(this.emptyViewMessage, 'hidden')
+				this.emptyViewMessageVisible.off('g_evm_tree')
 			break
 
 			case 'v':
@@ -1178,14 +1267,13 @@ Plumber = f.unit({
 
 		this.deletePromptStat = this.tree.pinchr()
 		this.deleteNode()
-		this.absolutelySetMainTree(null)
 	},
 
 	absolutelySetMainTree: function(tree) {
 		this.tree = tree
 		this.view.setTree(this.tree)
 
-		dom.togclass(this.emptyViewMessage, 'hidden', !!this.tree)
+		this.emptyViewMessageVisible.set(!this.tree, 'g_evm_tree')
 	},
 
 
@@ -1194,14 +1282,15 @@ Plumber = f.unit({
 		if(!stat) return
 
 		stat.removeRoot.disconnect()
-		if(stat.removeRoot === stat.nextRoot) {
-			this.absolutelySetMainTree(null)
-
-		} else {
+		if(stat.nextRoot && stat.nextRoot !== stat.removeRoot) {
 			stat.nextRoot.upnode = null
 			stat.nextRoot.upcon = null
 			this.absolutelySetMainTree(stat.nextRoot)
+
+		} else {
+			this.absolutelySetMainTree(null)
 		}
+
 		this.view.selectNode(null)
 
 		this.closeDeletePrompt()
@@ -1285,7 +1374,7 @@ Plumber = f.unit({
 		} else {
 			if(this.catchSamples) {
 				var sid = dt.getData('text/sid')
-				,   sample = f.apick(this.sampler.samples, 'id', sid)
+				,   sample = f.apick(this.sampler.samples, 'src', sid)
 
 				if(sample) {
 					this.constructNode(sample, this.view)
@@ -1305,7 +1394,7 @@ Plumber = f.unit({
 
 
 	onSampleImport: function(sample) {
-		// this.displayFigure(sample.id)
+		// this.displayFigure(sample.src)
 		this.events.emit('onImportElement', sample)
 		return sample
 	},
@@ -1349,7 +1438,7 @@ Plumber = f.unit({
 
 			// m.label = dom.div('marker-info', m.content)
 			// dom.text(m.label, node.sample.src)
-			dom.text(m.elemInfo, node.sample.src)
+			dom.text(m.elemInfo, '['+ node.id +'] '+ node.sample.src)
 			dom.addclass(m.elemInfo, 'marker-label')
 
 			m.bRot = dom.div('marker-action', m.content)
@@ -1388,29 +1477,40 @@ Plumber = f.unit({
 		var master = this.connectionParts[0]
 		,   slave  = this.connectionParts[1]
 
-		if(master && slave) this.makeViewConnection(master, slave)
+		if(master && slave) this.makeViewConnection(master, slave, true)
 	},
 
-	makeViewConnection: function(master, slave) {
+	makeViewConnection: function(master, slave, animate, eventType) {
 		this.view.selectConnection(null)
 		this.view2.selectConnection(null)
 		this.view2.setTree(null)
+
+		var nodes = []
+		slave.node.traverse(function(n) {
+			nodes.push(n.id)
+		})
 
 		slave.node.updateSize()
 		master.node.connect(master.index, slave.node, slave.index)
 
 		this.view.setTree(this.tree)
-
-		master.playConnection()
-
-
 		this.displayFigure(null)
 
-		this.events.emit('onAddElement', { status: 'connected' })
+
+		if(animate) {
+			master.playConnection()
+		}
+
+
+		this.events.emit(eventType || 'onAddElement', {
+			status: 'connected',
+			root: slave.node,
+			nodes: nodes
+		})
 	},
 
-	removeSample: function(id) {
-		var sample = f.apick(this.sampler.samples, 'id', id)
+	removeSample: function(src) {
+		var sample = f.apick(this.sampler.samples, 'src', src)
 		if(sample) {
 			f.adrop(this.sampler.samples, sample)
 		}

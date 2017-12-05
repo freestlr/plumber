@@ -46,12 +46,12 @@ UI.Sidebar = f.unit(Block, {
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
 	},
 
-	addSample: function(data, name, thumb, removable, start) {
+	addSample: function(id, name, thumb, removable, start) {
 		var menu = this.sampleMenu
 
-		this.remSample(data)
+		this.remSample(id)
 
-		var block = menu.addItem({ data: data })
+		var block = menu.addItem({ data: id })
 
 		if(start) dom.prepend(menu.element, block.element)
 
@@ -83,13 +83,13 @@ UI.Sidebar = f.unit(Block, {
 		return block
 	},
 
-	remSample: function(data) {
+	remSample: function(id) {
 		var menu = this.sampleMenu
 
 		for(var i = menu.blocks.length -1; i >= 0; i--) {
 			var block = menu.blocks[i]
 
-			if(block.data.id === data.id) {
+			if(block.data === id) {
 				menu.removeBlock(block)
 			}
 		}
@@ -108,6 +108,7 @@ UI.Sidebar = f.unit(Block, {
 
 			if(samples) {
 				block.visible.set(samples.indexOf(block.data) !== -1, 'type')
+
 			} else {
 				block.visible.set(!block.replacer, 'type')
 				// block.visible.set(true, 'type')
@@ -126,7 +127,7 @@ UI.Sidebar = f.unit(Block, {
 	},
 
 	onSampleDrag: function(block, e) {
-		e.dataTransfer.setData('text/sid', block.data.id)
+		e.dataTransfer.setData('text/sid', block.data)
 	},
 
 	onModeChange: function(mode) {

@@ -4,25 +4,25 @@
 	{"hide": 1, "id": "iso", "src": "iso.json"},
 
 	{
-		"id": "B100_12MP-12MP",
+		"name": "B100_12MP-12MP",
 		"src": "B100_12MP-12MP.json",
 		"thumb": "images/thumbs/B100-12-12.png",
 		"link": "https://shop.eriks.nl/en/hydraulics-hydraulic-adapters-bsp-adaptors/bsp-connection-stud-straight-b100-12-12-11483321/"
 	},
 	{
-		"id": "10EFG6K",
+		"name": "10EFG6K",
 		"src": "10EFG6K.json",
 		"thumb": "images/thumbs/10EFG6K.png",
 		"link": "https://shop.eriks.nl/en/hydraulic-hose-10efg6k-795771/"
 	},
 	{
-		"id": "12G-12FBSPORXv2",
+		"name": "12G-12FBSPORXv2",
 		"src": "12G-12FBSPORX_v2.json",
 		"thumb": "images/thumbs/12G-12FBSPORX.png",
 		"link": "https://shop.eriks.nl/en/hydraulics/megacrimp-hose-fitting-12g12fbsporx-1064384/"
 	},
 	{
-		"id": "BSP T-piece B240-12",
+		"name": "BSP T-piece B240-12",
 		"src": "BSP T-piece B240-12.json",
 		"thumb": "images/thumbs/BSP T-piece B240-12.png",
 		"link": "https://shop.eriks.nl/en/bsp-t-piece-b240-12-11483749/"
@@ -50,7 +50,7 @@
 	{ "replacer": true, "src": "clamp_216.json" },
 
 	{
-		"id": "heavy 1",
+		"name": "heavy 1",
 		"thumb": "images/thumbs/heavy 1.png",
 		"types": [
 			"Clamp_428_PP.json",
@@ -69,7 +69,7 @@
 		]
 	},
 	{
-		"id": "Standard set 1 v2 #A",
+		"name": "Standard set 1 v2 #A",
 		"thumb": "images/thumbs/Standard set 1 v2 A.png",
 		"types": [
 			"Weld plate SP.json",
@@ -85,7 +85,7 @@
 		]
 	},
 	{
-		"id": "Standard set 2 v3 #A",
+		"name": "Standard set 2 v3 #A",
 		"thumb": "images/thumbs/Standard set 2 v3 A.png",
 		"types": [
 			"clamp_216.json",

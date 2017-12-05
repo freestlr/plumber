@@ -27,6 +27,8 @@ function eventmap() {
 	main.events.when({
 		'onNodeSelect': onNodeSelect,
 		'onAddElement': onAddElement,
+		'onReplaceElement': onReplaceElement,
+		'onConnectElement': onConnectElement,
 		'onImportElement': onImportElement
 	})
 
@@ -42,42 +44,42 @@ function addSample(item) {
 	if(!item || item.hide) return
 
 	if(main.isComplexFigure(item)) {
-		sidebar.addSample(item, item.id, item.thumb, false)
+		sidebar.addSample(item, item.name, item.thumb, false)
 
 	} else {
-		var sample = main.addSample(item.id || item.src, item.src, item.link)
+		var sample = main.getSample(item.src, item.link)
 		if(sample) {
-			var block = sidebar.addSample(sample, sample.id, item.thumb, false)
+			var block = sidebar.addSample(sample.src, sample.name, item.thumb, false)
 
 			block.replacer = item.replacer
 		}
 	}
 }
 
-function changeSample(sample) {
-	if(!sample) {
+function changeSample(src) {
+	if(!src) {
 		main.displayFigure(null)
 		updateVisibleSamples()
 
-	} else if(main.isComplexFigure(sample)) {
-		main.clear()
+	} else if(main.isComplexFigure(src)) {
+		// main.clear()
 		updateVisibleSamples()
-		main.displayFigure(sample)
+		main.displayFigure(src)
 
 	} else {
 		var mode = sidebar.modeMenu.activeItem
 		switch(mode) {
 			case 'connect':
-				main.displayFigure(sample.id)
+				main.displayFigure(src)
 			break
 
 			case 'replace':
 				if(sidebar.selectedNode) {
 					sidebar.sampleMenu.set(-1)
-					main.replaceElement(sample.src, sidebar.selectedNode)
+					main.replaceElement(src, sidebar.selectedNode)
 
 				} else {
-					main.replaceElement(sample.src, 0)
+					main.replaceElement(src, 0)
 				}
 			break
 		}
@@ -85,7 +87,7 @@ function changeSample(sample) {
 }
 
 function onImportElement(sample) {
-	sidebar.addSample(sample, sample.id, sample.thumb, true, true)
+	sidebar.addSample(sample.src, sample.name, sample.thumb, true, true)
 	// sidebar.setSample(sample)
 }
 
@@ -106,6 +108,16 @@ function onAddElement(e) {
 			sidebar.sampleMenu.set(-1)
 		break
 	}
+
+	// console.log('onAddElement', e.status)
+}
+
+function onReplaceElement(e) {
+	// console.log('onReplaceElement', e.status)
+}
+
+function onConnectElement(e) {
+	// console.log('onConnectElement', e.status, e.error || e.nodes)
 }
 
 function onModeChange(mode) {

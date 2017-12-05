@@ -15,10 +15,10 @@ Sampler.prototype = {
 
 		var sample = new Sample(def, this)
 
-		var prev = f.apick(this.samples, 'id', sample.id)
+		var prev = f.apick(this.samples, 'src', sample.src)
 		if(prev) {
 			f.adrop(this.samples, prev)
-			console.warn('Sample with id', sample.id, 'already exists')
+			console.warn('Sample with src', sample.src, 'already exists')
 		}
 
 		this.samples.push(sample)
@@ -44,7 +44,6 @@ Sampler.prototype = {
 
 		}).then(function(object) {
 			return this.addSample({
-				id: file.name,
 				src: file.name,
 				object: object
 			})
@@ -68,11 +67,7 @@ function Sample(def, parent) {
 	this.boxCenter = new THREE.Vector3
 	this.boxLength = 1
 
-	if(this.id == null) {
-		this.id = f.range(10).map(f.randchar).join('')
-	}
-
-	if(this.src) {
+	if(!this.name && this.src) {
 		this.name = this.src.replace(/\.[^\.]*$/, '').split('/').pop()
 	}
 
@@ -117,6 +112,8 @@ Sample.prototype = {
 			return defer
 		}
 
+		this.broken = false
+
 		switch(this.format) {
 			case 'obj':
 				var loader = new Loader
@@ -159,8 +156,9 @@ Sample.prototype = {
 
 	loadError: function(err) {
 		this.broken = true
-		this.progress = 1
-		console.warn('Sample load error', this.src || this.id, err)
+		this.progress = 0
+		console.warn('Sample load error', this.src, err)
+		this.deferLoad = null
 		throw err
 	},
 
@@ -168,7 +166,7 @@ Sample.prototype = {
 		if(!object) return
 
 		if(object.position.length()) {
-			console.error('sample', this.src || this.id, 'not zero position:', object.position)
+			console.error('sample', this.src, 'not zero position:', object.position)
 		}
 
 		this.progress = 1
@@ -220,12 +218,12 @@ Sample.prototype = {
 		mesh.parent.remove(mesh)
 
 		if(!mesh.geometry) {
-			console.error('sample', this.src || this.id, 'subtract mesh without geometry')
+			console.error('sample', this.src, 'subtract mesh without geometry')
 			return
 		}
 
 		if(this.subtractMesh) {
-			console.warn('sample', this.src || this.id, 'has multiple subtract meshes')
+			console.warn('sample', this.src, 'has multiple subtract meshes')
 		}
 
 		this.subtractMesh = mesh
@@ -331,7 +329,7 @@ Sample.prototype = {
 	},
 
 	describe: function() {
-		console.log('sample id: {'+ this.id +'} src: {'+ (this.src || '') +'}')
+		console.log('sample src: {'+ (this.src || '') +'}')
 		this.traverse(this.object, this.describeObject, this, null, true)
 	}
 }
