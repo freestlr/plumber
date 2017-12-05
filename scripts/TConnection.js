@@ -255,7 +255,7 @@ TConnection = f.unit({
 
 		slave.connected = master
 		slave.target = master.node
-		slave.node.upcon  = master
+		slave.node.upcon  = slave
 		slave.node.upnode = master.node
 		slave.master = false
 

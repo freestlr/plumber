@@ -239,6 +239,10 @@ TNode = f.unit({
 			return console.warn('TN.connect to undefined node')
 		}
 
+		if(node === this) {
+			return console.error('TN.connect to itself')
+		}
+
 		var conA = this.connections[indexA]
 		,   conB = node.connections[indexB]
 

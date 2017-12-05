@@ -1276,7 +1276,9 @@ Plumber = f.unit({
 
 	absolutelySetMainTree: function(tree) {
 		this.tree = tree
-		this.view.setTree(this.tree)
+		var view = this.mode === 'constructor' ? this.view : this.view2
+
+		view.setTree(this.tree)
 
 		this.emptyViewMessageVisible.set(!this.tree, 'g_evm_tree')
 	},
