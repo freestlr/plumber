@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<head>
+	<title>fit test</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+
+	<script src="build/three.js"></script>
+	<script src="build/plumber-engine.js"></script>
+	<link rel="stylesheet" href="build/plumber-engine.css">
+
+	<style>
+		body {
+			margin: 24px;
+		}
+		.view {
+			position: relative;
+		}
+		.item1 {
+			display: inline-block;
+			width: 640px;
+			height: 480px;
+			margin-right: 24px;
+		}
+		.button {
+			display: inline-block;
+			vertical-align: top;
+			padding: 8px 12px;
+			background-color: #eee;
+			user-select: none;
+		}
+		.button:hover {
+			color: #eee;
+			background-color: #333;
+			cursor: pointer;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="view item1"></div>
+</body>
+
+<script>
+	var plumber = new Plumber({
+		eroot: document.querySelector('.item1'),
+		srcAtlas: 'build/plumber-atlas.svg',
+		srcCubemap: 'build/plumber-cubemap.png',
+		dirSamples: 'samples/',
+		clearButton: false,
+		mode: 'constructor'
+	})
+
+	var figure = {
+		"types": [
+			"BSP T-piece B240-12.json",
+			"12G-12FBSPORX_v2.json",
+			"10EFG6K.json",
+			"B100_12MP-12MP.json"
+		],
+		"nodes": [
+			{"t": 1, "a": 0, "ai": 0, "bi": 0},
+			{"t": 2, "a": 1, "ai": 1, "bi": 1},
+			{"t": 3, "a": 0, "ai": 1, "bi": 0},
+			{"t": 0, "a": 3, "ai": 1, "bi": 1},
+			{"t": 1, "a": 4, "ai": 0, "bi": 0},
+			{"t": 2, "a": 5, "ai": 1, "bi": 1},
+			{"t": 3, "a": 0, "ai": 2, "bi": 0},
+			{"t": 0, "a": 7, "ai": 1, "bi": 1},
+			{"t": 1, "a": 8, "ai": 0, "bi": 0},
+			{"t": 2, "a": 9, "ai": 1, "bi": 1}
+		]
+	}
+
+	var index = 0
+	var nodeIdList = []
+	function saveAndConnectNextElement(e) {
+		// save created node
+		nodeIdList[index] = e.nodes[0]
+
+		// connect next node
+		var next = figure.nodes[index++]
+		if(next) plumber.connectElement(
+			figure.types[next.t],
+			next.bi,
+			nodeIdList[next.a],
+			next.ai)
+	}
+
+
+	plumber.events.on('onAddElement', saveAndConnectNextElement)
+	plumber.events.on('onConnectElement', saveAndConnectNextElement)
+	plumber.addElement(0, figure.types[0])
+
+</script>
