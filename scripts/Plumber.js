@@ -248,7 +248,7 @@ Plumber = f.unit({
 			break
 
 			case 'initFromHash':
-				this.initFromHash = true
+				this.initFromHash = !!options.initFromHash
 			break
 
 			default:
@@ -482,6 +482,11 @@ Plumber = f.unit({
 		} else {
 			sample.load().then(function() {
 				this.replaceElementBySample(sample, param)
+			}, function(e) {
+				this.events.emit('onReplaceElement', {
+					status: 'rejected',
+					reason: 'bad element: '+ src
+				})
 			}, this)
 		}
 	},
@@ -492,7 +497,7 @@ Plumber = f.unit({
 			replaceMany([node])
 		}
 		function replaceMany(nodes) {
-			events.emit('onReplaceElement', { status: 'replaced', nodes: nodes })
+			events.emit('onReplaceElement', { status: 'replaced', nodes: nodes.map(f.prop('id')) })
 		}
 		function replaceBad(e) {
 			events.emit('onReplaceElement', { status: 'rejected', reason: e })
@@ -1131,8 +1136,8 @@ Plumber = f.unit({
 		}
 
 		this.events.emit('onConnectElement', {
-			status: 'error',
-			error: type === 'raw' ? data : f.implode(messages[type] || 'unknown error', data)
+			status: 'rejected',
+			reason: type === 'raw' ? data : f.implode(messages[type] || 'unknown error', data)
 		})
 	},
 
@@ -1281,8 +1286,8 @@ Plumber = f.unit({
 		var stat = this.deletePromptStat
 		if(!stat) return
 
-		stat.removeRoot.disconnect()
-		if(stat.nextRoot && stat.nextRoot !== stat.removeRoot) {
+		stat.root.disconnect()
+		if(stat.nextRoot && stat.nextRoot !== stat.root) {
 			stat.nextRoot.upnode = null
 			stat.nextRoot.upcon = null
 			this.absolutelySetMainTree(stat.nextRoot)
@@ -1466,7 +1471,7 @@ Plumber = f.unit({
 			}
 		}
 
-		this.events.emit('onNodeSelect', [node, prev])
+		this.events.emit('onNodeSelect', [node && node.id, prev && prev.id])
 	},
 
 	onConnectionSelect: function(view, index, con) {
@@ -1593,7 +1598,7 @@ Plumber = f.unit({
 		}
 
 		if(this.deletePromptStat) {
-			var node = this.deletePromptStat.removeRoot
+			var node = this.deletePromptStat.root
 			,   point = this.deletePromptTip.point
 
 			point.world.setFromMatrixPosition(node.objectCenter.matrixWorld)

@@ -216,8 +216,8 @@ TNode = f.unit({
 		}
 
 		return {
-			removeRoot: removeRoot,
-			removeList: f.snot(rootNodes, maxList),
+			root: removeRoot,
+			nodes: f.snot(rootNodes, maxList),
 			nextRoot: maxRoot
 		}
 	},
@@ -227,8 +227,8 @@ TNode = f.unit({
 		this.traverse(function(n) { nodes.push(n.id) })
 
 		return {
-			removeRoot: this,
-			removeList: nodes,
+			root: this,
+			nodes: nodes,
 			nextRoot: null
 		}
 	},
