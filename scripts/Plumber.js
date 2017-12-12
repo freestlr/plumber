@@ -1250,12 +1250,12 @@ Plumber = f.unit({
 
 		var stat = this.deletePromptStat = node.pinch()
 
-		if(stat.removeList.length < 2) {
+		if(stat.nodes.length < 2) {
 			this.deleteNode()
 
 		} else {
 			dom.text(this.deletePromptTipText,
-				['Do you want to delete', stat.removeList.length, 'nodes?'].join(' '))
+				['Do you want to delete', stat.nodes.length, 'nodes?'].join(' '))
 
 			this.deletePromptTip.visible.on()
 		}
