@@ -1,9 +1,9 @@
-extract=":JOIN /SEARCH/ { s/.*\[\(.*\)\]/\\1/; t TRIM; N; b JOIN; :TRIM; s/^\s*'\|',\?$$//gm; p; q }"
-styles= $(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_styles/g')" index.html)
-scripts=$(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_scripts/g')" index.html)
+extract="s:/\*.*\*/::sg; s://.*::g; s/.*SEARCH\s*=\s*\[(.*?)\].*/\1/s; s/\s*'//g; s/,/\n/g; s/\s*$$/\n/;"
+styles= $(shell perl -p0e "$(shell echo $(extract) | sed 's/SEARCH/html5_styles/g')" index.html)
+scripts=$(shell perl -p0e "$(shell echo $(extract) | sed 's/SEARCH/html5_scripts/g')" index.html)
 
-estyles= $(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_styles/g')" engine.html)
-escripts=$(shell sed -n "$(shell echo $(extract) | sed 's/SEARCH/html5_scripts/g')" engine.html)
+estyles= $(shell perl -p0e "$(shell echo $(extract) | sed 's/SEARCH/html5_styles/g')" engine.html)
+escripts=$(shell perl -p0e "$(shell echo $(extract) | sed 's/SEARCH/html5_scripts/g')" engine.html)
 
 
 all: build build/plumber-engine.css build/plumber-engine.js
@@ -16,20 +16,20 @@ build:
 
 build/index.html: index.html
 	cp index.html $@
-	sed -i ':JOIN /html5_scripts/ { s/\[.*\]/["common.js"]/; t END; N; b JOIN }; :END' $@
-	sed -i ':JOIN /html5_styles/ { s/\[.*\]/["common.css"]/; t END; N; b JOIN }; :END' $@
+	perl -i -p0e 's/(html5_scripts.*?\[).*?\]/\1"common.js"]/;' $@
+	perl -i -p0e 's/(html5_styles.*?\[).*?\]/\1"common.css"]/;' $@
 
 build/plumber-engine.css: $(estyles)
 	cat $^ > $@
 	# remove utf-8 BOM char as it's not on start of file
-	sed -i 's/\xEF\xBB\xBF//g' $@
+	perl -i -p0e 's/\x{EF}\x{BB}\x{BF}//g' $@
 
 build/plumber-engine.js: $(escripts)
 	uglifyjs $^ --compress --mangle --output $@
 	# uglifyjs puts "use strict" to start of resulting file - make troubles
-	sed -i 's/^"use strict";//' $@
+	perl -i -p0e 's/^"use strict";//' $@
 	# and removes not used variables - IE gets bleeding on setter without arguments
-	sed -i 's/\(set \w\+\)()/\1(_)/' $@
+	perl -i -p0e 's/\(set \w\+\)()/\1(_)/' $@
 
 
 
@@ -43,9 +43,9 @@ clean:
 	rm -rf build/
 
 fix:
-	sed -i 's/ visibility="hidden"//g' images/atlas.svg
-	sed -i 's/ display="none"//g' images/atlas.svg
-	sed -i '/metadata/ d' images/atlas.svg
+	perl -i -p0e 's/\s*visibility="hidden"//g' images/atlas.svg
+	perl -i -p0e 's/\s*display="none"//g' images/atlas.svg
+	perl -i -p0e '/metadata/ d' images/atlas.svg
 
 
 .PHONY: all build fix package
