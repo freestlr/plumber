@@ -8,16 +8,16 @@ function Gate(method, value) {
 Gate.prototype = {
 
 	on: function(pin) {
-		this.inputs[pin] = true
-		this.check()
+		this.set(true, pin)
 	},
 
 	off: function(pin) {
-		this.inputs[pin] = false
-		this.check()
+		this.set(false, pin)
 	},
 
 	set: function(state, pin) {
+		if(this.inputs[pin] === state) return
+
 		this.inputs[pin] = state
 		this.check()
 	},
@@ -28,13 +28,15 @@ Gate.prototype = {
 	},
 
 	check: function(force) {
-		var value = Gate.UNSET
-		for(var pin in this.inputs) {
-			if(Gate.UNSET === value) value = this.inputs[pin]
-			else value = this.method(value, this.inputs[pin])
-		}
+		var value
 
-		if(Gate.UNSET === value) {
+		var pins = Object.keys(this.inputs)
+		if(pins.length) {
+			value = this.inputs[pins[0]]
+			for(var i = 1; i < pins.length; i++) {
+				value = this.method(value, this.inputs[pins[i]])
+			}
+		} else {
 			value = this.value
 		}
 
@@ -50,8 +52,6 @@ Gate.prototype = {
 
 	constructor: Gate
 }
-
-Gate.UNSET = {}
 
 Gate.MULTIPLY = function(a, b) { return a *  b }
 Gate.ADD      = function(a, b) { return a +  b }
