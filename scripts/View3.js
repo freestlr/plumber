@@ -135,6 +135,10 @@ View3 = f.unit({
 		})
 		this.markers.events.on('marker_tap', this.onMarkerTap, this)
 
+		this.markers.markersVisible.events.on('change', function(value) {
+			this.needsRedraw = true
+		}, this)
+
 
 
 		this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
