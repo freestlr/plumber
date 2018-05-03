@@ -50,6 +50,7 @@ Defer.all = function(list) {
 
 Defer.complete = function(success, value) {
 	var defer = new Defer
+	defer.pending = false
 	defer.success = success
 	defer.value = value
 
