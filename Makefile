@@ -48,4 +48,4 @@ fix:
 	perl -i -p0e '/metadata/ d' images/atlas.svg
 
 
-.PHONY: all build fix package
+.PHONY: all build fix pack
