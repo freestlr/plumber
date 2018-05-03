@@ -157,7 +157,7 @@ function updateVisibleSamples() {
 					main.view.updateNodeStencil(node)
 				}
 
-				if(node === sidebar.selectedNode) {
+				if(node.id === sidebar.selectedNode) {
 					visibleNode = nodeSamples
 				}
 				visibleAll = f.sor(visibleAll, nodeSamples)

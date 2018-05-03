@@ -559,10 +559,11 @@ Plumber = f.unit({
 			break
 
 			default:
-				if(param instanceof TNode) {
-					this.replaceNode(param, sample, true).then(replaceOne, replaceBad)
+				var node = param instanceof TNode ? param : this.getElementById(param)
+				if(node) {
+					this.replaceNode(node, sample, true).then(replaceOne, replaceBad)
 
-				} else replaceBad('invalid param')
+				} else replaceBad('invalid param: '+ param)
 			break
 		}
 
