@@ -169,6 +169,7 @@ TConnection = f.unit({
 		}
 
 		if(state == null) {
+			this.tween.source.connected = 0
 			this.tween.target.connected = 1
 
 		} else {
