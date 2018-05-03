@@ -1202,8 +1202,7 @@ Plumber = f.unit({
 		return this.constructNode(sample).then(function(replacer) {
 			replacer.replace(node)
 
-			if(node.upcon) this.view.setTree(this.view.tree)
-			else this.view.setTree(replacer)
+			this.absolutelySetMainTree(node.upcon ? this.view.tree : replacer)
 
 			if(select) this.view.selectNode(replacer)
 
