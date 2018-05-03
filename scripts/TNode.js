@@ -6,12 +6,6 @@ TNode = f.unit({
 		this.object    = new THREE.Object3D
 		this.events    = new EventEmitter
 
-		this.box       = new THREE.Box3
-		this.boxCenter = new THREE.Vector3
-		this.boxSize   = new THREE.Vector3
-		this.boxLength = 1
-
-
 		this.localBox    = new THREE.Box3
 		this.localCenter = new THREE.Vector3
 		this.localSize   = new THREE.Vector3
@@ -292,41 +286,16 @@ TNode = f.unit({
 		// TODO
 	},
 
-	sizeUnion: function(node) {
-		if(node.sample) {
-			node.updateBox()
-			this.box.union(node.localBox)
-
-		} else {
-			// this.box.expandByPoint(node.object.position)
-		}
-	},
-
 	updateBox: function() {
-		this.localBox.copy(this.sample.box).applyMatrix4(this.object.matrixWorld)
+		if(this.sample) {
+			this.localBox.copy(this.sample.box).applyMatrix4(this.object.matrixWorld)
+		} else {
+			this.localBox.makeEmpty()
+		}
+
 		this.localBox.getSize(this.localSize)
 		this.localCenter.copy(this.sample.boxCenter).applyMatrix4(this.object.matrixWorld)
 		this.localLength = this.localSize.length()
-	},
-
-	updateSize: function() {
-		this.object.updateMatrixWorld()
-
-
-		this.box.makeEmpty()
-		this.traverse(this.sizeUnion, this)
-
-
-		if(this.box.isEmpty()) {
-			this.boxCenter.set(0, 0, 0)
-			this.boxSize.set(1, 1, 1).normalize()
-			this.boxLength = 1
-
-		} else {
-			this.box.getCenter(this.boxCenter)
-			this.box.getSize(this.boxSize)
-			this.boxLength = this.boxSize.length()
-		}
 	}
 })
 

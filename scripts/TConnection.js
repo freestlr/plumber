@@ -44,7 +44,7 @@ TConnection = f.unit({
 	},
 
 	makeTween: function() {
-		this.tween = new TWEEN.Tween({ connected: 0 })
+		this.tween = new TWEEN.Tween({ connected: 1 })
 			.to({ connected: 1 }, 1000)
 			.easing(TWEEN.Easing.Linear.None)
 			.onStart(this.onTweenStart, this)
@@ -56,8 +56,8 @@ TConnection = f.unit({
 
 	},
 
-	onTweenUpdate: function(t, values) {
-		this.transitionProgress(values.connected)
+	onTweenUpdate: function() {
+		this.transitionProgress(this.tween.source.connected)
 	},
 
 	onTweenComplete: function() {

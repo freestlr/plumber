@@ -342,7 +342,11 @@ View3 = f.unit({
 		,   distMax = this.orbit.maxDistance
 		,   distGot = f.clamp(isNaN(distance) ? distNow : distance, distMin, distMax)
 
-		nextOffset.subVectors(camera, target).setLength(distGot)
+		nextOffset.subVectors(camera, target)
+		if(!nextOffset.lengthSq()) {
+			nextOffset.set(1, 1, 1)
+		}
+		nextOffset.setLength(distGot)
 
 
 		var thetaNow = Math.acos(nextOffset.y / distGot)
@@ -396,8 +400,6 @@ View3 = f.unit({
 			time = this.focusDuration
 		}
 
-		this.updateTreeSize()
-
 		var distance = this.getFitDistance(this.treeSize, 1.5, 1.5)
 
 		this.orbitTo(this.treeCenter, time, distance)
@@ -408,29 +410,7 @@ View3 = f.unit({
 			time = this.focusDuration
 		}
 
-		// var distance = node.sample.boxSize.y * 4 * this.focusDistance
-
 		this.orbitTo(node.localCenter, time)
-
-		// this.updateTreeSize()
-
-		// if(isNaN(time)) {
-		// 	time = this.focusDuration
-		// }
-
-		// var distance
-		// ,   center
-
-		// if(node) {
-		// 	center = node.boxCenter
-
-		// } else {
-		// 	distance = this.getFitDistance(this.treeSize, this.treeLength, 1.8, 1.8)
-		// 	center = this.treeCenter
-
-		// }
-
-		// this.orbitTo(center, time, distance)
 	},
 
 	getFitDistance: function(size, factorX, factorY) {
@@ -467,7 +447,6 @@ View3 = f.unit({
 
 		if(this.tree) {
 			this.root.add(this.tree.object)
-			this.root.updateMatrixWorld()
 
 			this.tree.traverse(this.updateNodeStencil, this)
 			this.tree.events.on('connect_start', this.onConnectStart, this)
@@ -480,6 +459,7 @@ View3 = f.unit({
 		this.updateConnectionTree()
 
 		this.focusOnTree()
+		this.needsRetrace = true
 		this.needsRedraw = true
 	},
 
@@ -495,7 +475,6 @@ View3 = f.unit({
 		var index = this.animatedConnections.indexOf(con)
 		if(index !== -1) {
 			con.events.off(null, null, this)
-			con.node.updateSize()
 
 			this.animatedConnections.splice(index, 1)
 		}
@@ -503,12 +482,27 @@ View3 = f.unit({
 
 	updateTreeSize: function() {
 		if(this.tree) {
-			this.tree.updateSize()
+			this.treeBox.makeEmpty()
 
-			this.treeBox.copy(this.tree.box)
-			this.treeSize.copy(this.tree.boxSize)
-			this.treeCenter.copy(this.tree.boxCenter)
-			this.treeLength = this.tree.boxLength
+			this.tree.traverseConnections(function(con) {
+				if(con.connected && con.master) con.transitionProgress(1)
+			}, this)
+
+			this.tree.object.updateMatrixWorld()
+
+			this.tree.traverse(function(node) {
+				node.updateBox()
+				this.treeBox.union(node.localBox)
+			}, this)
+
+			this.tree.traverseConnections(function(con) {
+				if(con.connected && con.master) con.onTweenUpdate()
+			}, this)
+
+
+			this.treeBox.getCenter(this.treeCenter)
+			this.treeBox.getSize(this.treeSize)
+			this.treeLength = this.treeSize.length()
 
 		} else {
 			this.treeBox.makeEmpty()
@@ -525,7 +519,6 @@ View3 = f.unit({
 		var remove = this.markers.markers.slice()
 
 		if(this.tree) {
-			this.tree.object.updateMatrixWorld()
 			this.tree.traverseConnections(this.updateConnection, this, remove)
 		}
 
@@ -552,8 +545,8 @@ View3 = f.unit({
 
 		var distance = this.getFitDistance(this.treeSize, 1.5, 1.5)
 
-		this.camera.far    = Math.max(this.orbit.radius + this.treeLength, distance * 2)
-		this.camera.near   = Math.max(this.orbit.radius - this.treeLength, distance * 0.1)
+		this.camera.far  = Math.max(this.orbit.radius + this.treeLength *2, distance * 2)
+		this.camera.near = Math.max(this.orbit.radius - this.treeLength *2, distance * 0.01)
 		this.camera.updateProjectionMatrix()
 
 		this.projector.updateMatrices()
@@ -919,7 +912,6 @@ View3 = f.unit({
 		clear(this.renderTarget)
 
 
-		this.scene.updateMatrixWorld(true)
 
 		if(this.enableRender) {
 			this.grid.visible = false
@@ -1078,6 +1070,7 @@ View3 = f.unit({
 		if(this.needsRetrace) {
 			this.needsRetrace = false
 
+			this.scene.updateMatrixWorld(true)
 			this.retrace()
 		}
 

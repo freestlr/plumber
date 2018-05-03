@@ -1497,7 +1497,8 @@ Plumber = f.unit({
 			nodes.push(n.id)
 		})
 
-		slave.node.updateSize()
+		slave.object.updateMatrixWorld()
+
 		master.node.connect(master.index, slave.node, slave.index)
 
 		this.view.setTree(this.tree)
