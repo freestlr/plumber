@@ -177,6 +177,7 @@ TConnection = f.unit({
 			this.tween.target.connected = + state
 		}
 
+		this.onTweenUpdate()
 		this.tween.duration(duration).start()
 	},
 
