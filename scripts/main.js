@@ -59,11 +59,9 @@ function addSample(item) {
 function changeSample(src) {
 	if(!src) {
 		main.displayFigure(null)
-		updateVisibleSamples()
 
 	} else if(main.isComplexFigure(src)) {
 		// main.clear()
-		updateVisibleSamples()
 		main.displayFigure(src)
 
 	} else {
@@ -78,12 +76,18 @@ function changeSample(src) {
 					sidebar.sampleMenu.set(-1)
 					main.replaceElement(src, sidebar.selectedNode)
 
+				} else if(kbd.state.SHIFT) {
+					sidebar.sampleMenu.set(-1)
+					main.replaceElement(src, -1)
+
 				} else {
 					main.replaceElement(src, 0)
 				}
 			break
 		}
 	}
+
+	updateVisibleSamples()
 }
 
 function onImportElement(sample) {
