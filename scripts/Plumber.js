@@ -780,9 +780,11 @@ Plumber = f.unit({
 			delete this.explodeStepDefer
 		}
 
-		var tree = this.view.tree || this.view2.tree
+		var view = this.view.tree ? this.view : this.view2
+		,   tree = view.tree
 		if(!tree) return
 
+		view.focusOnTree(null, enabled ? view.explodeDim : view.assembleDim)
 
 		if(this.explodeStepped) {
 			var list = []
@@ -1530,8 +1532,10 @@ Plumber = f.unit({
 
 		master.node.connect(master.index, slave.node, slave.index)
 
-		this.view.setTree(this.tree)
 		this.displayFigure(null)
+
+		this.view.setTree(this.tree)
+		this.view.focusOnTree(null, this.view.assembleDim)
 
 
 		if(animate) {
