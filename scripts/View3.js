@@ -303,6 +303,7 @@ View3 = f.unit({
 
 	updateLights: function() {
 		this.dirLight.position.copy(this.camera.position)
+		this.dirLight.updateMatrixWorld()
 	},
 
 	updateGrid: function() {
@@ -488,7 +489,7 @@ View3 = f.unit({
 				if(con.connected && con.master) con.transitionProgress(1)
 			}, this)
 
-			this.tree.object.updateMatrixWorld()
+			this.scene.updateMatrixWorld()
 
 			this.tree.traverse(function(node) {
 				node.updateBox()
@@ -498,6 +499,8 @@ View3 = f.unit({
 			this.tree.traverseConnections(function(con) {
 				if(con.connected && con.master) con.onTweenUpdate()
 			}, this)
+
+			this.scene.updateMatrixWorld(true)
 
 
 			this.treeBox.getCenter(this.treeCenter)
@@ -728,8 +731,6 @@ View3 = f.unit({
 	},
 
 	retrace: function() {
-		if(!this.enableRaycast || !this.tree) return
-
 		this.projector.viewportToWorld(this.mouse2, this.mouse3, true)
 		this.raycaster.setFromCamera(this.mouse2, this.camera)
 
@@ -1025,6 +1026,8 @@ View3 = f.unit({
 		if(this.animatedConnections.length) {
 			this.needsRedraw = true
 			this.needsRetrace = true
+
+			this.scene.updateMatrixWorld(true)
 		}
 
 		if(this.orbitTween.playing) {
@@ -1042,6 +1045,7 @@ View3 = f.unit({
 		if(this.orbitTween.playing || this.cameraTween.playing) {
 			this.camera.lookAt(this.orbit.target)
 			this.orbit.update()
+
 			this.needsRedraw = true
 		}
 
@@ -1068,10 +1072,11 @@ View3 = f.unit({
 		}
 
 		if(this.needsRetrace) {
-			this.needsRetrace = false
 
-			this.scene.updateMatrixWorld(true)
-			this.retrace()
+			if(this.enableRaycast && this.tree && !this.orbit.down) {
+				this.needsRetrace = false
+				this.retrace()
+			}
 		}
 
 		if(this.needsRedraw) {
