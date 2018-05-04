@@ -141,8 +141,7 @@ function updateVisibleSamples() {
 	switch(mode) {
 		case 'connect':
 			if(main.tree) main.tree.traverse(function(node) {
-				node.lit = false
-				main.view.updateNodeStencil(node)
+				main.view.litNode(node, false)
 			})
 			sidebar.setVisibleSamples(null)
 		break
@@ -157,8 +156,7 @@ function updateVisibleSamples() {
 				var nodeSamples = main.getNodeReplacers(node, main.sampler.samples)
 
 				if(lit) {
-					node.lit = sidebar.selectedNode ? false : nodeSamples.length
-					main.view.updateNodeStencil(node)
+					main.view.litNode(node, sidebar.selectedNode ? false : nodeSamples.length)
 				}
 
 				if(node.id === sidebar.selectedNode) {

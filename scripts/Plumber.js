@@ -58,6 +58,7 @@ Plumber = f.unit({
 		this.view2 = new View3({
 			// eroot: document.body,
 			renderer: this.renderer,
+			// enableSSAO: false,
 			enableStencil: false,
 			enableRaycast: false
 			// clearColor: 0x00FF00
@@ -530,8 +531,7 @@ Plumber = f.unit({
 				var replaceable = []
 
 				this.tree.traverse(function(node) {
-					node.lit = node.canBeReplacedBy(sample)
-					this.view.updateNodeStencil(node)
+					this.view.litNode(node, node.canBeReplacedBy(sample))
 
 					if(node.lit) replaceable.push(node)
 				}, this)
@@ -545,9 +545,7 @@ Plumber = f.unit({
 					case 1:
 						var node = replaceable[0]
 
-						node.lit = false
-						this.view.updateNodeStencil(node)
-
+						this.view.litNode(node, false)
 						this.replaceNode(node, sample, true).then(replaceOne, replaceBad)
 					break
 
@@ -579,8 +577,7 @@ Plumber = f.unit({
 
 	litModeClear: function() {
 		if(this.tree) this.tree.traverse(function(node) {
-			node.lit = false
-			this.view.updateNodeStencil(node)
+			this.view.litNode(node, false)
 		}, this)
 
 		this.view.needsRedraw = true
@@ -657,6 +654,8 @@ Plumber = f.unit({
 
 
 	makeGUI: function() {
+		var self = this
+
 		this.gui = new dat.GUI({
 			// autoPlace: false,
 			hideable: false
@@ -675,6 +674,22 @@ Plumber = f.unit({
 		this.gui.closed = true
 
 		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
+		this.gui.add(this.view, 'enableAA').name('AA').onChange(redraw)
+		this.gui.add(this.view, 'enableSSAO').name('SSAO').onChange(redraw)
+		this.gui.add(this.view, 'enableOnlyAO').name('Only AO').onChange(redraw)
+		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
+
+		var au = this.view.smSSAO.uniforms
+		,   ao = this.gui.addFolder('Occlusion')
+		// ao.add(main.v3, 'enableBlurAO').name('Blur AO').onChange(redraw)
+		// ao.add(main.v3, 'enableBloomAO').name('Bloom AO').onChange(redraw)
+		ao.add(au.cameraNear, 'value').min(0).max(1000).name('cameraNear').onChange(redraw)
+		ao.add(au.cameraFar,  'value').min(0).max(1000).name('cameraFar').onChange(redraw)
+		ao.add(au.diffArea,   'value').min(0).max(2).name('diffArea').onChange(redraw)
+		ao.add(au.gDisplace,  'value').min(0).max(2).name('gDisplace').onChange(redraw)
+		ao.add(au.radius,     'value').min(0).max(50).name('radius').onChange(redraw)
+		ao.add(au.aoClamp,    'value').min(0).max(2).name('aoClamp').onChange(redraw)
+		ao.add(au.aoMin,      'value').min(0).max(1).name('aoMin').onChange(redraw)
 
 		slots.forEach(function(slot) {
 			var fd = this.gui.addFolder(slot)
@@ -692,7 +707,17 @@ Plumber = f.unit({
 		this.gui.add(this, 'explode').min(0).max(1).name('Explode').onChange(explode)
 		this.gui.add(this, 'explodeStepped').name('Explode Step')
 
-		var self = this
+		this.gui.add(this.view, 'directAngle').min(-1).max(1).name('Direct Angle').onChange(relight)
+		this.gui.add(this.view, 'directK').min(-1).max(1).name('Direct K').onChange(relight)
+		this.gui.add(this.view, 'directLift').min(-1).max(1).name('Direct Lift').onChange(relight)
+		this.gui.add(this.view.dirLight, 'intensity').min(0).max(1).name('Direct Power').onChange(redraw)
+		this.gui.add(this.view.ambLight, 'intensity').min(0).max(1).name('Ambient Power').onChange(redraw)
+
+		function relight() {
+			self.view.updateLights()
+			self.view.needsRedraw = true
+		}
+
 		function redraw() {
 			self.view.needsRedraw = true
 			self.view2.needsRedraw = true
@@ -1316,6 +1341,10 @@ Plumber = f.unit({
 
 		this.view.resizeRenderTargets(w, h)
 		this.view.resizeShaders(w, h)
+
+		this.view2.rtDepthStencil = this.view.rtDepthStencil
+		this.view2.rt1 = this.view.rt1
+		this.view2.rt2 = this.view.rt2
 		// this.view.onResize()
 	},
 

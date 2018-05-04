@@ -6,10 +6,10 @@ THREE.OverlayShader = {
 		'resolution': { value: new THREE.Vector2( 1/1024, 1/512 ) },
 		'drawColor': { value: new THREE.Color(1, 1, 1) },
 		'drawAlpha': { value: 1.0 },
-		'lineAlpha': { value: 1.0 },
+		'lineAlpha': { value: 0.4 },
 		'lineAngle': { value: 0.0 },
-		'fillAlpha': { value: 0.0 },
-		'edgeAlpha': { value: 1.0 }
+		'edgeAlpha': { value: 0.8 },
+		'fillAlpha': { value: 0.1 }
 	},
 
 	vertexShader: [
@@ -31,6 +31,8 @@ THREE.OverlayShader = {
 		'uniform float lineAngle;',
 		'uniform float fillAlpha;',
 		'uniform float edgeAlpha;',
+
+		/*
 
 		'float edgeBasic(sampler2D image, vec2 pixel) {',
 			'vec4 mtl = texture2D(image, pixel + resolution * vec2(-1.0,  1.0));',
@@ -73,7 +75,7 @@ THREE.OverlayShader = {
 			"G[7] = mat3( -n3, n2, -n3, n2, n4, n2, -n3, n2, -n3 );",
 			"G[8] = mat3( n3, n3, n3, n3, n3, n3, n3, n3, n3 );",
 
-			/* fetch the 3x3 neighbourhood and use the RGB vector's length as intensity value */
+			// fetch the 3x3 neighbourhood and use the RGB vector's length as intensity value
 			"vec3 sample;",
 			"for (float i=0.0; i<3.0; i++) {",
 				"for (float j=0.0; j<3.0; j++) {",
@@ -82,7 +84,7 @@ THREE.OverlayShader = {
 				"}",
 			"}",
 
-			/* calculate the convolution values for all the masks */
+			// calculate the convolution values for all the masks
 			"float cnv[9];",
 			"for (int i=0; i<9; i++) {",
 				"float dp3 = dot(G[i][0], I[0]) + dot(G[i][1], I[1]) + dot(G[i][2], I[2]);",
@@ -101,7 +103,7 @@ THREE.OverlayShader = {
 			"G[0] = mat3( 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, -1.0, -2.0, -1.0 );",
 			"G[1] = mat3( 1.0, 0.0, -1.0, 2.0, 0.0, -2.0, 1.0, 0.0, -1.0 );",
 
-			/* fetch the 3x3 neighbourhood and use the RGB vector's length as intensity value */
+			// fetch the 3x3 neighbourhood and use the RGB vector's length as intensity value
 			"vec3 sample;",
 			"for (float i=0.0; i<3.0; i++)",
 			"for (float j=0.0; j<3.0; j++) {",
@@ -109,7 +111,7 @@ THREE.OverlayShader = {
 				"I[int(i)][int(j)] = length(sample);",
 			"}",
 
-			/* calculate the convolution values for all the masks */
+			// calculate the convolution values for all the masks
 			"float cnv[2];",
 			"for (int i=0; i<2; i++) {",
 				"float dp3 = dot(G[i][0], I[0]) + dot(G[i][1], I[1]) + dot(G[i][2], I[2]);",
@@ -118,6 +120,8 @@ THREE.OverlayShader = {
 
 			"return 0.017 * sqrt(cnv[0]*cnv[0]+cnv[1]*cnv[1]);",
 		'}',
+
+		*/
 
 		'float drawLine(float angle, float step, float thick) {',
 			'float pi = 3.141592653589793;',
@@ -134,17 +138,45 @@ THREE.OverlayShader = {
 		'void main() {',
 			'vec2 pixel = gl_FragCoord.xy * resolution;',
 
-			'float fill = texture2D(tDiffuse, pixel).r;',
+			'vec4 mtl = texture2D(tDiffuse, pixel + resolution * vec2(-1.0,  1.0));',
+			'vec4 mtc = texture2D(tDiffuse, pixel + resolution * vec2( 0.0,  1.0));',
+			'vec4 mtr = texture2D(tDiffuse, pixel + resolution * vec2( 1.0,  1.0));',
+			'vec4 mcl = texture2D(tDiffuse, pixel + resolution * vec2(-1.0,  0.0));',
+			'vec4 mcc = texture2D(tDiffuse, pixel + resolution * vec2( 0.0,  0.0));',
+			'vec4 mcr = texture2D(tDiffuse, pixel + resolution * vec2( 1.0,  0.0));',
+			'vec4 mbl = texture2D(tDiffuse, pixel + resolution * vec2(-1.0, -1.0));',
+			'vec4 mbc = texture2D(tDiffuse, pixel + resolution * vec2( 0.0, -1.0));',
+			'vec4 mbr = texture2D(tDiffuse, pixel + resolution * vec2( 1.0, -1.0));',
+
+			'vec4 hi = max(mtl, max(mtc, max(mtr,',
+			          'max(mcl, max(mcc, max(mcr,',
+			          'max(mbl, max(mbc,     mbr))))))));',
+
+			'vec3 pcc = mcc.rgb;',
+			'float dtl = length(mtl.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+			'float dtc = length(mtc.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+			'float dtr = length(mtr.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+			'float dcl = length(mcl.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+			'float dcr = length(mcr.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+			'float dbl = length(mbl.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+			'float dbc = length(mbc.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+			'float dbr = length(mbr.rgb - pcc) > 0.0 ? 1.0 : 0.0;',
+
+			'float edge = 0.4 * (dtl * 0.5 + dtc + dtr * 0.5 + dcl + dcr + dbl * 0.5 + dbc + dbr * 0.5);',
+
+			'float fill = mcc.a > 0.0 ? 1.0 : 0.0;',
 			'float line1 = drawLine(-30.0 + lineAngle, 10.0, 2.0);',
 			'float line2 = drawLine( 80.0 + lineAngle, 20.0, 2.0);',
 
 			'float level = 0.0;',
-			'level += edgeAlpha * edgeBasic(tDiffuse, pixel);',
+			// 'level += edgeAlpha * edgeBasic(tDiffuse, pixel);',
+			'level += edgeAlpha * edge;',
 			'level += lineAlpha * max(fill * line1 * 0.9, fill * line2 * 0.3);',
 			'level += fillAlpha * fill;',
 
 			'if(level > 0.0) {',
-				'gl_FragColor = vec4(drawColor, drawAlpha * level);',
+				// 'gl_FragColor = vec4(drawColor, drawAlpha * level);',
+				'gl_FragColor = vec4(mix(hi.rgb, mcc.rgb, fill), hi.a * level);',
 			'} else {',
 				'gl_FragColor = vec4(0.0);',
 			'}',

@@ -43,17 +43,22 @@ THREE.HorizontalBlurShader = {
 
 			"vec4 sum = vec4( 0.0 );",
 
-			"sum += texture2D( tDiffuse, vec2( vUv.x - 4.0 * h, vUv.y ) ) * 0.051;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x - 3.0 * h, vUv.y ) ) * 0.0918;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x - 2.0 * h, vUv.y ) ) * 0.12245;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x - 1.0 * h, vUv.y ) ) * 0.1531;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x, vUv.y ) ) * 0.1633;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x + 1.0 * h, vUv.y ) ) * 0.1531;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x + 2.0 * h, vUv.y ) ) * 0.12245;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x + 3.0 * h, vUv.y ) ) * 0.0918;",
-			"sum += texture2D( tDiffuse, vec2( vUv.x + 4.0 * h, vUv.y ) ) * 0.051;",
+			"vec4 texn4 = texture2D( tDiffuse, vec2( vUv.x - 4.0 * h, vUv.y ) );",
+			"vec4 texn3 = texture2D( tDiffuse, vec2( vUv.x - 3.0 * h, vUv.y ) );",
+			"vec4 texn2 = texture2D( tDiffuse, vec2( vUv.x - 2.0 * h, vUv.y ) );",
+			"vec4 texn1 = texture2D( tDiffuse, vec2( vUv.x - 1.0 * h, vUv.y ) );",
+			"vec4 texc0 = texture2D( tDiffuse, vec2( vUv.x, vUv.y ) );",
+			"vec4 texp1 = texture2D( tDiffuse, vec2( vUv.x + 1.0 * h, vUv.y ) );",
+			"vec4 texp2 = texture2D( tDiffuse, vec2( vUv.x + 2.0 * h, vUv.y ) );",
+			"vec4 texp3 = texture2D( tDiffuse, vec2( vUv.x + 3.0 * h, vUv.y ) );",
+			"vec4 texp4 = texture2D( tDiffuse, vec2( vUv.x + 4.0 * h, vUv.y ) );",
 
-			"gl_FragColor = sum;",
+			"vec4 col = max(texn4, max(texn3, max(texn2, max(texn1, max(texc0, max(texp1, max(texp2, max(texp3, texp4))))))));",
+
+			// "gl_FragColor = sum;",
+			"gl_FragColor = vec4(col.rgb, texc0.a * 0.1633",
+				"+ texn4.a * 0.051 + texn3.a * 0.0918 + texn2.a * 0.12245 + texn1.a * 0.1531",
+				"+ texp4.a * 0.051 + texp3.a * 0.0918 + texp2.a * 0.12245 + texp1.a * 0.1531);",
 
 		"}"
 

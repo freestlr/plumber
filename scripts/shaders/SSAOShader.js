@@ -15,14 +15,16 @@ THREE.SSAOShader = {
 
 	uniforms: {
 
-		"tDiffuse":     { value: null },
+		// "tDiffuse":     { value: null },
 		"tDepth":       { value: null },
 		"size":         { value: new THREE.Vector2( 512, 512 ) },
-		"cameraNear":   { value: 1 },
-		"cameraFar":    { value: 100 },
-		"onlyAO":       { value: 0 },
-		"aoClamp":      { value: 0.5 },
-		"lumInfluence": { value: 0.5 }
+		"cameraNear":   { value: 0.1  },
+		"cameraFar":    { value: 210  },
+		"diffArea":     { value: 0.45 },
+		"gDisplace":    { value: 0.49 },
+		"radius":       { value: 10   },
+		"aoClamp":      { value: 0.5  },
+		"aoMin":        { value: 1.0  }
 
 	},
 
@@ -45,14 +47,15 @@ THREE.SSAOShader = {
 		"uniform float cameraNear;",
 		"uniform float cameraFar;",
 
-		"uniform bool onlyAO;",      // use only ambient occlusion pass?
-
 		"uniform vec2 size;",        // texture width, height
 		"uniform float aoClamp;",    // depth clamp - reduces haloing at screen edges
+		"uniform float aoMin;",
+		"uniform float radius;",
+		"uniform float diffArea;",
+		"uniform float gDisplace;",
 
-		"uniform float lumInfluence;",  // how much luminance affects occlusion
 
-		"uniform sampler2D tDiffuse;",
+		// "uniform sampler2D tDiffuse;",
 		"uniform sampler2D tDepth;",
 
 		"varying vec2 vUv;",
@@ -64,13 +67,13 @@ THREE.SSAOShader = {
 		// user variables
 
 		"const int samples = 8;",     // ao sample count
-		"const float radius = 5.0;",  // ao radius
+		// "const float radius = 5.0;",  // ao radius
 
 		"const bool useNoise = false;",      // use noise instead of pattern for sample dithering
 		"const float noiseAmount = 0.0003;", // dithering amount
 
-		"const float diffArea = 0.4;",   // self-shadowing reduction
-		"const float gDisplace = 0.4;",  // gauss bell center
+		// "const float diffArea = 0.4;",   // self-shadowing reduction
+		// "const float gDisplace = 0.4;",  // gauss bell center
 
 
 		// RGBA depth
@@ -103,15 +106,23 @@ THREE.SSAOShader = {
 
 		"}",
 
+		'//unpack a 32bit float from 4 8bit, [0;1] clamped floats',
+		'float DecodeFloatRGBA( vec4 _packed)',
+		'{',
+			'vec4 rgba = 255.0 * _packed;',
+			'float sign =  step(-128.0, -rgba[1]) * 2.0 - 1.0;',
+			'float exponent = rgba[0] - 127.0;    ',
+			'if (abs(exponent + 127.0) < 0.001)',
+				'return 0.0;           ',
+			'float mantissa =  mod(rgba[1], 128.0) * 65536.0 + rgba[2] * 256.0 + rgba[3] + float(0x800000);',
+			'return sign *  exp2(exponent-23.0) * mantissa ;     ',
+		'}',
+
 		"float readDepth( const in vec2 coord ) {",
 
-			"float cameraFarPlusNear = cameraFar + cameraNear;",
-			"float cameraFarMinusNear = cameraFar - cameraNear;",
-			"float cameraCoef = 2.0 * cameraNear;",
-
-			// "return ( 2.0 * cameraNear ) / ( cameraFar + cameraNear - unpackDepth( texture2D( tDepth, coord ) ) * ( cameraFar - cameraNear ) );",
-			"return cameraCoef / ( cameraFarPlusNear - unpackRGBAToDepth( texture2D( tDepth, coord ) ) * cameraFarMinusNear );",
-
+			"return ( 2.0 * cameraNear ) / ( cameraFar + cameraNear - unpackRGBAToDepth( texture2D( tDepth, coord ) ) * ( cameraFar - cameraNear ) );",
+			// "return -1.0/unpackRGBAToDepth( texture2D( tDepth, coord ) );",
+			// "return ( 2.0 * cameraNear ) / ( cameraFar + cameraNear - DecodeFloatRGBA( texture2D( tDepth, coord ) ) * ( cameraFar - cameraNear ) );",
 
 		"}",
 
@@ -194,23 +205,18 @@ THREE.SSAOShader = {
 			"}",
 
 			"ao /= float( samples );",
-			"ao = 1.0 - ao;",
+			// "ao = 1.0 - ao;",
 
-			"vec3 color = texture2D( tDiffuse, vUv ).rgb;",
+			// "vec3 color = texture2D( tDiffuse, vUv ).rgb;",
+			// "vec3 lumcoeff = vec3( 0.299, 0.587, 0.114 );",
+			// "float lum = lumInfluence * dot( color.rgb, lumcoeff );",
 
-			"vec3 lumcoeff = vec3( 0.299, 0.587, 0.114 );",
-			"float lum = dot( color.rgb, lumcoeff );",
-			"vec3 luminance = vec3( lum );",
 
-			"vec3 final = vec3( color * mix( vec3( ao ), vec3( 1.0 ), luminance * lumInfluence ) );",  // mix( color * ao, white, luminance )
+			// "vec3 final = vec3( color * mix( vec3( ao ), vec3( 1.0 ), luminance * lumInfluence ) );",  // mix( color * ao, white, luminance )
 
-			"if ( onlyAO ) {",
-
-				"final = vec3( mix( vec3( ao ), vec3( 1.0 ), luminance * lumInfluence ) );",  // ambient occlusion only
-
-			"}",
-
-			"gl_FragColor = vec4( final, 1.0 );",
+			// "gl_FragColor = vec4( vec3(0.0), 1.0 - ao + lum * ao - lum );",
+			// "gl_FragColor = vec4( vec3(0.0), 1.0 - ao * (1.0 - lum) - 1.0 * lum );",
+			"gl_FragColor = vec4( vec3(0.0), min(aoMin, ao) );",
 
 		"}"
 

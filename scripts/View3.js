@@ -8,8 +8,14 @@ View3 = f.unit({
 	enableWireframe: false,
 	enableRaycast: true,
 	enableStencil: true,
-	enableFXAA: true,
-	enableBloom: true,
+	enableAA: false,
+	enableSSAO: true,
+	enableOnlyAO: false,
+	enableBlurAO: true,
+	enableBloomAO: false,
+	enableBloomStencil: true,
+
+	debugDepth: false,
 
 	// enableWarningPulse: false,
 	// enableSelectMarker: true,
@@ -26,11 +32,17 @@ View3 = f.unit({
 	focusDistance: 1.0,
 	focusDuration: 500,
 
+	directAngle: 0.28,
+	directK: -0.5,
+	directLift: 0.5,
+
 	stencilRaycastMask: ~0,
 
 	stencilNone: {
 		value: 1,
-		params: {}
+		params: {
+			drawAlpha: 0,
+		}
 	},
 
 	stencilLit: {
@@ -76,8 +88,8 @@ View3 = f.unit({
 		this.element   = dom.div('view-3', this.eroot)
 		this.events    = new EventEmitter
 		this.scene     = new THREE.Scene
-		this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.2)
-		this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 1.0)
+		this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.7)
+		this.dirLight  = new THREE.DirectionalLight(0xFFFFFF, 0.5)
 		this.camera    = new THREE.PerspectiveCamera(30)
 		this.orbit     = new THREE.OrbitControls(this.camera, this.element)
 		this.raycaster = new THREE.Raycaster
@@ -85,6 +97,7 @@ View3 = f.unit({
 		this.grid      = new THREE.Object3D
 		this.lastcam   = new THREE.Matrix4
 
+		this.highlightedNodes = []
 		this.animatedConnections = []
 
 		this.scene.autoUpdate = false
@@ -115,7 +128,10 @@ View3 = f.unit({
 		this.smOverlay = this.makeShader(THREE.OverlayShader)
 		this.smHBlur   = this.makeShader(THREE.HorizontalBlurShader)
 		this.smVBlur   = this.makeShader(THREE.VerticalBlurShader)
-		this.smFXAA    = this.makeShader(THREE.FXAAShader)
+		this.smACAA    = this.makeShader(THREE.ACAAShader)
+		this.smSSAO    = this.makeShader(THREE.SSAOShader)
+		this.smDepth   = new THREE.MeshDepthMaterial
+		this.smDepth.depthPacking = THREE.RGBADepthPacking
 
 		this.clearButton = dom.div('view-clear out-02 hand', this.element)
 		Atlas.set(this.clearButton, 'i-cross', 'absmid')
@@ -167,6 +183,7 @@ View3 = f.unit({
 		this.camera.position.set(1, 1, 1)
 
 		this.treeBox    = new THREE.Box3
+		this.treeSphere = new THREE.Sphere
 		this.treeCenter = new THREE.Vector3
 		this.treeSize   = new THREE.Vector3
 		this.treeLength = 1
@@ -302,7 +319,17 @@ View3 = f.unit({
 	},
 
 	updateLights: function() {
-		this.dirLight.position.copy(this.camera.position)
+		var p = this.dirLight.position
+
+		p.subVectors(this.camera.position, this.orbit.target)
+
+		var a = Math.atan2(p.z, p.x)
+		,   l = p.length()
+
+		p.x = Math.cos(a - this.directAngle * Math.PI)
+		p.z = Math.sin(a - this.directAngle * Math.PI)
+		p.y = p.y / l * this.directK + this.directLift
+
 		this.dirLight.updateMatrixWorld()
 	},
 
@@ -514,6 +541,8 @@ View3 = f.unit({
 			this.treeLength = 1
 		}
 
+		this.treeBox.getBoundingSphere(this.treeSphere)
+
 		this.debugBox.position.copy(this.treeCenter)
 		this.debugBox.scale.copy(this.treeSize)
 	},
@@ -544,16 +573,43 @@ View3 = f.unit({
 	},
 
 	updateProjection: function() {
-		this.camera.aspect = this.width / this.height
+		var v1 = new THREE.Vector3
+		,   v2 = new THREE.Vector3
 
-		var distance = this.getFitDistance(this.treeSize, 1.5, 1.5)
+		return function() {
+			this.camera.aspect = this.width / this.height
 
-		this.camera.far  = Math.max(this.orbit.radius + this.treeLength *2, distance * 2)
-		this.camera.near = Math.max(this.orbit.radius - this.treeLength *2, distance * 0.01)
-		this.camera.updateProjectionMatrix()
+			if(!isFinite(this.camera.aspect)) {
+				this.camera.aspect = 1
+			}
 
-		this.projector.updateMatrices()
-	},
+			// var distance = this.getFitDistance(this.treeSize, 1.5, 1.5)
+
+			// this.camera.far  = Math.max(this.orbit.radius + this.treeLength *2, distance * 2)
+			// this.camera.near = Math.max(this.orbit.radius - this.treeLength *2, distance * 0.01)
+			// this.camera.updateProjectionMatrix()
+
+			v1.subVectors(this.orbit.target, this.camera.position)
+			v2.subVectors(this.treeSphere.center, this.camera.position)
+			// this.cameraRay.origin.copy(this.camera.position)
+			// this.cameraRay.direction.subVectors(this.orbit.target, this.camera.position).normalize()
+			var distance = v2.dot(v1.normalize())
+			,   radius = this.treeSphere.radius
+
+			this.camera.near = Math.max(distance - radius, 1)
+			this.camera.far  = Math.max(distance + radius, 100)
+			this.camera.updateProjectionMatrix()
+
+			if(this.smSSAO) {
+				this.smSSAO.uniforms.cameraNear.value = this.camera.near
+				this.smSSAO.uniforms.cameraFar.value = this.camera.far
+			}
+
+			// console.log('camera', this.camera.near, this.camera.far, this.camera.aspect)
+
+			this.projector.updateMatrices()
+		}
+	}(),
 
 	onTransformControlsChange: function() {
 		var con = this.transformConnection
@@ -709,6 +765,22 @@ View3 = f.unit({
 		this.needsRedraw = true
 	},
 
+	litNode: function(node, lit) {
+		if(!node) return
+
+		node.lit = lit
+
+		var index = this.highlightedNodes.indexOf(node)
+		if(lit) {
+			if(index === -1) this.highlightedNodes.push(node)
+
+		} else {
+			if(index !== -1) this.highlightedNodes.splice(index, 1)
+		}
+
+		this.updateNodeStencil(node)
+	},
+
 	updatePointer: function(point) {
 		if(this.fpvEnabled) {
 			this.mouse.x = this.width  / 2
@@ -797,14 +869,19 @@ View3 = f.unit({
 	},
 
 	resizeRenderTargets: function(w, h) {
-		this.rtStencil = new THREE.WebGLRenderTarget(w, h, {
+		this.rtDepthStencil = new THREE.WebGLRenderTarget(w, h, {
+			minFilter: THREE.NearestFilter,
+			magFilter: THREE.NearestFilter,
+			format: THREE.RGBAFormat
+		})
+		console.log(this.rtDepthStencil)
+
+		this.rt1 = new THREE.WebGLRenderTarget(w, h, {
 			minFilter: THREE.LinearFilter,
 			magFilter: THREE.LinearFilter,
 			format: THREE.RGBAFormat
 		})
-
-		this.rt1 = this.rtStencil.clone()
-		this.rt2 = this.rtStencil.clone()
+		this.rt2 = this.rt1.clone()
 	},
 
 	resizeShaders: function(w, h) {
@@ -815,8 +892,8 @@ View3 = f.unit({
 			this.smOverlay.uniforms['resolution'].value.set(rx, ry)
 		}
 
-		if(this.smFXAA) {
-			this.smFXAA.uniforms['resolution'].value.set(rx, ry)
+		if(this.smACAA) {
+			this.smACAA.uniforms['resolution'].value.set(rx, ry)
 		}
 
 		if(this.smVBlur) {
@@ -918,6 +995,7 @@ View3 = f.unit({
 			this.grid.visible = false
 			this.root.visible = true
 
+			this.renderer.stencilWrite = false
 			draw(this.renderTarget, this.scene, this.camera)
 		}
 
@@ -934,81 +1012,147 @@ View3 = f.unit({
 			this.scene.overrideMaterial = null
 		}
 
-		if(this.enableStencil && this.smFill && this.smCopy && this.smOverlay) {
+		if(this.smDepth && (this.enableSSAO || this.enableStencil)) {
+			var target = this.debugDepth ? this.renderTarget : this.rtDepthStencil
+
+			gl.enable(gl.DEPTH_TEST)
 			gl.enable(gl.STENCIL_TEST)
+			gl.stencilMask(0xFF)
 			gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
-			THREE.Object3D.prototype.stencilWrite = true
+			this.renderer.stencilWrite = true
+			this.scene.overrideMaterial = this.smDepth
 
+			this.renderer.setClearColor(0xFFFFFF, 1)
+			clear(target)
+			draw(target, this.scene, this.camera)
 
-			this.scene.overrideMaterial = this.smFill
-			clear(this.rtStencil)
-			draw(this.rtStencil, this.scene, this.camera)
 			this.scene.overrideMaterial = null
-			THREE.Object3D.prototype.stencilWrite = false
+			this.renderer.stencilWrite = false
+			gl.disable(gl.STENCIL_TEST)
+
+			if(this.debugDepth) return
+		}
+
+		if(this.smSSAO && this.enableSSAO && !this.debugStencil) {
+			gl.disable(gl.DEPTH_TEST)
+
+			if(this.enableOnlyAO) {
+				shader(this.smFill, null, { color: 0xFFFFFF })
+				draw(this.renderTarget)
+			}
+
+			clear(rb)
+			shader(this.smSSAO, null, {
+				tDepth: this.rtDepthStencil.texture
+			})
+			draw(rb)
+
+
+			if(this.enableAA && this.smACAA) {
+				shader(this.smACAA, rb)
+				draw(wb)
+				swap()
+			}
+
+			if(this.enableBlurAO && this.smVBlur && this.smHBlur) {
+				shader(this.smVBlur, rb)
+				draw(wb)
+
+				shader(this.smHBlur, wb)
+
+				gl.enable(gl.BLEND)
+				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
+				if(this.enableBloomAO) {
+					draw(this.renderTarget)
+				} else {
+					draw(rb)
+				}
+				gl.disable(gl.BLEND)
+			}
+
+			gl.enable(gl.BLEND)
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+			shader(this.smCopy, rb)
+			draw(this.renderTarget)
+
+			gl.disable(gl.BLEND)
+			gl.enable(gl.DEPTH_TEST)
+		}
+
+		if(this.smOverlay && this.enableStencil) {
+
+			var stencilPasses = []
+			if(this.highlightedNodes.length) {
+				stencilPasses.push(this.stencilLit)
+			}
+			if(this.nodeHovered) {
+				stencilPasses.push(this.stencilHover)
+			}
+			if(this.nodeSelected) {
+				stencilPasses.push(this.stencilSelect)
+			}
+
+			if(!stencilPasses.length) return
 
 
 
 			this.renderer.setClearColor(0, 0)
 			clear(rb)
 			clear(wb)
-
-
 			gl.disable(gl.DEPTH_TEST)
 			gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP)
 
 
-			var stencilPasses = [
-				this.stencilLit,
-				this.stencilHover,
-				this.stencilSelect
-			]
+
+
+			this.renderer.setClearColor(0, 0)
+			clear(this.rtDepthStencil, true, true, false)
+
+			gl.enable(gl.STENCIL_TEST)
 			for(var i = 0; i < stencilPasses.length; i++) {
 				var pass = stencilPasses[i]
 
 				gl.stencilFunc(gl.EQUAL, pass.value, 0xFF)
-				shader(this.smFill)
-				this.renderer.setClearColor(0, 1)
-				clear(this.rtStencil, true, true, false)
-				draw(this.rtStencil)
-				gl.stencilFunc(gl.ALWAYS, 0, 0xFF)
-
-				shader(this.smOverlay, this.rtStencil, pass.params)
-				gl.enable(gl.BLEND)
-				gl.blendFunc(gl.ONE, gl.ONE)
-				draw(wb)
-				gl.disable(gl.BLEND)
+				shader(this.smFill, null, {
+					color: pass.params.drawColor,
+					alpha: pass.params.drawAlpha
+				})
+				draw(this.rtDepthStencil)
 			}
+			gl.disable(gl.STENCIL_TEST)
+
+			shader(this.smOverlay, this.rtDepthStencil)
+			draw(rb)
+
+
 
 			if(this.enableFXAA && this.smFXAA) {
-				shader(this.smFXAA, wb)
-				draw(rb)
+				shader(this.smFXAA, rb)
+				draw(wb)
 				swap()
 			}
 
-			if(this.enableBloom && this.smVBlur && this.smHBlur) {
-				shader(this.smVBlur, wb)
-				draw(rb)
+			if(this.enableBloomStencil && this.smVBlur && this.smHBlur) {
+				shader(this.smVBlur, rb)
+				draw(wb)
 
-				shader(this.smHBlur, rb)
+				shader(this.smHBlur, wb)
 
 				gl.enable(gl.BLEND)
 				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-				draw()
+				draw(this.renderTarget)
 				gl.disable(gl.BLEND)
 			}
 
 			gl.enable(gl.BLEND)
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-			shader(this.smCopy, wb)
-			draw()
-
-
+			shader(this.smCopy, rb)
+			draw(this.renderTarget)
 
 			gl.disable(gl.BLEND)
-			gl.disable(gl.STENCIL_TEST)
 			gl.enable(gl.DEPTH_TEST)
 		}
-
 	},
 
 	onTick: function(dt) {
@@ -1056,7 +1200,7 @@ View3 = f.unit({
 		if(this.orbit.radiusChanged) {
 			this.orbit.radiusChanged = false
 
-			this.updateProjection()
+			// this.updateProjection()
 		}
 
 		this.camera.updateMatrixWorld()
@@ -1067,13 +1211,16 @@ View3 = f.unit({
 			this.updateLights()
 			this.updateGrid()
 
+			this.updateProjection()
+
 			this.needsRetrace = true
 			this.needsRedraw = true
 		}
 
 		if(this.needsRetrace) {
 
-			if(this.enableRaycast && this.tree && !this.orbit.down) {
+			if(this.enableRaycast && this.tree && !this.orbit.down
+			&& !this.orbitTween.playing && !this.cameraTween.playing) {
 				this.needsRetrace = false
 				this.retrace()
 			}
@@ -1090,10 +1237,8 @@ View3 = f.unit({
 })
 
 
-THREE.Object3D.prototype.stencilWrite = false
-
 THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geometry, material, group) {
-	if(!this.stencilWrite) return
+	if(!renderer.stencilWrite) return
 
 	var gl = renderer.context
 
@@ -1101,7 +1246,7 @@ THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geom
 }
 
 THREE.Object3D.prototype.onAfterRender = function(renderer, scene, camera, geometry, material, group) {
-	// if(!this.stencilWrite) return
+	// if(!renderer.stencilWrite) return
 
 	// var gl = renderer.context
 }
