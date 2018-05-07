@@ -1018,9 +1018,6 @@ View3 = f.unit({
 		if(this.smDepth && (this.enableSSAO || this.enableStencil)) {
 			var target = this.debugDepth ? this.renderTarget : this.rtDepthStencil
 
-			this.rtDepthStencil.texture.minFilter = THREE.NearestFilter
-			this.rtDepthStencil.texture.magFilter = THREE.NearestFilter
-
 			gl.enable(gl.DEPTH_TEST)
 			gl.enable(gl.STENCIL_TEST)
 			gl.stencilMask(0xFF)
@@ -1044,9 +1041,6 @@ View3 = f.unit({
 		rb = this.rt2
 		if(this.smSSAO && this.enableSSAO && !this.debugStencil) {
 			gl.disable(gl.DEPTH_TEST)
-
-			this.rtDepthStencil.texture.minFilter = THREE.LinearFilter
-			this.rtDepthStencil.texture.magFilter = THREE.LinearFilter
 
 			if(this.enableOnlyAO) {
 				shader(this.smFill, null, { color: 0xFFFFFF })
