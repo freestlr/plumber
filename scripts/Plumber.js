@@ -1460,7 +1460,9 @@ Plumber = f.unit({
 			return
 		}
 
-		if(node) {
+		if(this.view.selectedConnection) {
+
+		} else if(node) {
 			var m = new UI.Marker({
 				undisposable: true,
 				deleteNode: node,
@@ -1625,9 +1627,8 @@ Plumber = f.unit({
 		this.view.onTick(dt)
 		this.view2.onTick(dt)
 
-		if(this.view.nodeSelected) {
-			var marker = this.view.nodeSelected.nodeMarker
-
+		var marker = this.view.nodeSelected && this.view.nodeSelected.nodeMarker
+		if(marker) {
 			marker.point.world.setFromMatrixPosition(this.view.nodeSelected.objectCenter.matrixWorld)
 			this.view.projector.updatePoint(marker.point)
 			marker.update()

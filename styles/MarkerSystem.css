@@ -145,6 +145,7 @@
 	fill: #a4aeb3;
 	stroke: #cfd8dd;
 	background-color: #cfd8dd;
+	pointer-events: none;
 }
 .marker svg.marker-interactive {
 	background-color: transparent !important;

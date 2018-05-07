@@ -149,7 +149,11 @@ View3 = f.unit({
 			eroot: this.element,
 			projector: this.projector
 		})
-		this.markers.events.on('marker_tap', this.onMarkerTap, this)
+		this.markers.events.when({
+			'marker_enter': this.onMarkerEnter,
+			'marker_leave': this.onMarkerLeave,
+			'marker_tap': this.onMarkerTap
+		}, this)
 
 		this.markers.markersVisible.events.on('change', function(value) {
 			this.needsRedraw = true
@@ -700,6 +704,7 @@ View3 = f.unit({
 		if(old) {
 			old.selected = false
 			old.marker.updateState()
+			this.selectNode(null)
 		}
 
 		this.selectedConnection = con
@@ -707,6 +712,7 @@ View3 = f.unit({
 		if(con) {
 			con.selected = true
 			con.marker.updateState()
+			this.selectNode(con.node)
 		}
 
 		this.events.emit('connection_select', con)
@@ -846,8 +852,16 @@ View3 = f.unit({
 		this.selectNode(this.nodeHovered)
 	},
 
+	onMarkerEnter: function(marker) {
+		this.hoverNode(marker && marker.connection && marker.connection.node || null)
+	},
+
+	onMarkerLeave: function(marker) {
+		this.hoverNode(null)
+	},
+
 	onMarkerTap: function(marker) {
-		var con = marker.connection
+		var con = marker && marker.connection
 		if(!con) return
 
 		if(kbd.state.CTRL) {
