@@ -674,17 +674,20 @@ Plumber = f.unit({
 		this.gui.closed = true
 
 		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
-		this.gui.add(this.view, 'enableAA').name('AA').onChange(redraw)
+		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
+		this.gui.add(this.view, 'enableStencil').name('Enable Stencil').onChange(redraw)
+		this.gui.add(this.view, 'enableStencilAA').name('AA Stencil').onChange(redraw)
+		this.gui.add(this.view, 'enableStencilBloom').name('Bloom Stencil').onChange(redraw)
 		this.gui.add(this.view, 'enableSSAO').name('SSAO').onChange(redraw)
 		this.gui.add(this.view, 'enableOnlyAO').name('Only AO').onChange(redraw)
-		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
+		this.gui.add(this.view, 'enableAAAO').name('AA AO').onChange(redraw)
+		this.gui.add(this.view, 'enableBlurAO').name('Blur AO').onChange(redraw)
+		this.gui.add(this.view, 'enableBloomAO').name('Bloom AO').onChange(redraw)
 
 		var au = this.view.smSSAO.uniforms
 		,   ao = this.gui.addFolder('Occlusion')
-		// ao.add(main.v3, 'enableBlurAO').name('Blur AO').onChange(redraw)
-		// ao.add(main.v3, 'enableBloomAO').name('Bloom AO').onChange(redraw)
-		ao.add(au.cameraNear, 'value').min(0).max(1000).name('cameraNear').onChange(redraw)
-		ao.add(au.cameraFar,  'value').min(0).max(1000).name('cameraFar').onChange(redraw)
+		// ao.add(au.cameraNear, 'value').min(0).max(1000).name('cameraNear').onChange(redraw)
+		// ao.add(au.cameraFar,  'value').min(0).max(1000).name('cameraFar').onChange(redraw)
 		ao.add(au.diffArea,   'value').min(0).max(2).name('diffArea').onChange(redraw)
 		ao.add(au.gDisplace,  'value').min(0).max(2).name('gDisplace').onChange(redraw)
 		ao.add(au.radius,     'value').min(0).max(50).name('radius').onChange(redraw)
@@ -1342,11 +1345,13 @@ Plumber = f.unit({
 		this.tiles.autoresize()
 
 		this.view.resizeRenderTargets(w, h)
-		this.view.resizeShaders(w, h)
 
 		this.view2.rtDepthStencil = this.view.rtDepthStencil
 		this.view2.rt1 = this.view.rt1
 		this.view2.rt2 = this.view.rt2
+		this.view2.rtB1 = this.view.rtB1
+		this.view2.rtB2 = this.view.rtB2
+
 		// this.view.onResize()
 	},
 

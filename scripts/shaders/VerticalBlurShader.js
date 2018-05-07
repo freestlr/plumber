@@ -15,7 +15,7 @@ THREE.VerticalBlurShader = {
 	uniforms: {
 
 		"tDiffuse": { value: null },
-		"v":        { value: 1.0 / 512.0 }
+		"height":   { value: 512.0 }
 
 	},
 
@@ -35,12 +35,13 @@ THREE.VerticalBlurShader = {
 	fragmentShader: [
 
 		"uniform sampler2D tDiffuse;",
-		"uniform float v;",
+		"uniform float height;",
 
 		"varying vec2 vUv;",
 
 		"void main() {",
 
+			"float v = 1.0 / height;",
 			"vec4 sum = vec4( 0.0 );",
 
 			"vec4 texn4 = texture2D( tDiffuse, vec2( vUv.x, vUv.y - 4.0 * v ) );",

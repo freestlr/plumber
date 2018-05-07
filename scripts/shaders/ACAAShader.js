@@ -14,8 +14,9 @@ THREE.ACAAShader = {
 
 	uniforms: {
 
-		"tDiffuse":   { value: null },
-		"resolution": { value: new THREE.Vector2( 1 / 1024, 1 / 512 ) }
+		"tDiffuse": { value: null },
+		"width":    { value: 512  },
+		"height":   { value: 512  }
 
 	},
 
@@ -32,13 +33,15 @@ THREE.ACAAShader = {
 	fragmentShader: [
 
 		"uniform sampler2D tDiffuse;",
-		"uniform vec2 resolution;",
+		"uniform float width;",
+		"uniform float height;",
 
 		"#define FXAA_REDUCE_MIN   (1.0/128.0)",
 		"#define FXAA_REDUCE_MUL   (1.0/8.0)",
 		"#define FXAA_SPAN_MAX     8.0",
 
 		"void main() {",
+			"vec2 resolution = 1.0 / vec2(width, height);",
 
 			"float aNW = texture2D( tDiffuse, ( gl_FragCoord.xy + vec2( -1.0, -1.0 ) ) * resolution ).a;",
 			"float aNE = texture2D( tDiffuse, ( gl_FragCoord.xy + vec2(  1.0, -1.0 ) ) * resolution ).a;",

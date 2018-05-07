@@ -3,7 +3,8 @@ THREE.OverlayShader = {
 
 	uniforms: {
 		'tDiffuse': { value: null },
-		'resolution': { value: new THREE.Vector2( 1/1024, 1/512 ) },
+		'width':    { value: 512  },
+		'height':   { value: 512  },
 		'drawColor': { value: new THREE.Color(1, 1, 1) },
 		'drawAlpha': { value: 1.0 },
 		'lineAlpha': { value: 0.4 },
@@ -24,7 +25,8 @@ THREE.OverlayShader = {
 	fragmentShader: [
 
 		'uniform sampler2D tDiffuse;',
-		'uniform vec2 resolution;',
+		'uniform float width;',
+		'uniform float height;',
 		'uniform vec3  drawColor;',
 		'uniform float drawAlpha;',
 		'uniform float lineAlpha;',
@@ -136,6 +138,7 @@ THREE.OverlayShader = {
 		'}',
 
 		'void main() {',
+			'vec2 resolution = 1.0 / vec2(width, height);',
 			'vec2 pixel = gl_FragCoord.xy * resolution;',
 
 			'vec4 mtl = texture2D(tDiffuse, pixel + resolution * vec2(-1.0,  1.0));',

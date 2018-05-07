@@ -21,9 +21,9 @@ THREE.SSAOShader = {
 		"cameraNear":   { value: 0.1  },
 		"cameraFar":    { value: 210  },
 		"diffArea":     { value: 0.45 },
-		"gDisplace":    { value: 0.49 },
-		"radius":       { value: 10   },
-		"aoClamp":      { value: 0.5  },
+		"gDisplace":    { value: 0.62 },
+		"radius":       { value: 17   },
+		"aoClamp":      { value: 0.89 },
 		"aoMin":        { value: 1.0  }
 
 	},
@@ -106,23 +106,24 @@ THREE.SSAOShader = {
 
 		"}",
 
-		'//unpack a 32bit float from 4 8bit, [0;1] clamped floats',
-		'float DecodeFloatRGBA( vec4 _packed)',
-		'{',
+		// unpack a 32bit float from 4 8bit, [0;1] clamped floats
+		'float DecodeFloatRGBA( vec4 _packed) {',
 			'vec4 rgba = 255.0 * _packed;',
-			'float sign =  step(-128.0, -rgba[1]) * 2.0 - 1.0;',
-			'float exponent = rgba[0] - 127.0;    ',
-			'if (abs(exponent + 127.0) < 0.001)',
-				'return 0.0;           ',
-			'float mantissa =  mod(rgba[1], 128.0) * 65536.0 + rgba[2] * 256.0 + rgba[3] + float(0x800000);',
-			'return sign *  exp2(exponent-23.0) * mantissa ;     ',
+			'float sign = step(-128.0, -rgba[1]) * 2.0 - 1.0;',
+			'float exponent = rgba[0] - 127.0;',
+			'if(abs(exponent + 127.0) < 0.001) {',
+				'return 0.0;',
+			'}',
+			'float mantissa = mod(rgba[1], 128.0) * 65536.0 + rgba[2] * 256.0 + rgba[3] + float(0x800000);',
+			'return sign * exp2(exponent-23.0) * mantissa;',
 		'}',
 
 		"float readDepth( const in vec2 coord ) {",
+			// "float depth = unpackRGBAToDepth(texture2D(tDepth, coord));",
+			"float depth = DecodeFloatRGBA(texture2D(tDepth, coord));",
 
-			"return ( 2.0 * cameraNear ) / ( cameraFar + cameraNear - unpackRGBAToDepth( texture2D( tDepth, coord ) ) * ( cameraFar - cameraNear ) );",
-			// "return -1.0/unpackRGBAToDepth( texture2D( tDepth, coord ) );",
-			// "return ( 2.0 * cameraNear ) / ( cameraFar + cameraNear - DecodeFloatRGBA( texture2D( tDepth, coord ) ) * ( cameraFar - cameraNear ) );",
+			"return (2.0 * cameraNear) / (cameraFar + cameraNear - depth * (cameraFar - cameraNear));",
+			// "return - 1.0 / depth;",
 
 		"}",
 
