@@ -215,6 +215,7 @@ View3 = f.unit({
 			sphere: new THREE.Sphere,
 			center: new THREE.Vector3,
 			size: new THREE.Vector3,
+			mass: 0,
 			length: 1
 		}
 	},
@@ -532,6 +533,8 @@ View3 = f.unit({
 
 	updateTreeSize: function(cont, forceState, state) {
 		cont.box.makeEmpty()
+		cont.center.set(0, 0, 0)
+		cont.mass = 0
 
 		if(this.tree) {
 			if(forceState) this.tree.traverseConnections(function(con) {
@@ -545,13 +548,24 @@ View3 = f.unit({
 			this.tree.traverse(function(node) {
 				node.updateBox()
 				cont.box.union(node.localBox)
+
+				var s = node.sample.boxLength
+				cont.center.x += s * node.localCenter.x
+				cont.center.y += s * node.localCenter.y
+				cont.center.z += s * node.localCenter.z
+
+				cont.mass += s
 			}, this)
 
-			cont.box.getCenter(cont.center)
+			if(Math.abs(cont.mass) > 1e-6) {
+				cont.center.multiplyScalar(1 / cont.mass)
+			} else {
+				cont.center.set(0, 0, 0)
+			}
+
 			cont.box.getSize(cont.size)
 
 		} else {
-			cont.center.set(0, 0, 0)
 			cont.size.set(1, 1, 1).normalize()
 		}
 
