@@ -882,16 +882,19 @@ View3 = f.unit({
 	},
 
 	resizeRenderTargets: function(w, h) {
-		var rtw = this.halfw
-		,   rth = this.halfh
+		this.fullW = w
+		this.fullH = h
 
-		this.rtDepthStencil = new THREE.WebGLRenderTarget(w, h, {
+		this.halfW = this.fullW >> 1
+		this.halfH = this.fullH >> 1
+
+		this.rtDepthStencil = new THREE.WebGLRenderTarget(this.fullW, this.fullH, {
 			minFilter: THREE.NearestFilter,
 			magFilter: THREE.NearestFilter,
 			format: THREE.RGBAFormat
 		})
 
-		this.rt1 = new THREE.WebGLRenderTarget(rtw, rth, {
+		this.rt1 = new THREE.WebGLRenderTarget(this.halfW, this.halfH, {
 			minFilter: THREE.LinearFilter,
 			magFilter: THREE.LinearFilter,
 			format: THREE.RGBAFormat
@@ -899,7 +902,7 @@ View3 = f.unit({
 		this.rt2 = this.rt1.clone()
 
 
-		this.rtB1 = new THREE.WebGLRenderTarget(w, h, {
+		this.rtB1 = new THREE.WebGLRenderTarget(this.fullW, this.fullH, {
 			minFilter: THREE.LinearFilter,
 			magFilter: THREE.LinearFilter,
 			format: THREE.RGBAFormat
@@ -910,9 +913,6 @@ View3 = f.unit({
 	onResize: function() {
 		this.width  = this.element.offsetWidth  || 1
 		this.height = this.element.offsetHeight || 1
-
-		this.halfw = this.width  >> 1
-		this.halfh = this.height >> 1
 
 		this.elementOffset = dom.offset(this.element)
 		this.projector.resize(this.width, this.height)
@@ -1056,18 +1056,18 @@ View3 = f.unit({
 
 			if(this.enableAAAO && this.smACAA) {
 				shader(this.smACAA, rb, {
-					width: this.halfw,
-					height: this.halfh
+					width: this.halfW,
+					height: this.halfH
 				})
 				draw(wb)
 				swap()
 			}
 
 			if(this.enableBlurAO && this.smVBlur && this.smHBlur) {
-				shader(this.smVBlur, rb, { height: this.halfh })
+				shader(this.smVBlur, rb, { height: this.halfH })
 				draw(wb)
 
-				shader(this.smHBlur, wb, { width: this.halfw })
+				shader(this.smHBlur, wb, { width: this.halfW })
 
 				gl.enable(gl.BLEND)
 				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -1133,31 +1133,30 @@ View3 = f.unit({
 			}
 			gl.disable(gl.STENCIL_TEST)
 
+
 			shader(this.smOverlay, this.rtDepthStencil, {
-				width: this.width,
-				height: this.height
+				width: this.fullW,
+				height: this.fullH
 			})
 			draw(rb)
 
 
-
 			if(this.enableStencilAA && this.smACAA) {
 				shader(this.smACAA, rb, {
-					width: this.width,
-					height: this.height
+					width: this.fullW,
+					height: this.fullH
 				})
 				draw(wb)
 				swap()
 			}
 
 			if(this.enableStencilBloom && this.smVBlur && this.smHBlur) {
-				shader(this.smVBlur, rb, { height: this.height })
+				shader(this.smVBlur, rb, { height: this.fullH })
 				draw(wb)
-
-				shader(this.smHBlur, wb, { width: this.width })
 
 				gl.enable(gl.BLEND)
 				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+				shader(this.smHBlur, wb, { width: this.fullW })
 				draw(this.renderTarget)
 				gl.disable(gl.BLEND)
 			}
