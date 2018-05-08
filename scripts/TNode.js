@@ -18,6 +18,13 @@ TNode = f.unit({
 
 		this.object.add(this.objectCenter)
 
+
+		// this.debugBox = new THREE.Mesh(
+		// 	new THREE.BoxGeometry(1, 1, 1),
+		// 	new THREE.MeshBasicMaterial({ color: 0xFF00FF, transparent: true, opacity: 0.2 }))
+		// this.debugBox.visible = false
+		// this.object.add(this.debugBox)
+
 		if(sample) this.setSample(sample)
 		else console.warn('new TNode with no sample')
 	},
@@ -86,6 +93,10 @@ TNode = f.unit({
 		this.sample.traverse(this.sampleObject, this.setObjectParent, this)
 
 		this.sample.box.getCenter(this.objectCenter.position)
+
+		// this.debugBox.position.copy(this.sample.boxCenter)
+		// this.debugBox.scale.copy(this.sample.boxSize)
+		// this.debugBox.updateMatrix()
 
 		this.object.add(this.sampleObject)
 

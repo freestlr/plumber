@@ -167,12 +167,6 @@ View3 = f.unit({
 		this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
 
 
-		this.debugBox = new THREE.Mesh(
-			new THREE.BoxGeometry(1, 1, 1),
-			new THREE.MeshBasicMaterial({ color: 0xFF00FF, transparent: true, opacity: 0.2 }))
-		this.debugBox.visible = false
-
-
 		this.cameraTween = new TWEEN.Tween({ x: 0, y: 0, z: 0 })
 			.easing(TWEEN.Easing.Cubic.Out)
 
@@ -200,7 +194,6 @@ View3 = f.unit({
 		this.root.add(this.dirLight)
 		this.scene.add(this.root)
 		this.scene.add(this.grid)
-		// this.scene.add(this.debugBox)
 		this.scene.add(this.transform)
 
 		new EventHandler(this.onMouseMove, this).listen('mousemove', this.element)
@@ -654,7 +647,6 @@ View3 = f.unit({
 				this.enableWireframe = this.debug
 				this.needsRedraw = true
 
-				this.debugBox.visible = this.debug
 				dom.togclass(this.markers.element, 'debug', this.debug)
 				this.markers.debug = this.debug
 				this.markers.update(true)
@@ -741,22 +733,16 @@ View3 = f.unit({
 
 		if(prev) {
 			prev.selected = false
+			// prev.debugBox.visible = false
 			this.updateNodeStencil(prev)
-			// if(prev.upnode) {
-			// 	prev.upnode.lit = false
-			// 	this.updateNodeStencil(prev.upnode)
-			// }
 		}
 
 		this.nodeSelected = node
 
 		if(node) {
 			node.selected = true
+			// node.debugBox.visible = true
 			this.updateNodeStencil(node)
-			// if(node.upnode) {
-			// 	node.upnode.lit = true
-			// 	this.updateNodeStencil(node.upnode)
-			// }
 		}
 
 		this.events.emit('node_select', [node, prev])
