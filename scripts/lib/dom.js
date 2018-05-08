@@ -138,6 +138,16 @@ dom.xstyle = function(elem, name, value) {
 	s[            name] = value
 }
 
+dom.attr = function(elem, name, value) {
+	if(!elem) {
+		return
+	} else if(value == null) {
+		elem.removeAttribute(name)
+	} else {
+		elem.setAttribute(name, value)
+	}
+}
+
 dom.html = function(elem, content) {
 	elem.innerHTML = content
 }
