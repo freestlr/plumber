@@ -2,6 +2,8 @@ function EventEmitter() {
 	this.lists = {}
 	this.queue = {}
 	this.links = {}
+
+	if(arguments.length) this.when.apply(this, arguments)
 }
 
 EventEmitter.ADD = {}
