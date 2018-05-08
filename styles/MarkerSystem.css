@@ -94,6 +94,10 @@
 	background-color: #537078;
 	fill: #ebeff2;
 }
+.marker-action.active {
+	background-color: #1a5d6f;
+	fill: #ebeff2;
+}
 
 
 .marker .marker-interactive {
