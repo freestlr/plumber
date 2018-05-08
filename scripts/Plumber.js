@@ -125,7 +125,7 @@ Plumber = f.unit({
 		this.displayMenu = new Block.Menu({
 			eroot: this.buttonRoot,
 			ename: 'vp-menu vp-menu-display',
-			options: {
+			template: {
 				factory: Block.Toggle,
 				deselect: false,
 				ename: 'vp-button'
@@ -149,7 +149,7 @@ Plumber = f.unit({
 		this.projectionMenu = new Block.Menu({
 			eroot: this.buttonRoot,
 			ename: 'vp-menu vp-menu-projection',
-			options: {
+			template: {
 				factory: Block.Toggle,
 				deselect: false,
 				ename: 'vp-button'

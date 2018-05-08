@@ -11,7 +11,7 @@ UI.Sidebar = f.unit(Block, {
 		this.modeMenu = new Block.Menu({
 			eroot: this.element,
 			ename: 'mode-menu',
-			options: {
+			template: {
 				factory: Block.Toggle,
 				deselect: false,
 				visibleMethod: dom.visible,
@@ -34,7 +34,7 @@ UI.Sidebar = f.unit(Block, {
 			ename: 'sample-menu',
 			deselect: true,
 
-			options: {
+			template: {
 				factory: Block.Toggle,
 				ename: 'sample-item'
 			}

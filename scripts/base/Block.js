@@ -3,11 +3,10 @@ Block = f.unit({
 
 	etag: 'div',
 	ename: 'block',
+	einam: '',
 	visibleMethod: dom.display,
 	cacheSize: true,
-
-	x: 0,
-	y: 0,
+	template: null,
 
 	init: function(options) {
 		f.copy(this, options)
@@ -15,12 +14,23 @@ Block = f.unit({
 		this.watchAtlas  = []
 		this.watchLocale = []
 		this.watchEvents = []
+		this.watchBlocks = []
 
-		for(var i = 0; i < this.protochain.length; i++) {
-			this.invoke(this.protochain[i], 'create')
+		var chain = this.protochain
+
+		this.template = {}
+		for(var i = 0; i < chain.length; i++) {
+			f.copy(this.template, chain[i].template)
 		}
-		for(var i = 0; i < this.protochain.length; i++) {
-			this.invoke(this.protochain[i], 'createPost')
+		if(options) {
+			f.copy(this.template, options.template)
+		}
+
+		for(var i = 0; i < chain.length; i++) {
+			this.invoke(chain[i], 'create')
+		}
+		for(var i = 0; i < chain.length; i++) {
+			this.invoke(chain[i], 'createPost')
 		}
 	},
 
@@ -32,50 +42,79 @@ Block = f.unit({
 	},
 
 	create: function() {
-		if(!this.events)  this.events  = new EventEmitter
-		if(!this.visible) this.visible = new Gate(Gate.AND, !this.hidden)
-		if(!this.element) this.element = dom.elem(this.etag, null, this.eroot)
+		if(!this.events) {
+			this.events = new EventEmitter
+		}
+		if(!this.visible) {
+			this.visible = new Gate(Gate.AND, !this.hidden)
+		}
+		if(!this.element) {
+			this.element = dom.elem(this.etag)
+		}
+		if(this.eroot) {
+			dom.append(this.eroot.element || this.eroot, this.element)
+		}
+
+		this.content = this.element
 	},
 
 	createPost: function() {
 		dom.addclass(this.element, this.ename)
 
+
+		if(typeof this.data === 'string') {
+			dom.addclass(this.element, this.data)
+		}
+		if(this.listens) for(var i = 0; i < this.listens.length; i++) {
+			this.events.on.apply(this.events, this.listens[i])
+		}
+
 		this.visible.events.on('change', this.visibleMethod, this, this.element)
 
 		if(this.text) {
-			dom.text(this.element, this.text)
+			dom.text(this.content, this.text)
 		}
 		if(this.title) {
 			this.element.setAttribute('title', this.title)
 		}
 		if(this.elabel) {
+			dom.addclass(this.element, 'labeled')
 			this.watchLocale.push(
-				Locale.setText(dom.div('block-label', this.element), this.elabel))
+				Locale.setText(dom.div('block-label', this.content), this.elabel))
 		}
 		if(this.etext) {
 			this.watchLocale.push(
-				Locale.setText(this.element, this.etext))
+				Locale.setText(this.content, this.etext))
 		}
 		if(this.etitle) {
 			this.watchLocale.push(
-				Locale.setTitle(this.element, this.etitle))
+				Locale.setTitle(this.content, this.etitle))
 		}
 		if(this.eicon) {
 			dom.addclass(this.element, 'eicon')
-			this.watchAtlas.push(
-				Atlas.set(this.element, this.eicon, 'absmid'))
+			if(typeof Atlas !== 'undefined') this.watchAtlas.push(
+				Atlas.set(this.content, this.eicon, this.einam))
 		}
 	},
 
 	destroy: function() {
-		this.watchAtlas.forEach(Atlas.free)
-		this.watchAtlas = []
+		if(typeof Atlas !== 'undefined') {
+			this.watchAtlas.forEach(Atlas.free)
+			this.watchAtlas = []
+		}
 
-		this.watchLocale.forEach(Locale.unwatch)
-		this.watchLocale = []
+		if(typeof Locale !== 'undefined') {
+			this.watchLocale.forEach(Locale.unwatch)
+			this.watchLocale = []
+		}
 
 		this.watchEvents.forEach(f.func('release'))
 		this.watchEvents = []
+
+		this.watchBlocks.forEach(f.func('destroy'))
+		this.watchBlocks = []
+
+		this.events.off()
 
 		dom.remove(this.element)
 	},
@@ -97,6 +136,9 @@ Block = f.unit({
 	},
 
 	autoresize: function() {
+		this.element.style.width  = ''
+		this.element.style.height = ''
+
 		var w = this.element.offsetWidth
 		,   h = this.element.offsetHeight
 
@@ -119,11 +161,13 @@ Block.Toggle = f.unit(Block, {
 	unitName: 'Block_Toggle',
 	ename: 'toggle',
 
+	auto: true,
 	active: false,
 	reset: false,
+	resetTime: 100,
 	disabled: false,
 	deselect: true,
-	auto: true,
+	hovered: false,
 
 	create: function() {
 		this.watchEvents.push(
@@ -141,11 +185,13 @@ Block.Toggle = f.unit(Block, {
 	},
 
 	onenter: function() {
-		this.events.emit('enter', this)
+		this.hovered = true
+		this.events.emit('hover', this.hovered)
 	},
 
 	onleave: function() {
-		this.events.emit('leave', this)
+		this.hovered = false
+		this.events.emit('hover', this.hovered)
 	},
 
 	toggle: function(emitEvent) {
@@ -153,28 +199,35 @@ Block.Toggle = f.unit(Block, {
 	},
 
 	set: function(active, emitEvent, force) {
+		var prev = !!this.active
+		,   next = !!active
 		if(!force) {
-			if(this.disabled
-			|| this.active == active
+			if(this.disabled || prev === next
+			|| (this.reset && this.active)
 			|| (!this.deselect && !active)) return false
 		}
 
-		if(!this.reset) {
-			this.active = active
-			this.update()
-		}
+		this.active = next
+		this.update()
 
 		if(emitEvent) {
-			this.events.emit('change', active)
-			this.events.emit(active ? 'active' : 'inactive', active)
+			this.events.emit('change', next)
+			this.events.emit(next ? 'active' : 'inactive', next)
+
+			var scope = this
+			if(!force && this.reset) setTimeout(function() {
+				scope.set(prev, emitEvent, true)
+
+			}, this.resetTime)
 		}
+
 		return true
 	},
 
 	update: function() {
 		dom.togclass(this.element, 'active',   this.active)
 		dom.togclass(this.element, 'disabled', this.disabled)
-		dom.togclass(this.element, 'hand', !this.disabled && (this.deselect || !this.active))
+		dom.togclass(this.element, 'hand', this.auto && !this.disabled && (!this.active || this.deselect))
 	}
 })
 
@@ -187,9 +240,9 @@ Block.List = f.unit(Block, {
 	blocks: null,
 	items: null,
 
-	options: {
-		ename: 'list-item',
-		factory: Block
+	template: {
+		factory: Block,
+		ename: 'list-item'
 	},
 
 	create: function() {
@@ -206,11 +259,14 @@ Block.List = f.unit(Block, {
 	},
 
 	addItem: function(item) {
-		if(typeof item === 'string') item = { data: item }
+		if(typeof item !== 'object') {
+			item = { data: item }
+		}
 
-		var options = f.merge({ eroot: this.container }, this.options, item)
+		var options = f.merge({ eroot: this.container }, this.template, item)
+		var Factory = options.factory || Block
 
-		return this.addBlock(new options.factory(options))
+		return this.addBlock(new Factory(options))
 	},
 
 	addBlock: function(block) {
@@ -229,6 +285,18 @@ Block.List = f.unit(Block, {
 		else dom.remove(block.element)
 
 		return true
+	},
+
+	getIndex: function(data) {
+		for(var i = 0; i < this.blocks.length; i++) {
+			var block = this.blocks[i]
+			if(block.hasOwnProperty('data') && block.data === data) return i
+		}
+		return -1
+	},
+
+	getBlock: function(data) {
+		return this.blocks[this.getIndex(data)]
 	},
 
 	destroy: function() {
@@ -250,7 +318,7 @@ Block.Menu = f.unit(Block.List, {
 	ename: 'menu',
 	active: -1,
 
-	options: {
+	template: {
 		ename: 'menu-item',
 		factory: Block.Toggle
 	},
@@ -262,8 +330,7 @@ Block.Menu = f.unit(Block.List, {
 	addBlock: function(block) {
 		block.events.when({
 			change: this.onitemchange,
-			enter: this.onitementer,
-			leave: this.onitemleave
+			hover: this.onitemhover
 		}, this, block)
 
 		block.set(0)
@@ -279,62 +346,58 @@ Block.Menu = f.unit(Block.List, {
 	},
 
 	update: function() {
-		for(var i = this.blocks.length -1; i >= 0; i--) {
-			var block = this.blocks[i]
-			if(!block.active) continue
-
-			this.active = i
-			this.activeBlock = block
-			this.activeItem  = block.data
-
-			return
-		}
-
 		this.active = -1
 		this.activeBlock = null
 		this.activeItem  = null
+
+		for(var i = this.blocks.length -1; i >= 0; i--) {
+			var block = this.blocks[i]
+
+			if(block.active) {
+				this.active = i
+				this.activeBlock = block
+				this.activeItem = block.data
+			}
+		}
 	},
 
 	onitemchange: function(block, active) {
-		this.unsetBlocks(block)
-		this.update()
-		this.events.emit('change', [this.activeItem, this.activeBlock, this.active])
-	},
+		if(active) this.unsetBlocks(block, true)
 
-	onitementer: function(block) {
-		this.events.emit('enter', block)
-	},
-
-	onitemleave: function(block) {
-		this.events.emit('leave', block)
-	},
-
-	set: function(index, emitEvent) {
-		var block = this.blocks[index]
-		if(block === this.activeBlock) return
-
-		this.unsetBlocks(block, emitEvent)
-		if(block) block.set(1, emitEvent)
+		var last = this.active
 
 		this.update()
-	},
-
-	getIndex: function(data) {
-		for(var i = 0; i < this.blocks.length; i++) {
-			var block = this.blocks[i]
-			if(block.hasOwnProperty('data') && block.data === data) return i
+		if(last !== this.active) {
+			this.events.emit('change', this.activeItem)
 		}
-		return -1
 	},
 
-	setItem: function(data, emitEvent) {
-		return this.set(this.getIndex(data), emitEvent)
+	onitemhover: function(block, enabled) {
+		this.events.emit('hover', [block, enabled])
+	},
+
+	set: function(index, emitEvent, multiple) {
+		var block = this.blocks[index]
+		if(block === this.activeBlock) return false
+
+		if(!block || block.set(1, emitEvent)) {
+			if(!multiple) this.unsetBlocks(block, emitEvent)
+
+			this.update()
+			return true
+		}
+
+		return false
+	},
+
+	setItem: function(data, emitEvent, multiple) {
+		return this.set(this.getIndex(data), emitEvent, multiple)
 	},
 
 	unsetBlocks: function(except, emitEvent) {
 		for(var i = 0; i < this.blocks.length; i++) {
 			var block = this.blocks[i]
-			if(block === except) continue
+			if(!block.active || block === except) continue
 
 			block.set(0, emitEvent, true)
 		}
@@ -342,19 +405,86 @@ Block.Menu = f.unit(Block.List, {
 })
 
 
-Block.Tip = f.unit(Block, {
+Block.Fade = f.unit(Block, {
+	unitName: 'Block_Fade',
+	ename: 'block-fade',
+
+	fadeAxis: null,
+	fadeTime: 300,
+	fadeDistance: 20,
+
+	create: function() {
+		this.fadeTween = new TWEEN.Tween({ v: 0 })
+			.to({ v: 0 }, this.fadeTime)
+			.easing(TWEEN.Easing.Cubic.Out)
+			.onStart(this.onTransitionStart, this)
+			.onUpdate(this.onTransitionUpdate, this)
+			.onComplete(this.onTransitionEnd, this)
+	},
+
+	createPost: function() {
+		this.fadeTween.source.v = +!this.hidden
+		this.fadeTween.target.v = +!this.hidden
+		this.visible.check(true)
+		// this.onTransitionUpdate()
+		// this.onTransitionEnd()
+	},
+
+	visibleMethod: function() {
+		if(this.visible.value) {
+			dom.display(this.element, true)
+			this.autoresize()
+		}
+
+		this.fadeTween.target.v = +this.visible.value
+		this.fadeTween.start()
+	},
+
+	onTransitionStart: function() {
+		this.inTransition = true
+	},
+
+	onTransitionUpdate: function() {
+		var v = this.fadeTween.source.v
+		,   d = (1 - v) * this.fadeDistance
+		,   a = this.fadeAxis || { x: 0, y: 1 }
+
+		this.element.style.opacity = Math.max(0, v * v * 2 - 1)
+		this.transform(this.element, d * a.x, d * a.y)
+	},
+
+	onTransitionEnd: function() {
+		if(!this.visible.value) {
+			dom.display(this.element, false)
+		}
+		this.inTransition = false
+	},
+
+	transform: function(element, x, y, s) {
+		var style = ' translateX('+ f.hround(x || 0) +'px)'
+		          + ' translateY('+ f.hround(y || 0) +'px)'
+		          + '      scale('+ f.hround(s || 1) +')'
+
+		element.style.webkitTransform = style
+		element.style.   mozTransform = style
+		element.style.    msTransform = style
+		element.style.     OTransform = style
+		element.style.      transform = style
+	}
+})
+
+
+Block.Tip = f.unit(Block.Fade, {
 	unitName: 'Block_Tip',
 	ename: 'tip',
 
+	hidden: true,
 	align: null,
 	tipRoot: null,
 	integerPosition: false,
-	hidden: true,
 	distance: 8,
-	arrowWidth: 12,
 	arrowPadding: 8,
 	animationTime: 200,
-	tweenDistance: 20,
 
 	create: function() {
 		this.arrow   = dom.div('tip-arrow', this.element)
@@ -362,49 +492,63 @@ Block.Tip = f.unit(Block, {
 
 		this.arrowPoint   = { x: 0, y: 0 }
 		this.elementPoint = { x: 0, y: 0 }
-
-		this.transitionTween = new TWEEN.Tween({ v: +!this.hidden })
-			.easing(TWEEN.Easing.Cubic.Out)
-			.to({}, this.animationTime)
-			.onStart(this.onTransitionStart, this)
-			.onUpdate(this.onTransitionUpdate, this)
-			.onComplete(this.onTransitionEnd, this)
 	},
 
-	createPost: function() {
-		this.visible.check(true)
+	getElementBox: function(element, relative) {
+		if(!element) return null
+
+		if(element.getBoundingClientRect) {
+			var rect = element.getBoundingClientRect()
+			,   offset = dom.offset(relative)
+
+			return {
+				x: rect.left - offset.x,
+				y: rect.top  - offset.y,
+				w: rect.width,
+				h: rect.height
+			}
+
+		} else {
+			var offset = dom.offset(element, relative)
+
+			return {
+				x: offset.x,
+				y: offset.y,
+				w: element.offsetWidth,
+				h: element.offsetHeight
+			}
+		}
 	},
 
 	moveToElement: function(element, align, distance) {
 		if(!element) return
 
-		var width  = element.offsetWidth
-		,   height = element.offsetHeight
-		,   offset = dom.offset(element, this.element.offsetParent)
+
+		var box = this.getElementBox(element, this.element.offsetParent)
 
 		if(align == null) {
-			align = this.align || this.getAlign(offset.x, offset.y, width, height)
+			align = this.align || this.getAlign(box.x, box.y, box.w, box.h)
 		}
 
-		var x = offset.x
-		,   y = offset.y
+		var x = box.x
+		,   y = box.y
 		switch(align) {
 			case 'left':
-				y += height / 2
+				y += box.h / 2
 			break
 
 			case 'right':
-				x += width
-				y += height / 2
+				x += box.w
+				y += box.h / 2
 			break
 
 			case 'top':
-				x += width / 2
+				x += box.w / 2
 			break
 
 			case 'bottom':
-				x += width / 2
-				y += height
+				x += box.w / 2
+				y += box.h
 			break
 		}
 
@@ -419,15 +563,22 @@ Block.Tip = f.unit(Block, {
 		var re = this.element.offsetParent
 		if(!re) return
 
-		var aw = this.arrowWidth / 2
+		var aw = this.arrow.offsetWidth
+		,   ah = this.arrow.offsetHeight
+		,   ad = Math.sqrt(aw * aw + ah * ah) / 2
 		,   ap = this.arrowPadding
 		,   ao = distance || this.distance
 		,   ew = this.element.offsetWidth
 		,   eh = this.element.offsetHeight
+		,   cw = this.content.offsetWidth
+		,   ch = this.content.offsetHeight
 		,   rw = re.offsetWidth
 		,   rh = re.offsetHeight
-		,   cx = ew / 2
-		,   cy = eh / 2
+
+		var ecx = Math.floor(ew / 2)
+		,   ecy = Math.floor(eh / 2)
+		,   ccx = Math.floor(cw / 2)
+		,   ccy = Math.floor(ch / 2)
 
 		var vertical
 		var epl, ept, apl, apt
@@ -435,32 +586,32 @@ Block.Tip = f.unit(Block, {
 			case 'left':
 				vertical = false
 				epl = x - ew - ao
-				ept = y - cy
-				apl = ew
-				apt = cy
+				ept = y - ecy
+				apl = cw
+				apt = ccy
 			break
 
 			case 'right':
 				vertical = false
 				epl = x + ao
-				ept = y - cy
+				ept = y - ecy
 				apl = 0
-				apt = cy
+				apt = ccy
 			break
 
 			case 'top':
 				vertical = true
-				epl = x - cx
+				epl = x - ecx
 				ept = y - ao - eh
-				apl = cx
-				apt = eh
+				apl = ccx
+				apt = ch
 			break
 
 			case 'bottom':
 				vertical = true
-				epl = x - cx
+				epl = x - ecx
 				ept = y + ao
-				apl = cx
+				apl = ccx
 				apt = 0
 			break
 
@@ -469,25 +620,25 @@ Block.Tip = f.unit(Block, {
 
 		var eol = Math.max(0, -epl)
 		if(eol) {
-			if(vertical) apl -= Math.min(cx - aw - ap, eol)
+			if(vertical) apl -= Math.min(ccx - ad - ap, eol)
 			epl += eol
 		}
 
 		var eor = Math.max(0, epl + ew - rw)
 		if(eor) {
-			if(vertical) apl += Math.min(cx - aw - ap, eor)
+			if(vertical) apl += Math.min(ccx - ad - ap, eor)
 			epl -= eor
 		}
 
 		var eot = Math.max(0, -ept)
 		if(eot) {
-			if(!vertical) apt -= Math.min(cy - aw - ap, eot)
+			if(!vertical) apt -= Math.min(ccy - ad - ap, eot)
 			ept += eot
 		}
 
 		var eob = Math.max(0, ept + eh - rh)
 		if(eob) {
-			if(!vertical) apt += Math.min(cy - aw - ap, eob)
+			if(!vertical) apt += Math.min(ccy - ad - ap, eob)
 			ept -= eob
 		}
 
@@ -535,41 +686,8 @@ Block.Tip = f.unit(Block, {
 		this.lastDistance = ao
 		this.lastAlign = align
 
-
+		this.fadeAxis = this.alignAxes[this.lastAlign || this.align]
 		this.updateTransform()
-	},
-
-
-	alignAxes: {
-		left   : { x:  1, y:  0 },
-		right  : { x: -1, y:  0 },
-		top    : { x:  0, y:  1 },
-		bottom : { x:  0, y: -1 }
-	},
-
-	transitionAxis: null,
-
-	updateTransform: function() {
-		var d = (1 - this.transitionTween.source.v) * this.tweenDistance
-		,   e = this.elementPoint
-
-		var a = this.transitionAxis
-			|| this.alignAxes[this.lastAlign || this.align]
-			|| { x: 0, y: 0 }
-
-		this.transform(this.element, e.x + d * a.x, e.y + d * a.y)
-	},
-
-	transform: function(element, x, y, s) {
-		var style = ' translateX('+ f.hround(x || 0) +'px)'
-		          + ' translateY('+ f.hround(y || 0) +'px)'
-		          + '      scale('+ f.hround(s || 1) +')'
-
-		element.style.webkitTransform = style
-		element.style.   mozTransform = style
-		element.style.    msTransform = style
-		element.style.     OTransform = style
-		element.style.      transform = style
 	},
 
 	getAlign: function(x, y, w, h) {
@@ -596,37 +714,38 @@ Block.Tip = f.unit(Block, {
 		return aligns[index]
 	},
 
-	visibleMethod: function(elem, v) {
-		if(!this.initVisible) {
-			this.initVisible = true
-
-			this.transitionTween.source.v = +v
-			this.onTransitionUpdate()
-			this.onTransitionEnd()
-			return
-		}
-
-		if(this.visible.value) {
-			dom.append(this.tipRoot, this.element)
-		}
-
-		this.transitionTween.target.v = +v
-		this.transitionTween.start()
+	alignAxes: {
+		left   : { x:  1, y:  0 },
+		right  : { x: -1, y:  0 },
+		top    : { x:  0, y:  1 },
+		bottom : { x:  0, y: -1 }
 	},
 
-	onTransitionStart: function() {
-		this.inTransition = true
+	visibleMethod: function() {
+		if(this.visible.value) {
+			dom.append(this.tipRoot, this.element)
+			this.autoresize()
+		}
+
+		this.fadeTween.target.v = +this.visible.value
+		this.fadeTween.start()
+	},
+
+	updateTransform: function() {
+		var d = (1 - this.fadeTween.source.v) * this.fadeDistance
+		,   e = this.elementPoint
+		,   a = this.fadeAxis || { x: 0, y: 0 }
+
+		this.transform(this.element, e.x + d * a.x, e.y + d * a.y)
 	},
 
 	onTransitionUpdate: function() {
-		this.element.style.opacity = this.transitionTween.source.v
+		this.element.style.opacity = this.fadeTween.source.v
 		this.updateTransform()
 	},
 
 	onTransitionEnd: function() {
-		if(!this.visible.value) {
-			dom.remove(this.element)
-		}
+		if(!this.visible.value) dom.remove(this.element)
 		this.inTransition = false
 	}
 })
