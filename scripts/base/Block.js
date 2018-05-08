@@ -749,3 +749,106 @@ Block.Tip = f.unit(Block.Fade, {
 		this.inTransition = false
 	}
 })
+
+
+Block.Dropdown = f.unit(Block.Toggle, {
+	unitName: 'Block_Dropdown',
+	ename: 'dropdown-toggle',
+	cacheSize: false,
+
+	tipTemplate: {
+		tipRoot: null,
+		align: null,
+		distance: 12
+	},
+
+	create: function() {
+		this.tip = new Block.Tip(this.protomerge('tipTemplate'))
+		this.content = this.tip.content
+
+		this.events.on('active', Block.Dropdown.closeAll, null, this)
+
+		Block.Dropdown.instances.push(this)
+	},
+
+	destroy: function() {
+		f.adrop(Block.Dropdown.instances, this)
+		this.tip.destroy()
+	},
+
+	update: function() {
+		Block.Toggle.prototype.update.apply(this, arguments)
+
+		this.tip.visible.set(this.active, 'dropdown')
+		if(this.active) this.autoresize()
+	},
+
+	autoresize: function() {
+		this.tip.moveToElement(this.element)
+	}
+})
+
+Block.Dropdown.instances = []
+Block.Dropdown.closeAll = function(except) {
+	Block.Dropdown.instances.forEach(function(dropdown) {
+		if(dropdown !== except) dropdown.set(0, true)
+	}, this)
+}
+
+
+Block.Range = f.unit(Block, {
+	unitName: 'Block_Range',
+	ename: 'block-range',
+	cacheSize: false,
+
+	value: 0,
+	step: 0,
+	min: 0,
+	max: 1,
+
+	create: function() {
+		this.bar = dom.elem('block-range-bar', this.element)
+		this.pos = dom.elem('block-range-pos', this.element)
+
+		this.drag = new Drag(this.element)
+		this.drag.events.when({
+			'start': this.onDragStart,
+			'end': this.onDragEnd,
+			'drag': this.onDrag
+		}, this)
+	},
+
+	onDragStart: function(drag, e) {
+		var pos = (e.pageX - this.barOffset.x) / this.barWidth
+
+		if(!dom.ancestor(e.target, this.pos)) {
+			drag.point.x = drag.origin.x = pos * this.barWidth
+			this.value = pos
+		}
+	},
+
+	onDragEnd: function(drag, e) {
+
+	},
+
+	onDrag: function(drag, e) {
+		this.value = drag.point.x / this.barWidth
+		this.update()
+	},
+
+	onResize: function() {
+		this.barOffset = dom.offset(this.bar)
+		this.barWidth  = this.bar.offsetWidth
+		this.barHeight = this.bar.offsetHeight
+		this.drag.min.x = this.min * this.barWidth
+		this.drag.max.x = this.max * this.barWidth
+		this.drag.point.x = f.clamp(this.drag.point.x, this.drag.min.x, this.drag.max.x)
+		this.drag.point.y = f.clamp(this.drag.point.y, this.drag.min.y, this.drag.max.y)
+		this.update()
+	},
+
+	update: function() {
+		var pos = f.hround(this.value * this.barWidth)
+		dom.xstyle(this.pos, 'transform', 'translateX('+ pos +'px)')
+	}
+})
