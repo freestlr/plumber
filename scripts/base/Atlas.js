@@ -50,7 +50,6 @@ Atlas = {
 			if(!element || item.element === element) {
 				item.element.removeChild(item.icon)
 				Atlas.items.splice(i, 1)
-				return
 			}
 		}
 	},
