@@ -190,8 +190,8 @@ View3 = f.unit({
 		this.focusOnTree(0)
 
 
-		this.root.add(this.ambLight)
-		this.root.add(this.dirLight)
+		this.scene.add(this.ambLight)
+		this.scene.add(this.dirLight)
 		this.scene.add(this.root)
 		this.scene.add(this.grid)
 		this.scene.add(this.transform)
