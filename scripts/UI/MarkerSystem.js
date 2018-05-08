@@ -126,10 +126,12 @@ UI.Marker = f.unit(Block.Tip, {
 			new EventHandler(this.onTap, this).listen('tap', this.element),
 			new EventHandler(this.onEnter, this).listen('mouseenter', this.element),
 			new EventHandler(this.onLeave, this).listen('mouseleave', this.element))
+
+		if(this.system) this.system.addMarker(this)
 	},
 
 	plug: function(system) {
-		if(this.system) this.unplug()
+		if(this.system) this.system.removeMarker(this)
 
 		this.system = system
 		if(!this.system) return
@@ -156,10 +158,13 @@ UI.Marker = f.unit(Block.Tip, {
 	destroy: function() {
 		Block.Tip.prototype.destroy.call(this)
 
+		if(this.system) {
+			this.system.removeMarker(this)
+		}
+
 		if(this.connection) {
 			this.connection.events.off(null, null, this)
 		}
-		this.unplug()
 
 		Atlas.free(this.elemGroup)
 	},
