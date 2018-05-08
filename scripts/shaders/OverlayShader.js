@@ -179,7 +179,8 @@ THREE.OverlayShader = {
 
 			'if(level > 0.0) {',
 				// 'gl_FragColor = vec4(drawColor, drawAlpha * level);',
-				'gl_FragColor = vec4(mix(hi.rgb, mcc.rgb, fill), hi.a * level);',
+				// 'gl_FragColor = vec4(mix(hi.rgb, mcc.rgb, fill), hi.a * level);',
+				'gl_FragColor = vec4(hi.rgb, hi.a * level);',
 			'} else {',
 				'gl_FragColor = vec4(0.0);',
 			'}',
