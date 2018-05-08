@@ -169,7 +169,8 @@ function updateVisibleSamples() {
 		break
 	}
 
-	if(lit) main.litModeStart()
+	if(lit) main.litModeStart('replace')
 	else    main.litModeClear()
+
 	main.view.needsRedraw = true
 }

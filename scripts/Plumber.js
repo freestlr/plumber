@@ -4,7 +4,9 @@ Plumber = f.unit({
 	version: 0.02,
 
 	mode: 'constructor',
+
 	explode: 0,
+	explodeEnabled: false,
 	explodeStepped: false,
 
 	catchFiles: false,
@@ -13,6 +15,9 @@ Plumber = f.unit({
 	dirSamples: '',
 	srcAtlas: 'plumber-atlas.svg',
 	srcCubemap: 'plumber-cubemap.png',
+
+	stencilReplaceColor: '#00f0ff',
+	stencilDeleteColor: '#ff5500',
 
 	initFromHash: false,
 
@@ -222,8 +227,6 @@ Plumber = f.unit({
 		}
 
 
-
-		this.makeDeletePrompt()
 
 
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
@@ -551,7 +554,7 @@ Plumber = f.unit({
 
 					default:
 						this.issuedReplace = sample
-						this.litModeStart()
+						this.litModeStart('replace')
 					break
 				}
 			break
@@ -568,17 +571,30 @@ Plumber = f.unit({
 		this.view.needsRedraw = true
 	},
 
-	litModeStart: function() {
-		this.view.stencilRaycastMask =
-			this.view.stencilLit    .value |
-			this.view.stencilHover  .value |
-			this.view.stencilSelect .value
+	litModeStart: function(mode) {
+		switch(mode) {
+			case 'replace':
+				this.view.stencilLit.params.drawColor = this.stencilReplaceColor
+				this.view.stencilRaycastMask =
+					this.view.stencilLit    .value |
+					this.view.stencilHover  .value |
+					this.view.stencilSelect .value
+			break
+
+			case 'delete':
+				this.view.stencilLit.params.drawColor = this.stencilDeleteColor
+				this.view.stencilRaycastMask = ~0
+			break
+
+			case 'parent':
+				this.view.stencilLit.params.drawColor = this.stencilReplaceColor
+				this.view.stencilRaycastMask = 0
+			break
+		}
 	},
 
 	litModeClear: function() {
-		if(this.tree) this.tree.traverse(function(node) {
-			this.view.litNode(node, false)
-		}, this)
+		this.view.litNodeList(this.view.highlightedNodes, false)
 
 		this.view.needsRedraw = true
 		this.view.stencilRaycastMask = ~0
@@ -627,29 +643,81 @@ Plumber = f.unit({
 	},
 
 
-	makeDeletePrompt: function() {
-		var tip = new Block.Tip({
+	deleteNodeWithPrompt: function(node) {
+		if(!node) return
+
+		var list = node.pinch()
+		if(!list || !list.nodes.length) {
+			return
+
+		} else if(list.nodes.length < 2) {
+			this.deleteNodeList(list)
+			return
+		}
+
+
+		this.view.selectNode(null)
+		this.view.hoverNode(null)
+		this.litModeStart('delete')
+		this.view.litNodeList(list.nodes.map(this.getElementById, this), true)
+
+
+		this.deletePromptTip = new UI.Prompt({
 			tipRoot: this.element,
-			align: 'top',
+
+			arrow: false,
+			align: 'bottom',
+			distance: 64,
 			point: this.view.projector.addPoint(),
-			hidden: true
+
+			attr: {
+				label: ['Do you want to delete', list.nodes.length, 'nodes?'].join(' ')
+			},
+
+			deletingNode: node,
+			deletingList: list,
+
+			buttonsTemplate: {
+				eventScope: this
+			},
+
+			buttons: [{
+				data: true,
+				text: 'Yes',
+				events: { 'active': this.deleteNodeFromPrompt }
+
+			}, {
+				data: false,
+				text: 'No',
+				events: { 'active': this.closeDeletePromptAndSelectNode }
+			}]
 		})
 
-		dom.addclass(tip.element, 'prompt')
+		this.deletePromptTip.visible.on()
+	},
 
-		var text = dom.div('prompt-text', tip.content)
-		,   ok   = dom.div('prompt-button hand prompt-button-ok', tip.content)
-		,   no   = dom.div('prompt-button hand prompt-button-cancel', tip.content)
+	deleteNodeFromPrompt: function(node) {
+		var tip = this.deletePromptTip
+		if(!tip) return
 
-		dom.text(ok, 'Yes')
-		dom.text(no, 'No')
+		this.deleteNodeList(tip.deletingList)
+		this.closeDeletePrompt()
+	},
 
-		tip.watchEvents.push(
-			new EventHandler(this.deleteNode, this).listen('tap', ok),
-			new EventHandler(this.closeDeletePrompt, this).listen('tap', no))
+	closeDeletePrompt: function() {
+		var tip = this.deletePromptTip
+		if(!tip) return
 
-		this.deletePromptTipText = text
-		this.deletePromptTip = tip
+		this.view.litNodeList(this.view.highlightedNodes, false)
+
+		tip.visible.off()
+		delete this.deletePromptTip
+	},
+
+	closeDeletePromptAndSelectNode: function() {
+		var tip = this.deletePromptTip
+		this.view.selectNode(tip && tip.deletingNode || null)
+		this.closeDeletePrompt()
 	},
 
 
@@ -661,9 +729,6 @@ Plumber = f.unit({
 			hideable: false
 		})
 
-		// var params = {
-		// 	stencilSlot: 'stencilHover'
-		// }
 
 		var slots = [
 			'stencilLit',
@@ -674,6 +739,7 @@ Plumber = f.unit({
 		this.gui.closed = true
 
 		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
+		this.gui.add(this.view, 'enableRender').name('Render').onChange(redraw)
 		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
 		this.gui.add(this.view, 'enableStencil').name('Enable Stencil').onChange(redraw)
 		this.gui.add(this.view, 'enableStencilAA').name('AA Stencil').onChange(redraw)
@@ -783,6 +849,8 @@ Plumber = f.unit({
 			delete this.explodeStepDefer
 		}
 
+		this.explodeEnabled = enabled
+
 		var view = this.view.tree ? this.view : this.view2
 		,   tree = view.tree
 		if(!tree) return
@@ -813,7 +881,7 @@ Plumber = f.unit({
 
 					var defer = new Defer
 					con.events.once('connect_end', defer.resolve, defer)
-					con.playConnection(enabled ? 0 : 1, 0.4)
+					con.playConnection(enabled ? 0 : 1, null, 0.4)
 
 					defers.push(defer)
 				}
@@ -828,6 +896,14 @@ Plumber = f.unit({
 				if(con.connected && con.master) con.playConnection(enabled ? 0 : 1)
 			})
 		}
+	},
+
+	explodeNode: function(node, exploded) {
+		if(!node.upcon) return
+
+		var master = node.upcon.connected
+
+		master.playConnection(exploded ? 0 : 1, null, 0.6)
 	},
 
 	displayFigure: function(figure) {
@@ -1178,19 +1254,15 @@ Plumber = f.unit({
 
 		} else if(kbd.down && kbd.changed) switch(kbd.key) {
 			case 'ENTER':
-				if(this.deletePromptTip.visible.value) {
-					this.deleteNode()
-				}
+				this.deleteNodeFromPrompt()
 			return
 
 			case 'ESC':
-				if(this.deletePromptTip.visible.value) {
-					this.closeDeletePrompt()
-				}
+				this.closeDeletePromptAndSelectNode()
 			return
 
 			case 'DEL':
-				this.promptDeleteNode(this.view.nodeSelected)
+				this.deleteNodeWithPrompt(this.view.nodeSelected)
 			return
 
 			case 'u':
@@ -1267,6 +1339,18 @@ Plumber = f.unit({
 	},
 
 
+	showNodeParent: function(node, enabled) {
+		var parent = node && node.upnode
+		if(!parent) return
+
+		if(enabled) {
+			this.litModeStart('parent')
+		} else {
+			this.litModeClear()
+		}
+		this.view.litNode(parent, enabled)
+	},
+
 	rotateNode: function(node) {
 		if(!node) return
 
@@ -1275,33 +1359,10 @@ Plumber = f.unit({
 		this.view.needsRedraw = true
 	},
 
-	promptDeleteNode: function(node) {
-		if(!node) return
-
-		var stat = this.deletePromptStat = node.pinch()
-
-		if(stat.nodes.length < 2) {
-			this.deleteNode()
-
-		} else {
-			dom.text(this.deletePromptTipText,
-				['Do you want to delete', stat.nodes.length, 'nodes?'].join(' '))
-
-			this.deletePromptTip.visible.on()
-		}
-	},
-
-
-	closeDeletePrompt: function() {
-		this.deletePromptTip.visible.off()
-		delete this.deletePromptStat
-	},
-
 	clearTree: function() {
 		if(!this.tree) return
 
-		this.deletePromptStat = this.tree.pinchr()
-		this.deleteNode()
+		this.deleteNodeList(this.tree.pinchr())
 	},
 
 	absolutelySetMainTree: function(tree) {
@@ -1314,15 +1375,23 @@ Plumber = f.unit({
 	},
 
 
-	deleteNode: function() {
-		var stat = this.deletePromptStat
-		if(!stat) return
+	deleteNodeList: function(list) {
+		if(!list) return
 
-		stat.root.disconnect()
-		if(stat.nextRoot && stat.nextRoot !== stat.root) {
-			stat.nextRoot.upnode = null
-			stat.nextRoot.upcon = null
-			this.absolutelySetMainTree(stat.nextRoot)
+		var root = list.nextRoot
+		if(root) {
+			root.object.matrixWorld.decompose(
+				root.object.position,
+				root.object.quaternion,
+				root.object.scale)
+			root.object.updateMatrix()
+		}
+
+		list.root.disconnect()
+
+		if(root && root !== list.root) {
+			if(root.upcon) root.upcon.disconnect()
+			this.absolutelySetMainTree(root)
 
 		} else {
 			this.absolutelySetMainTree(null)
@@ -1330,9 +1399,9 @@ Plumber = f.unit({
 
 		this.view.selectNode(null)
 
-		this.closeDeletePrompt()
-
-		this.events.emit('onRemoveElement', stat)
+		this.events.emit('onRemoveElement', {
+			nodes: list.nodes
+		})
 	},
 
 
@@ -1390,10 +1459,10 @@ Plumber = f.unit({
 	},
 
 	onTap: function(e) {
-		if(this.deletePromptTip.visible.value) {
-			if(!dom.ancestor(e.target, this.deletePromptTip.element)
-			&& !dom.ancestor(e.target, this.view.markers.element)) {
-				this.closeDeletePrompt()
+		if(this.deletePromptTip) {
+			if(e.target === this.view.element
+			|| e.target === this.view2.element) {
+				this.closeDeletePromptAndSelectNode()
 			}
 		}
 	},
@@ -1450,9 +1519,7 @@ Plumber = f.unit({
 
 
 	onNodeSelect: function(node, prev) {
-		var system = this.view.markers
 		if(prev && prev.nodeMarker) {
-			system.removeMarker(prev.nodeMarker)
 			prev.nodeMarker.destroy()
 			prev.nodeMarker = null
 		}
@@ -1465,50 +1532,31 @@ Plumber = f.unit({
 			return
 		}
 
+
+
 		if(this.view.selectedConnection) {
 
 		} else if(node) {
-			var m = new UI.Marker({
-				undisposable: true,
-				deleteNode: node,
-				align: 'bottom'
+			node.nodeMarker = new UI.NodeMarker({
+				system: this.view.markers,
+				hidden: false,
+				node: node,
+				events: {
+					'node_rotate': this.rotateNode,
+					'node_delete': this.deleteNodeWithPrompt,
+					'node_explode': this.explodeNode,
+					'node_parent':  this.showNodeParent
+				},
+				eventScope: this
 			})
-
-			system.addMarker(m)
-
-			m.visible.on('main')
-
-			dom.remclass(m.content, 'marker-interactive')
-
-
-			// m.label = dom.div('marker-info', m.content)
-			// dom.text(m.label, node.sample.src)
-			dom.text(m.elemInfo, '['+ node.id +'] '+ node.sample.src)
-			dom.addclass(m.elemInfo, 'marker-label')
-
-			m.bRot = dom.div('marker-action', m.content)
-			m.bDel = dom.div('marker-action', m.content)
-
-			m.watchEvents.push(
-				new EventHandler(this.rotateNode, this, node).listen('tap', m.bRot),
-				new EventHandler(this.promptDeleteNode, this, node).listen('tap', m.bDel))
-
-			m.watchAtlas.push(
-				Atlas.set(m.bRot, 'i-rotate'),
-				Atlas.set(m.bDel, 'i-delete'))
-
-			if(node.sample.link) {
-				m.bInfo = dom.a(node.sample.link, 'marker-action out-02', m.content)
-				m.bInfo.setAttribute('target', '_blank')
-				m.watchAtlas.push(Atlas.set(m.bInfo, 'i-info'))
-			}
-
-			node.nodeMarker = m
-
 
 			if(!kbd.state.SHIFT) {
 				this.view.focusOnNode(node)
 			}
+
+			this.closeDeletePrompt()
+		} else {
+			this.closeDeletePromptAndSelectNode()
 		}
 
 		this.events.emit('onNodeSelect', [node && node.id, prev && prev.id])
@@ -1545,8 +1593,12 @@ Plumber = f.unit({
 		this.view.focusOnTree(null, this.view.assembleDim)
 
 
-		if(animate) {
-			master.playConnection()
+		if(!animate || this.explodeEnabled) {
+			var state = this.explodeEnabled ? 0 : 1
+			master.playConnection(state, state, 0)
+
+		} else if(animate) {
+			master.playConnection(1, 0)
 		}
 
 
@@ -1570,7 +1622,7 @@ Plumber = f.unit({
 		new EventHandler(this.onresize, this).listen('resize',  window)
 		new EventHandler(this.onkey,    this).listen('keydown', window)
 		new EventHandler(this.onkey,    this).listen('keyup',   window)
-		new EventHandler(this.onTap,    this).listen('tap',     window)
+		new EventHandler(this.onTap,    this).listen('tap',     this.element)
 		// new EventHandler(this.onHash,   this).listen('hashchange', window)
 
 		new EventHandler(this.onDragOver, this).listen('dragover', this.view .element)
@@ -1639,13 +1691,13 @@ Plumber = f.unit({
 			marker.update()
 		}
 
-		if(this.deletePromptStat) {
-			var node = this.deletePromptStat.root
+		if(this.deletePromptTip) {
+			var node = this.deletePromptTip.deletingNode
 			,   point = this.deletePromptTip.point
 
 			point.world.setFromMatrixPosition(node.objectCenter.matrixWorld)
 			this.view.projector.updatePoint(point)
-			this.deletePromptTip.move(Math.round(point.screen.x), Math.round(point.screen.y))
+			this.deletePromptTip.move(point.screen.x, point.screen.y)
 		}
 	}
 })

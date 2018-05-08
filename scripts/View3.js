@@ -784,6 +784,13 @@ View3 = f.unit({
 		}
 
 		this.updateNodeStencil(node)
+		this.needsRedraw = true
+	},
+
+	litNodeList: function(list, lit) {
+		if(list) for(var i = list.length -1; i >= 0; i--) {
+			this.litNode(list[i], lit)
+		}
 	},
 
 	updatePointer: function(point) {

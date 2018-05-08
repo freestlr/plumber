@@ -8,7 +8,6 @@ TConnection = f.unit({
 		this.master = null
 		this.connected = null
 
-		this.selected = false
 		this.inactive = new Gate(Gate.AND, false)
 
 		this.events = new EventEmitter
@@ -22,6 +21,7 @@ TConnection = f.unit({
 
 		this.depth = parseFloat(this.joint.depth) || 0
 		this.screw = this.joint.extra === 'screw'
+		this.rotation = 0
 
 		this.makeTween()
 
@@ -32,8 +32,15 @@ TConnection = f.unit({
 		this.objectInner = new THREE.Object3D
 		this.objectOuter = new THREE.Object3D
 
+		this.connectionLine = new THREE.Line(
+			new THREE.BufferGeometry,
+			new THREE.LineBasicMaterial({ color: 0x000000 }))
+
+		this.connectionLine.geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3))
+
 		this.node.object.add(this.objectInner)
 		this.node.object.add(this.objectOuter)
+		this.node.object.add(this.connectionLine)
 
 		this.updatePosition()
 	},
@@ -91,6 +98,9 @@ TConnection = f.unit({
 	transitionProgress: function(progress) {
 		if(!this.connected || !this.master) return
 
+		var master = this
+		,   slave = this.connected
+
 		var stages = this.getTransitionStages()
 		,   stageIndex = -1
 		,   stageProgress = 0
@@ -114,13 +124,14 @@ TConnection = f.unit({
 		}
 
 
-		var d0 = this.depth
-		,   d1 = this.connected.depth
+		// var d0 = master.depth
+		// ,   d1 = slave.depth
 
-		var depth = d0 && d1 ? Math.min(d0, d1) : d0 + d1
-		var depth = d0 + d1
-		,   screw = this.screw || this.connected.screw ? Math.PI * 2 : 0
-		,   distance = (this.node.sample.boxLength + this.connected.node.sample.boxLength) /4
+		// var depth = d0 && d1 ? Math.min(d0, d1) : d0 + d1
+
+		var depth = master.depth + slave.depth
+		,   screw = master.screw || slave.screw ? Math.PI * 2 : 0
+		,   distance = (master.node.sample.boxLength + slave.node.sample.boxLength) /4
 
 
 		var par_distance = 0
@@ -149,36 +160,56 @@ TConnection = f.unit({
 			break
 		}
 
+		var mpos = master.object.position
+		,   spos = slave.object.position
 
-		this.connected.object.position
-			.copy(this.joint.normal)
-			.setLength(par_distance)
+		master.object.quaternion.setFromAxisAngle(master.joint.normal, par_screw)
+		spos.copy(master.joint.normal).setLength(par_distance)
 
-		this.object.quaternion.setFromAxisAngle(this.joint.normal, par_screw)
+
+
+		var lineGeometry = master.connectionLine.geometry
+		,   linePosition = lineGeometry.attributes.position
+
+		linePosition.array[0] = mpos.x
+		linePosition.array[1] = mpos.y
+		linePosition.array[2] = mpos.z
+		linePosition.array[3] = mpos.x + spos.x
+		linePosition.array[4] = mpos.y + spos.y
+		linePosition.array[5] = mpos.z + spos.z
+
+		lineGeometry.computeBoundingBox()
+		lineGeometry.computeBoundingSphere()
+		linePosition.needsUpdate = true
 	},
 
-	playConnection: function(state, timeScale) {
+	playConnection: function(to, from, timeScale) {
 		if(!this.connected || !this.master) return
-
-		this.animating = true
-		this.events.emit('connect_start', this)
 
 		var duration = this.getTransitionStages().reduce(f.sum)
 		if(!isNaN(timeScale)) {
 			duration *= timeScale
 		}
 
-		if(state == null) {
-			this.tween.source.connected = 0
-			this.tween.target.connected = 1
-
+		if(to != null) {
+			this.tween.target.connected = +to
 		} else {
-			this.tween.source.connected = +!state
-			this.tween.target.connected = + state
+			this.tween.target.connected = 1
+		}
+		if(from != null) {
+			this.tween.source.connected = +from
 		}
 
 		this.onTweenUpdate()
-		this.tween.duration(duration).start()
+
+		if(duration) {
+			this.animating = true
+			this.events.emit('connect_start', this)
+			this.tween.duration(duration).start()
+
+		} else {
+			this.object.updateMatrixWorld()
+		}
 	},
 
 
@@ -217,52 +248,10 @@ TConnection = f.unit({
 	connect: function(node) {
 		if(this.connected) return
 
-		var normal = new THREE.Vector3
-
 		var master = this
 		,   slave = node
 
-
-
-
-		normal.copy(slave.joint.normal).negate()
-
-
-
-
-		master.node.object.add(master.object)
-
-		master.object.position.copy(master.joint.point)
-		master.object.add(slave.object)
-
-		slave.object.position.set(0, 0, 0)
-		slave.object.quaternion.setFromUnitVectors(normal, master.joint.normal)
-		slave.object.rotateOnAxis(normal, -master.joint.up.angleTo(slave.joint.up))
-		slave.object.add(slave.node.object)
-
-		slave.node.object.position.copy(slave.joint.point).negate()
-
-
-
-
-		master.connected = slave
-		master.target = slave.node
-		master.master = true
-
-		// master.master = master
-		// master.slave = slave
-
-		// slave.master = master
-		// slave.slave = slave
-
-		slave.connected = master
-		slave.target = master.node
-		slave.node.upcon  = slave
-		slave.node.upnode = master.node
-		slave.master = false
-
-		master.events.emit('connect', [master, slave])
-		slave.events.emit('connect', [slave, master])
+		this.setConnection(master, slave, true)
 	},
 
 	disconnect: function() {
@@ -271,20 +260,46 @@ TConnection = f.unit({
 		var master = this.master ? this : this.connected
 		,   slave = this.master ? this.connected : this
 
-		master.object.remove(slave.object)
+		this.setConnection(master, slave, false)
+	},
 
-		master.connected = null
-		master.target = null
-		master.master = null
+	setConnection: function(master, slave, on) {
+		if(on) {
+			var normal = new THREE.Vector3
+			normal.copy(slave.joint.normal).negate()
 
-		slave.connected = null
-		slave.target.upcon  = null
-		slave.target.upnode = null
-		slave.target = null
-		slave.master = null
+			master.node.object.add(master.object)
 
-		master.events.emit('disconnect', [master, slave])
-		slave.events.emit('disconnect', [slave, master])
+			master.object.position.copy(master.joint.point)
+			master.object.add(slave.object)
+
+			slave.object.position.set(0, 0, 0)
+			slave.object.quaternion.setFromUnitVectors(normal, master.joint.normal)
+			slave.object.rotateOnAxis(normal, -master.joint.up.angleTo(slave.joint.up))
+			slave.object.add(slave.node.object)
+
+			slave.node.object.position.copy(slave.joint.point).negate()
+
+		} else {
+			master.object.remove(slave.object)
+		}
+
+
+		master.connectionLine.visible = on
+
+		master.master    = on ? true       : null
+		master.connected = on ? slave      : null
+		master.target    = on ? slave.node : null
+
+		slave.master      = on ? false       : null
+		slave.connected   = on ? master      : null
+		slave.target      = on ? master.node : null
+
+		slave.node.upcon  = on ? slave       : null
+		slave.node.upnode = on ? master.node : null
+
+		master.events.emit(on ? 'connect' : 'disconnect', [master, slave])
+		slave .events.emit(on ? 'connect' : 'disconnect', [slave, master])
 	},
 
 	rotate: function(angle) {
@@ -294,7 +309,9 @@ TConnection = f.unit({
 			this.connected.rotate(angle)
 
 		} else {
+			this.rotation += angle
 			this.object.rotateOnAxis(this.joint.normal, angle)
+			this.object.updateMatrixWorld()
 		}
 	},
 

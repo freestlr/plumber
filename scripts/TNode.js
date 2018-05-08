@@ -290,6 +290,7 @@ TNode = f.unit({
 
 		} else {
 			this.object.rotateOnAxis(this.object.up, angle)
+			this.object.updateMatrixWorld()
 		}
 	},
 

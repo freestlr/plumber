@@ -3,9 +3,13 @@ Block = f.unit({
 
 	etag: 'div',
 	ename: 'block',
-	einam: '',
+	einam: 'absmid',
 	visibleMethod: dom.display,
 	cacheSize: true,
+
+	events: null,
+	element: null,
+	visible: null,
 	template: null,
 
 	init: function(options) {
@@ -16,34 +20,32 @@ Block = f.unit({
 		this.watchEvents = []
 		this.watchBlocks = []
 
-		var chain = this.protochain
-
-		this.template = {}
-		for(var i = 0; i < chain.length; i++) {
-			f.copy(this.template, chain[i].template)
-		}
-		if(options) {
-			f.copy(this.template, options.template)
-		}
-
-		for(var i = 0; i < chain.length; i++) {
-			this.invoke(chain[i], 'create')
-		}
-		for(var i = 0; i < chain.length; i++) {
-			this.invoke(chain[i], 'createPost')
-		}
+		this.protocall('create')
+		this.protocall('createPost')
 	},
 
-	invoke: function(proto, method) {
-		if(Object.prototype.hasOwnProperty.call(proto, method)
-		&& typeof proto[method] === 'function') {
-			return proto[method].call(this)
+	protomerge: function(name) {
+		var value = {}
+		for(var i = 0; i < this.protochain.length; i++) {
+			f.copy(value, this.protochain[i][name])
+		}
+		f.copy(value, this[name])
+		return value
+	},
+
+	protocall: function(name) {
+		for(var i = 0; i < this.protochain.length; i++) {
+			var proto = this.protochain[i]
+			,   method = proto[name]
+
+			if(Object.prototype.hasOwnProperty.call(proto, name)
+			&& typeof method === 'function') method.call(this)
 		}
 	},
 
 	create: function() {
-		if(!this.events) {
-			this.events = new EventEmitter
+		if(this.events instanceof EventEmitter === false) {
+			this.events = new EventEmitter(this.events, this.eventScope || this)
 		}
 		if(!this.visible) {
 			this.visible = new Gate(Gate.AND, !this.hidden)
@@ -69,32 +71,122 @@ Block = f.unit({
 			this.events.on.apply(this.events, this.listens[i])
 		}
 
-		this.visible.events.on('change', this.visibleMethod, this, this.element)
-
 		if(this.text) {
-			dom.text(this.content, this.text)
+			console.warn('Block::text is [deprecated], use ::attr.text')
+			this.setAttribute('text', this.text)
+			// dom.text(this.content, this.text)
 		}
 		if(this.title) {
-			this.element.setAttribute('title', this.title)
+			console.warn('Block::title is [deprecated], use ::attr.title')
+			this.setAttribute('title', this.title)
+			// attr.title = this.title
+			// dom.attr(this.content, 'title', this.title)
+			// this.element.setAttribute('title', this.title)
 		}
 		if(this.elabel) {
-			dom.addclass(this.element, 'labeled')
-			this.watchLocale.push(
-				Locale.setText(dom.div('block-label', this.content), this.elabel))
+			console.warn('Block::elabel is [deprecated], use ::eattr.label')
+			this.setAttributeLocale('label', this.elabel)
+			// this.setLabel(this.elabel)
+			// dom.addclass(this.element, 'labeled')
+			// this.watchLocale.push(
+			// 	Locale.setText(dom.div('block-label', this.content), this.elabel))
 		}
 		if(this.etext) {
-			this.watchLocale.push(
-				Locale.setText(this.content, this.etext))
+			console.warn('Block::etext is [deprecated], use ::eattr.text')
+			this.setAttributeLocale('text', this.etext)
+			// this.setAttributesLocale({ textContent: this.etext })
+			// this.watchLocale.push(
+			// 	Locale.setText(this.content, this.etext))
 		}
 		if(this.etitle) {
-			this.watchLocale.push(
-				Locale.setTitle(this.content, this.etitle))
+			console.warn('Block::etitle is [deprecated], use ::eattr.title')
+			this.setAttributeLocale('title', this.etitle)
+			// this.setAttributesLocale({ title: this.etitle })
+			// this.watchLocale.push(
+			// 	Locale.setTitle(this.content, this.etitle))
 		}
 		if(this.eicon) {
-			dom.addclass(this.element, 'eicon')
-			if(typeof Atlas !== 'undefined') this.watchAtlas.push(
-				Atlas.set(this.content, this.eicon, this.einam))
+			console.warn('Block::eicon is [deprecated], use ::attr.icon')
+			this.setAttribute('icon', this.eicon)
+			// this.setIcon(this.eicon)
+			// dom.addclass(this.element, 'eicon')
+			// if(typeof Atlas !== 'undefined') this.watchAtlas.push(
+			// 	Atlas.set(this.content, this.eicon, this.einam))
 		}
+
+
+		this.setAttributes(this.attr)
+		this.setAttributesLocale(this.eattr)
+
+		this.visible.events.on('change', this.visibleMethod, this, this.element)
+	},
+
+	setIcon: function(value) {
+		dom.togclass(this.element, 'eicon', !!value)
+
+		if(typeof Atlas === 'undefined') return
+
+		if(value != null) {
+			if(!this.atlasElement) {
+				this.atlasElement = this.content
+				this.watchAtlas.push(this.atlasElement)
+			}
+			this.atlasIcon = value
+			Atlas.set(this.atlasElement, this.atlasIcon, this.einam)
+
+		} else if(this.atlasElement) {
+			Atlas.free(this.atlasElement)
+			f.adrop(this.watchAtlas, this.atlasElement)
+			this.atlasElement = null
+		}
+	},
+
+	setLabel: function(value) {
+		if(value != null) {
+			if(!this.labelElement) {
+				this.labelElement = dom.div('block-label', this.content)
+				dom.addclass(this.element, 'labeled')
+			}
+
+			dom.text(this.labelElement, value)
+
+		} else if(this.labelElement) {
+			dom.remclass(this.element, 'labeled')
+			dom.remove(this.labelElement)
+			this.labelElement = null
+		}
+	},
+
+	setAttribute: function(name, value) {
+		switch(name) {
+			case 'text':
+				dom.text(this.content, value)
+			break
+
+			case 'icon':
+				this.setIcon(value)
+			break
+
+			case 'label':
+				this.setLabel(value)
+			break
+
+			default:
+				dom.attr(this.content, name, value)
+			break
+		}
+	},
+
+	setAttributeLocale: function(name, value) {
+		this.watchLocale.push(Locale.setAttribute(name, this.content, value))
+	},
+
+	setAttributes: function(attr) {
+		for(var name in attr) this.setAttribute(name, attr[name])
+	},
+
+	setAttributesLocale: function(attr) {
+		for(var name in attr) this.setAttributeLocale(name, attr[name])
 	},
 
 	destroy: function() {
@@ -247,6 +339,7 @@ Block.List = f.unit(Block, {
 
 	create: function() {
 		this.blocks = []
+		this.template = this.protomerge('template')
 		this.container = this.element
 	},
 
@@ -480,6 +573,7 @@ Block.Tip = f.unit(Block.Fade, {
 
 	hidden: true,
 	align: null,
+	preferAlign: null,
 	tipRoot: null,
 	integerPosition: false,
 	distance: 8,
@@ -489,6 +583,10 @@ Block.Tip = f.unit(Block.Fade, {
 	create: function() {
 		this.arrow   = dom.div('tip-arrow', this.element)
 		this.content = dom.div('tip-content', this.element)
+
+		if(!this.tipRoot) {
+			this.tipRoot = this.eroot || this.element.parentNode || document.body
+		}
 
 		this.arrowPoint   = { x: 0, y: 0 }
 		this.elementPoint = { x: 0, y: 0 }
@@ -707,6 +805,10 @@ Block.Tip = f.unit(Block.Fade, {
 
 		var aligns = ['top', 'right', 'bottom', 'left']
 		,   spaces = [ot - eh, or - ew, ob - eh, ol - ew]
+
+		if(this.preferAlign && spaces[aligns.indexOf(this.preferAlign)] > 0) {
+			return this.preferAlign
+		}
 
 		var maxspace = Math.max.apply(null, spaces)
 		,   index = spaces.indexOf(maxspace)
