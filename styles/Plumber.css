@@ -202,6 +202,7 @@ body .dg .property-name {
 	position: absolute;
 	border: 1px solid #888;
 	box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.3);
+	box-sizing: border-box;
 	z-index: 2;
 }
 .tip-content {
@@ -211,8 +212,6 @@ body .dg .property-name {
 	position: absolute;
 	margin-top: -8px;
 	margin-left: -8px;
-	margin-top: -10px;
-	margin-left: -10px;
 	width: 16px;
 	height: 16px;
 	border: 1px solid #888;
@@ -321,11 +320,16 @@ body .dg .property-name {
 .prompt {
 	z-index: 4;
 }
+.prompt,
+.prompt .tip-arrow {
+	border-color: #167d6c;
+}
 .prompt .tip-content {
 	padding: 12px;
 	text-align: center;
 }
-.prompt-text {
+.prompt-text,
+.prompt .tip-content > .block-label {
 	text-align: center;
 	margin: 8px 8px 18px;
 	font-size: 14px;
@@ -338,12 +342,17 @@ body .dg .property-name {
 	margin: 4px;
 	font-size: 14px;
 	background-color: #296fd6;
+	background-color: #34a592;
 	border-left: 3px solid #102e84;
+	border-left: 3px solid #167d6c;
 	color: #fff;
+	color: #e8e8e8;
 }
 .prompt-button:hover {
 	background-color: #083f84;
+	background-color: #198875;
 	border-left-color: #000;
+	border-left-color: #064a3f;
 }
 
 
