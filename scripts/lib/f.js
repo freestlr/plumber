@@ -156,6 +156,7 @@ f.jeq = function(a, b) {
 		case 'string': return false
 	}
 
+	if(!a || !b) return false
 	if(a.length !== b.length) return false
 
 	var k
@@ -250,11 +251,6 @@ f.any = function(array) {
 	return array && array[f.rand(array.length)]
 }
 
-f.charmap = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-f.randchar = function() {
-	return f.any(f.charmap)
-}
-
 f.exp = function(val) {
 	var exp  = 0
 	,   absv = Math.abs(val)
@@ -321,7 +317,9 @@ f.func = function(name) {
 	for(var args = [], i = 1; i < arguments.length; i++) args.push(arguments[i])
 
 	return function(item) {
-		return item[name] && item[name].apply && item[name].apply(item, args)
+		return item[name]
+			&& typeof item[name].apply === 'function'
+			&& item[name].apply(item, args)
 	}
 }
 
@@ -424,11 +422,30 @@ f.throttle = function(delay, fn) {
 }
 
 f.postpone = function(delay, fn) {
-	var timer
+	var timer = false
+	,   poned = false
 	return function() {
-		clearTimeout(timer)
-		timer = setTimeout(fn, delay)
+		if(timer) {
+			poned = true
+		} else {
+			timer = true
+			setTimeout(end, delay)
+		}
 	}
+	function end() {
+		if(poned) {
+			poned = false
+			setTimeout(end, delay)
+		} else {
+			timer = false
+			fn()
+		}
+	}
+}
+
+f.charmap = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+f.randchar = function() {
+	return f.any(f.charmap)
 }
 
 f.implode = function(string, data, scheme, skip) {
@@ -438,12 +455,12 @@ f.implode = function(string, data, scheme, skip) {
 	})
 }
 
-f.nzformat = function(num, size) {
+f.nzformat = function(num, size, zero) {
 	if(isNaN(num)) return num +''
 
 	var abs  = Math.abs(num)
 	,   diff = size - Math.max(0, f.exp(abs))
-	,   gap  = diff > 1 ? Array(diff).join('0') : ''
+	,   gap  = diff > 1 ? Array(diff).join(zero || '0') : ''
 	return (num < abs ? '-' : '') + gap + abs
 }
 
@@ -474,6 +491,124 @@ f.dformat = function(date, format) {
 	return format.replace(/([YMDhis])(\1+)?/g, function(all, one) {
 		return f.nzformat(date[map[one]]() + (add[one] || 0), all.length)
 	})
+}
+
+f.tformat = function(table, options) {
+	if(options == null) options = {}
+	if(options.join  == null) options.join = ' '
+	if(options.align == null) options.align = false
+
+	var rowc = table.length
+	,   colc = table[0].length
+	,   size = f.rangep(colc, 0, 0)
+	,   rows = []
+
+	for(var i = 0; i < rowc; i++) {
+		var data = table[i]
+		,   cols = []
+
+		for(var j = 0; j < colc; j++) {
+			var value = data[j] == null ? '' : data[j] +''
+			if(!j && options.indent && options.indent.length) {
+				value = options.indent[i % options.indent.length] + value
+			}
+
+			size[j] = Math.max(size[j], value.length)
+			cols.push(value)
+		}
+
+		rows.push(cols)
+	}
+
+	for(var i = 0; i < rowc; i++) {
+		var cols = rows[i]
+
+		for(var j = 0; j < colc; j++) {
+			var value = cols[j]
+			,   vsize = size[j]
+			,   align = Array(vsize +1 - value.length).join(' ')
+
+			cols[j] = (options.align instanceof Array ? options.align[j] : options.align)
+				? value + align
+				: align + value
+		}
+	}
+
+	var string = []
+	for(var i = 0; i < rowc; i++) {
+		string.push(rows[i].join(options.join))
+	}
+
+	return string.join('\n')
+}
+
+f.tindsym = ['\u2514', '\u251C', ' ', '\u2502']
+// f.tindsym = ['└', '├ ' ', '│']
+// f.tindsym = ['L_', '|-', '  ', '| ']
+f.tind = function(order) {
+	for(var indent = ''; order > 1; order >>= 1) {
+		indent = f.tindsym[(order % 2) + (!!indent.length * 2)] + indent
+	}
+	return indent
+}
+
+f.tmap = function(node, func, scope, options, level, order, parent, index) {
+	if(!options) {
+		options = {}
+	}
+
+	if(!node || options.stop) {
+		return options
+	}
+
+	if(level == null) {
+		level = 0
+		order = 1
+
+		if(options.print) {
+			if(!options.collect) {
+				options.collect = []
+			}
+			if(!options.indent) {
+				options.indent = []
+			}
+		}
+	}
+
+	if(level == null) level = 0
+	if(order == null) order = 1
+
+	if(options.maxdepth != null && level > options.maxdepth) {
+		return options
+	}
+
+	if(options.mindepth == null || level >= options.mindepth) {
+		var result = func.call(scope || node, node, options, level, parent, index)
+
+		if(options.stop) return options
+		if(options.collect) options.collect.push(result)
+		if(options.print) options.indent.push(f.tind(order))
+	}
+
+	var children = options.property ? node[options.property] : node.children
+	if(!children) return options
+
+	var l = children.length
+	,   r = options.reverse
+	for(var i = r ? l -1 : 0; r ? i >= 0 : i < l; r ? i-- : i++) {
+		f.tmap(children[i], func, scope, options, level +1, (order << 1)+ +(i < l -1), node, i)
+	}
+
+	if(options.print && level === 0) {
+		console.log(f.tformat(options.collect, {
+			join: options.join || '',
+			align: options.align || [1],
+			indent: options.indent
+
+		}) +'\n')
+	}
+
+	return options
 }
 
 f.rgb = function(rgb) {
@@ -555,7 +690,7 @@ f.bindr = function(func, scope, bound, replace) {
 }
 
 f.unit = function(parent, object) {
-	if(arguments.length <2) {
+	if(arguments.length <2 && typeof parent !== 'function') {
 		object = parent
 		parent = null
 	}

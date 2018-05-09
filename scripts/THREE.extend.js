@@ -35,6 +35,8 @@ THREE.Plane.prototype.intersectPlane = function ( plane, optionalTarget ) {
 			return result
 		}
 	}
+
+	return null
 }
 
 THREE.Box2.prototype.emptyEPS = function() {
@@ -44,6 +46,8 @@ THREE.Box2.prototype.emptyEPS = function() {
 }
 
 THREE.Ray.prototype.atY = function( y, optionalTarget ) {
+
+	if(optionalTarget == null) optionalTarget = new THREE.Vector3
 
 	var length = (y - this.origin.y) / this.direction.y;
 
@@ -70,6 +74,8 @@ THREE.Ray.prototype.distanceToPlane = function ( plane, extend ) {
 }
 
 THREE.Ray.prototype.intersectPlane = function ( plane, optionalTarget, extend ) {
+
+	if(optionalTarget == null) optionalTarget = new THREE.Vector3
 
 	var t = this.distanceToPlane( plane, extend );
 
@@ -107,3 +113,94 @@ THREE.Sphere.prototype.union = function ( sphere ) {
 	return this;
 
 }
+
+
+!function() {
+
+var objectTypeMap = {
+	Scene            : 'SC',
+	Sprite           : 'SP',
+	PerspectiveCamera: 'PC',
+	Group            : 'GR',
+	Object3D         : 'O3',
+	Mesh             : 'MS',
+	Line             : 'LN',
+	LineSegments     : 'LS',
+	LineLoop         : 'LL',
+	Points           : 'PT',
+	AmbientLight     : 'AL',
+	PointLight       : 'PL',
+	DirectionalLight : 'DL'
+}
+function describeObject(object, options) {
+	var fields = []
+
+	var map = options.map || 'tnmglprs'
+	for(var i = 0; i < map.length; i++) {
+		if(i > 0) fields.push(' ')
+
+		switch(map[i]) {
+
+		case 't': fields.push(
+			objectTypeMap[object.type] || object.type)
+		break
+
+		case 'n': fields.push(
+			'{'+ (object.name || '') +'}')
+		break
+
+		case 'm': fields.push(
+			object.material ? '<'+ (object.material instanceof Array
+				? '['+ object.material.map(function(m) { return m.name || '' }).join(',') +']'
+				: object.material.name || '') +'>'
+			: '')
+		break
+
+		case 'g': fields.push(
+			object.geometry
+				? (object.geometry instanceof THREE.BufferGeometry
+					? object.geometry.attributes.position && object.geometry.attributes.position.count || 0
+					: object.geometry.vertices.length) +'v'
+				: '')
+		break
+
+		case 'l': fields.push(
+			object.layers.mask +'=')
+		break
+
+		case 'p': fields.push(
+			'[',
+			f.mround(object.position.x, 3) +', ',
+			f.mround(object.position.y, 3) +', ',
+			f.mround(object.position.z, 3), ']')
+		break
+
+		case 'r': fields.push(
+			'[',
+			f.hround(f.xdeg * object.rotation.x) +', ',
+			f.hround(f.xdeg * object.rotation.y) +', ',
+			f.hround(f.xdeg * object.rotation.z), ']')
+		break
+
+		case 's': fields.push(
+			'[',
+			f.mround(object.scale.x, 3) +', ',
+			f.mround(object.scale.y, 3) +', ',
+			f.mround(object.scale.z, 3), ']')
+		break
+
+		}
+	}
+
+	return fields
+}
+
+THREE.Object3D.prototype.describe = function(options) {
+	f.tmap(this, describeObject, null, f.copy({
+		property: 'children',
+		print: true,
+		align: [1,1,1]
+	}, options))
+}
+
+}()
