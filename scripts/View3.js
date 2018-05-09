@@ -526,6 +526,7 @@ View3 = f.unit({
 			con.events.off(null, null, this)
 
 			this.animatedConnections.splice(index, 1)
+			this.animatedConnectionsEnd = true
 		}
 	},
 
@@ -1190,7 +1191,8 @@ View3 = f.unit({
 
 		this.transform.update()
 
-		if(this.animatedConnections.length) {
+		if(this.animatedConnections.length || this.animatedConnectionsEnd) {
+			this.animatedConnectionsEnd = false
 			this.needsRedraw = true
 			this.needsRetrace = true
 			this.needsProjection = true
