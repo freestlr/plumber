@@ -363,7 +363,7 @@ View3 = f.unit({
 		// this.gridYZ.position.x = 0.4 * projYZ + this.camera.position.x
 	},
 
-	orbitTo: function(nextTarget, time, distance, theta) {
+	orbitTo: function(nextTarget, time, distance, theta, lerp) {
 		var EPS = 1e-9
 
 		var camera = this.camera.position
@@ -390,7 +390,7 @@ View3 = f.unit({
 		var thetaNow = Math.acos(nextOffset.y / distGot)
 		,   thetaMin = Math.max(this.focusThetaMin, this.orbit.minPolarAngle)
 		,   thetaMax = Math.min(this.focusThetaMax, this.orbit.maxPolarAngle)
-		,   thetaGot = f.clamp(isNaN(theta) ? thetaNow : theta, thetaMin, thetaMax)
+		,   thetaGot = f.clamp(theta == null ? thetaNow : theta, thetaMin, thetaMax)
 
 		if(this.orbit.orthoMode) {
 			thetaGot = thetaNow
@@ -418,6 +418,11 @@ View3 = f.unit({
 				this.cameraTween.from(camera).to(nextCamera, time).start()
 			}
 
+		} else if(lerp != null) {
+			camera.lerp(nextCamera, lerp)
+			target.lerp(nextTarget, lerp)
+			this.orbit.update()
+
 		} else {
 			camera.copy(nextCamera)
 			target.copy(nextTarget)
@@ -431,7 +436,7 @@ View3 = f.unit({
 		this.needsRedraw = true
 	},
 
-	focusOnTree: function(time, dim) {
+	focusOnTree: function(time, dim, lerp) {
 		// return this.focusOnNode(null, time)
 
 		if(time == null) {
@@ -442,9 +447,9 @@ View3 = f.unit({
 			dim = this.currentDim
 		}
 
-		var distance = this.getFitDistance(dim.size, 1.5, 1.5)
+		var distance = this.getFitDistance(dim.size, 4/3, 4/3)
 
-		this.orbitTo(dim.center, time, distance)
+		this.orbitTo(dim.center, time, distance, null, lerp)
 	},
 
 	focusOnNode: function(node, time) {

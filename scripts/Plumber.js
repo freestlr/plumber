@@ -327,7 +327,7 @@ Plumber = f.unit({
 		this.view2.markers.markersVisible.set(!!this.modeis.ctr, 'g_m_mode')
 
 
-		this.onViewTweenUpdate()
+		this.onViewTweenUpdate(1)
 		this.onViewTweenComplete()
 		// this.tiles.update()
 	},
@@ -820,14 +820,19 @@ Plumber = f.unit({
 	},
 
 
-	onViewTweenUpdate: function() {
-		if(this.splitView) {
-			this.splitView.position = this.viewTween.source.position
-			this.tiles.update()
+	onViewTweenUpdate: function(t) {
+		if(!this.splitView) return
 
-			this.view.focusOnTree(0)
-			this.view2.focusOnTree(0)
-		}
+		this.splitView.position = this.viewTween.source.position
+		this.tiles.update()
+
+		this.view.focusOnTree(0,
+			this.explodeEnabled ? this.view.explodeDim : this.view.assembleDim,
+			t)
+
+		this.view2.focusOnTree(0,
+			this.explodeEnabled ? this.view2.explodeDim : this.view2.assembleDim,
+			t)
 	},
 
 	onViewTweenStart: function() {
