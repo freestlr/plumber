@@ -8,6 +8,7 @@
  */
 
 var TWEEN = {
+	time: 0,
 	tweens: [],
 
 	getAll: function() {
@@ -16,20 +17,19 @@ var TWEEN = {
 
 	removeAll: function() {
 		for(var i = TWEEN.tweens.length -1; i >= 0; i--) {
-			TWEEN.tweens[i].drop = true
+			TWEEN.tweens[i].updating = false
 		}
 	},
 
 	add: function(tween) {
-		tween.drop = false
+		tween.updating = true
 		if(TWEEN.tweens.indexOf(tween) === -1) {
 			TWEEN.tweens.push(tween)
 		}
 	},
 
 	remove: function(tween) {
-		tween.playing = false
-		tween.drop = true
+		tween.updating = false
 	},
 
 	loop: function() {
@@ -42,15 +42,17 @@ var TWEEN = {
 	},
 
 	update: function(time) {
+		TWEEN.time = isNaN(time) ? window.performance.now() : time
+
 		var length = TWEEN.tweens.length
 		if(!length) return false
-
-		time = isNaN(time) ? window.performance.now() : +time
 
 		for(var i = length -1; i >= 0; i--) {
 			var tween = TWEEN.tweens[i]
 
-			if(tween.drop || !tween.update(time)) {
+			if(tween.updating || tween.ended) {
+				tween.update(TWEEN.time)
+			} else {
 				TWEEN.tweens.splice(i, 1)
 			}
 		}
@@ -58,8 +60,6 @@ var TWEEN = {
 		return true
 	}
 }
-
-TWEEN.loop()
 
 TWEEN.Tween = function(object) {
 	this.source = {}
@@ -72,31 +72,52 @@ TWEEN.Tween = function(object) {
 	this.repeatTimes = 0
 	this.enableYoyo = false
 	this.reversed = false
-
 	this.easingFunction = TWEEN.Easing.Linear.None
 	this.interpolationFunction = TWEEN.Interpolation.Linear
+
 	this.chainedTweens = []
+	this.synchedTweens = []
 
 	this.onStartCallbackFired = false
 	this.onStartCallback = null
 	this.onStartScope = null
+	this.onStartData = null
 
 	this.onUpdateCallback = null
 	this.onUpdateScope = null
+	this.onUpdateData = null
 
 	this.onCompleteCallback = null
 	this.onCompleteScope = null
+	this.onCompleteData = null
 
 	this.onStopCallback = null
 	this.onStopScope = null
+	this.onStopData = null
 
 	this.playing = false
 	this.ended = false
+	this.elapsed = 0
+	this.progress = 0
+	this.prodelta = 0
 
 	if(object) this.setSource(object)
 }
 
 TWEEN.Tween.prototype = {
+
+	copy: function(tween) {
+		this.durationTime          = tween.durationTime
+		this.delayTime             = tween.delayTime
+		this.startTime             = tween.startTime
+		this.repeatTimes           = tween.repeatTimes
+		this.enableYoyo            = tween.enableYoyo
+		this.reversed              = tween.reversed
+		this.easingFunction        = tween.easingFunction
+		this.interpolationFunction = tween.interpolationFunction
+
+		return this
+	},
 
 	setSource: function(object) {
 		this.source = object
@@ -121,11 +142,14 @@ TWEEN.Tween.prototype = {
 	},
 
 	to: function(object, duration) {
+		if(object != null) {
+			this.setTarget(object)
+		}
+
 		if(duration != null) {
 			this.durationTime = duration
 		}
 
-		this.setTarget(object)
 		return this
 	},
 
@@ -159,38 +183,55 @@ TWEEN.Tween.prototype = {
 		return this
 	},
 
-	onStart: function(callback, scope) {
+	synch: function() {
+
+	},
+
+	onStart: function(callback, scope, data) {
 		this.onStartCallback = callback
 		this.onStartScope = scope
+		this.onStartData = data
 		return this
 	},
 
-	onUpdate: function(callback, scope) {
+	onUpdate: function(callback, scope, data) {
 		this.onUpdateCallback = callback
 		this.onUpdateScope = scope
+		this.onUpdateData = data
 		return this
 	},
 
-	onComplete: function(callback, scope) {
+	onComplete: function(callback, scope, data) {
 		this.onCompleteCallback = callback
 		this.onCompleteScope = scope
+		this.onCompleteData = data
 		return this
 	},
 
-	onStop: function(callback, scope) {
+	onStop: function(callback, scope, data) {
 		this.onStopCallback = callback
 		this.onStopScope = scope
+		this.onStopData = data
 		return this
 	},
 
 
 	stop: function() {
+		this.playing = false
+
 		TWEEN.remove(this)
 
 		if(this.debug) console.trace(this.debug, 'stop')
 
 		if(this.onStopCallback !== null) {
-			this.onStopCallback.call(this.onStopScope, this.source)
+			this.onStopCallback.call(this.onStopScope, this.onStopData)
+		}
+
+		for(var name in this.valuesTarget) {
+			var valueTarget = this.valuesTarget[name]
+			if(valueTarget instanceof TWEEN.Tween) {
+				valueTarget.stop()
+			}
 		}
 
 		this.stopChainedTweens()
@@ -223,10 +264,16 @@ TWEEN.Tween.prototype = {
 		this.valuesTarget = {}
 
 		for(var property in this.target) {
-			if(property in this.valuesSource === false) continue
-
 			var valueTarget = this.target[property]
 			,   valueSource = this.valuesSource[property]
+
+			if(valueTarget instanceof TWEEN.Tween) {
+				this.valuesTarget[property] = valueTarget
+				continue
+			}
+
+			if(property in this.valuesSource === false) continue
+
 
 			if(valueTarget instanceof Array) {
 				if(valueTarget.length) {
@@ -257,15 +304,35 @@ TWEEN.Tween.prototype = {
 
 		this.onStartCallbackFired = false
 		this.ended = false
+		this.elapsed = 0
+		this.progress = 0
+		this.prodelta = 0
 
-		this.startTime = isNaN(time) ? window.performance.now() : +time
+		this.startTime = isNaN(time) ? TWEEN.time : +time
 		this.startTime += this.delayTime
 
 		this.updateSource()
 		this.updateTarget()
 
+		this.delta = {}
+
 		for(var property in this.valuesTarget) {
-			this.delta[property] = this.valuesSource[property]
+			var valueSource = this.valuesSource[property]
+			,   valueTarget = this.valuesTarget[property]
+
+			// if(valueSource === valueTarget) {
+			// 	delete this.valuesSource[property]
+			// 	delete this.valuesTarget[property]
+			// }
+
+			if(valueTarget instanceof TWEEN.Tween) {
+				valueTarget.start(time)
+				TWEEN.remove(valueTarget)
+				this.delta[property] = valueTarget.delta
+
+			} else {
+				this.delta[property] = 0
+			}
 		}
 
 		if(this.debug) console.trace(this.debug, 'start',
@@ -281,12 +348,17 @@ TWEEN.Tween.prototype = {
 			this.playing = false
 
 			if(this.debug) console.log(this.debug, 'ended')
-
-			return false
+			return
 		}
 
 		if(time < this.startTime) {
-			return true
+			this.updating = true
+			return
+		}
+
+		if(time - this.startTime > this.durationTime && this.elapsed === 1) {
+			this.updating = false
+			return
 		}
 
 		if(this.onStartCallbackFired === false) {
@@ -294,42 +366,19 @@ TWEEN.Tween.prototype = {
 			this.playing = true
 
 			if(this.onStartCallback !== null) {
-				this.onStartCallback.call(this.onStartScope, this.source)
+				this.onStartCallback.call(this.onStartScope, this.source, this.onStartData)
 			}
 
 			if(this.debug) console.log(this.debug, 'playing')
 		}
 
-		var elapsed = (time - this.startTime) / this.durationTime
-		elapsed = elapsed > 1 ? 1 : elapsed
+		this.passedTime = time - this.startTime
+		this.remainTime = this.durationTime - this.passedTime
+		this.setProgress(this.passedTime / this.durationTime)
 
-		var value = this.easingFunction(elapsed)
+		this.updating = this.elapsed < 1 || this.repeatTimes > 0
 
-		for(var property in this.valuesTarget) {
-			var valueTarget = this.valuesTarget[property]
-			,   valueSource = this.valuesSource[property]
-			,   valueCurrent
-
-			if(valueTarget instanceof Array) {
-				valueCurrent = this.interpolationFunction(valueTarget, value)
-			} else {
-				valueCurrent = valueSource + (valueTarget - valueSource) * value
-			}
-
-			this.delta[property] = valueCurrent - this.source[property]
-			this.source[property] = valueCurrent
-		}
-
-		if(this.debug) console.log(this.debug, 'update',
-			'\n\tvalues:', this.source,
-			'\n\tdetta:', this.delta)
-
-		if(this.onUpdateCallback !== null) {
-			this.onUpdateCallback.call(this.onUpdateScope, value, this.source)
-		}
-
-
-		if(elapsed === 1) {
+		if(this.elapsed === 1) {
 
 			if(this.repeatTimes > 0) {
 				this.repeatTimes--
@@ -362,7 +411,7 @@ TWEEN.Tween.prototype = {
 				this.ended = true
 
 				if(this.onCompleteCallback !== null) {
-					this.onCompleteCallback.call(this.onCompleteScope, this.source)
+					this.onCompleteCallback.call(this.onCompleteScope, this.onCompleteData)
 				}
 
 				for(var i = this.chainedTweens.length -1; i >= 0; i--) {
@@ -373,7 +422,41 @@ TWEEN.Tween.prototype = {
 			}
 		}
 
-		return true
+		return
+	},
+
+	setProgress: function(elapsed) {
+		var last = this.progress
+		this.elapsed = elapsed > 1 ? 1 : elapsed < 0 ? 0 : elapsed
+		this.progress = this.easingFunction(this.elapsed)
+		this.prodelta = this.progress - last
+
+		for(var property in this.valuesTarget) {
+			var valueTarget = this.valuesTarget[property]
+			,   valueSource = this.valuesSource[property]
+			,   valueCurrent
+
+			if(valueTarget instanceof TWEEN.Tween) {
+				valueTarget.setProgress(this.elapsed)
+				continue
+
+			} else if(valueTarget instanceof Array) {
+				valueCurrent = this.interpolationFunction(valueTarget, this.progress)
+			} else {
+				valueCurrent = valueSource + (valueTarget - valueSource) * this.progress
+			}
+
+			this.delta[property] = valueCurrent - this.source[property]
+			this.source[property] = valueCurrent
+		}
+
+		if(this.debug) console.log(this.debug, 'update',
+			'\n\tvalues:', this.source,
+			'\n\tdetta:', this.delta)
+
+		if(this.onUpdateCallback !== null) {
+			this.onUpdateCallback.call(this.onUpdateScope, this.progress, this.source)
+		}
 	}
 }
 
