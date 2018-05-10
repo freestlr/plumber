@@ -83,6 +83,11 @@ TWEEN.Tween = function(object) {
 	this.onStartScope = null
 	this.onStartData = null
 
+	this.onHalfwayCallbackFired = false
+	this.onHalfwayCallback = null
+	this.onHalfwayScope = null
+	this.onHalfwayData = null
+
 	this.onUpdateCallback = null
 	this.onUpdateScope = null
 	this.onUpdateData = null
@@ -191,6 +196,13 @@ TWEEN.Tween.prototype = {
 		this.onStartCallback = callback
 		this.onStartScope = scope
 		this.onStartData = data
+		return this
+	},
+
+	onHalfway: function(callback, scope, data) {
+		this.onHalfwayCallback = callback
+		this.onHalfwayScope = scope
+		this.onHalfwayData = data
 		return this
 	},
 
@@ -303,6 +315,7 @@ TWEEN.Tween.prototype = {
 		TWEEN.add(this)
 
 		this.onStartCallbackFired = false
+		this.onHalfwayCallbackFired = false
 		this.ended = false
 		this.elapsed = 0
 		this.progress = 0
@@ -378,6 +391,24 @@ TWEEN.Tween.prototype = {
 
 		this.updating = this.elapsed < 1 || this.repeatTimes > 0
 
+
+		if(this.debug) console.log(this.debug, 'update',
+			'\n\tvalues:', this.source,
+			'\n\tdetta:', this.delta)
+
+		if(this.onHalfwayCallbackFired === false) {
+			this.onHalfwayCallbackFired = true
+
+			if(this.onHalfwayCallback !== null) {
+				this.onHalfwayCallback.call(this.onHalfwayScope, this.onHalfwayData)
+			}
+		}
+
+		if(this.onUpdateCallback !== null) {
+			this.onUpdateCallback.call(this.onUpdateScope, this.progress, this.source)
+		}
+
+
 		if(this.elapsed === 1) {
 
 			if(this.repeatTimes > 0) {
@@ -448,14 +479,6 @@ TWEEN.Tween.prototype = {
 
 			this.delta[property] = valueCurrent - this.source[property]
 			this.source[property] = valueCurrent
-		}
-
-		if(this.debug) console.log(this.debug, 'update',
-			'\n\tvalues:', this.source,
-			'\n\tdetta:', this.delta)
-
-		if(this.onUpdateCallback !== null) {
-			this.onUpdateCallback.call(this.onUpdateScope, this.progress, this.source)
 		}
 	}
 }
