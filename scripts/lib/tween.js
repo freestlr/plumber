@@ -61,6 +61,9 @@ var TWEEN = {
 	}
 }
 
+TWEEN.loop()
+
+
 TWEEN.Tween = function(object) {
 	this.source = {}
 	this.target = {}
@@ -396,7 +399,7 @@ TWEEN.Tween.prototype = {
 			'\n\tvalues:', this.source,
 			'\n\tdetta:', this.delta)
 
-		if(this.onHalfwayCallbackFired === false) {
+		if(this.onHalfwayCallbackFired === false && this.progress > 0.5) {
 			this.onHalfwayCallbackFired = true
 
 			if(this.onHalfwayCallback !== null) {
