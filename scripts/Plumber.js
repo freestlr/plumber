@@ -70,10 +70,11 @@ Plumber = f.unit({
 		})
 
 
-		this.viewTween = new TWEEN.Tween({ position: 1 })
-			.to({ position: 1 }, 400)
+		this.viewTween = new TWEEN.Tween({ split: 0 })
+			.to({ split: 0 }, 400)
 			.easing(TWEEN.Easing.Cubic.Out)
 			.onStart(this.onViewTweenStart, this)
+			.onHalfway(this.onViewTweenHalfway, this)
 			.onUpdate(this.onViewTweenUpdate, this)
 			.onComplete(this.onViewTweenComplete, this)
 
@@ -312,11 +313,8 @@ Plumber = f.unit({
 
 
 		this.splitView = this.tiles.splits[0]
-		if(this.splitView) {
-			var p = this.splitView.position
-			this.viewTween.target.position = p
-			this.viewTween.source.position = p
-		}
+		this.viewTween.target.split = 0
+		this.viewTween.source.split = 0
 
 
 		this.splitViewMessageVisible.set(this.modeis.ctr, 'g_svm_mode')
@@ -776,11 +774,15 @@ Plumber = f.unit({
 		this.gui.add(this, 'explode').min(0).max(1).name('Explode').onChange(explode)
 		this.gui.add(this, 'explodeStepped').name('Explode Step')
 
-		this.gui.add(this.view, 'directAngle').min(-1).max(1).name('Direct Angle').onChange(relight)
-		this.gui.add(this.view, 'directK').min(-1).max(1).name('Direct K').onChange(relight)
-		this.gui.add(this.view, 'directLift').min(-1).max(1).name('Direct Lift').onChange(relight)
-		this.gui.add(this.view.dirLight, 'intensity').min(0).max(1).name('Direct Power').onChange(redraw)
-		this.gui.add(this.view.ambLight, 'intensity').min(0).max(1).name('Ambient Power').onChange(redraw)
+		var light = this.gui.addFolder('Light')
+		light.add(this.view, 'directAngle').min(-1).max(1).name('Direct Angle').onChange(relight)
+		light.add(this.view, 'directK').min(-1).max(1).name('Direct K').onChange(relight)
+		light.add(this.view, 'directLift').min(-1).max(1).name('Direct Lift').onChange(relight)
+		light.add(this.view.dirLight, 'intensity').min(0).max(1).name('Direct Power').onChange(redraw)
+		light.add(this.view.ambLight, 'intensity').min(0).max(1).name('Ambient Power').onChange(redraw)
+
+		this.gui.add(this.viewTween, 'durationTime').min(400).max(10000).name('T')
+
 
 		function relight() {
 			self.view.updateLights()
@@ -823,8 +825,9 @@ Plumber = f.unit({
 	onViewTweenUpdate: function(t) {
 		if(!this.splitView) return
 
-		this.splitView.position = this.viewTween.source.position
+		this.splitView.position = 1 - this.viewTween.source.split / 2
 		this.tiles.update()
+
 
 		this.view.focusOnTree(0,
 			this.explodeEnabled ? this.view.explodeDim : this.view.assembleDim,
@@ -833,6 +836,10 @@ Plumber = f.unit({
 		this.view2.focusOnTree(0,
 			this.explodeEnabled ? this.view2.explodeDim : this.view2.assembleDim,
 			t)
+	},
+
+	onViewTweenHalfway: function() {
+		this.updateMarkerVisibility()
 	},
 
 	onViewTweenStart: function() {
@@ -943,9 +950,9 @@ Plumber = f.unit({
 
 		this.view2.setTree(null)
 
-		var splitPosition = this.splitScreen ? 0.5 : 1
-		if(splitPosition !== this.viewTween.target.position) {
-			this.viewTween.target.position = splitPosition
+		var split = this.splitScreen ? 1 : 0
+		if(split !== this.viewTween.target.split) {
+			this.viewTween.target.split = split
 			this.viewTween.start()
 		}
 
@@ -1053,7 +1060,11 @@ Plumber = f.unit({
 	},
 
 	updateMarkerVisibility: function() {
-		var visible = this.debug || this.view2.tree
+		var visible = this.view2.tree
+			&& this.viewTween.target.split === 1
+			&& this.viewTween.source.split > 0.5
+
+		if(this.debug) visible = true
 
 		this.view .markers.markersVisible.set(!!visible, 'g_m_split')
 		this.view2.markers.markersVisible.set(!!visible, 'g_m_split')
