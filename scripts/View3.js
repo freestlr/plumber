@@ -942,6 +942,13 @@ View3 = f.unit({
 		this.needsRedraw = true
 	},
 
+	updateViewportSize: function() {
+		var w = this.viewport ? this.viewport.w : this.width
+		,   h = this.viewport ? this.viewport.h : this.height
+
+		this.orbit.setSize(w, h)
+	},
+
 	draw: function() {
 		var gl = this.renderer.context
 		,   vp = this.viewport

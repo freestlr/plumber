@@ -1426,6 +1426,9 @@ Plumber = f.unit({
 		this.view2.rtB1 = this.view.rtB1
 		this.view2.rtB2 = this.view.rtB2
 
+		this.view.updateViewportSize()
+		this.view2.updateViewportSize()
+
 		// this.view.onResize()
 	},
 

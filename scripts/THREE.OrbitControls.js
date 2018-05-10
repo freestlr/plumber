@@ -25,11 +25,14 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	this.object = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
+	this.element = this.domElement === document ? this.domElement.body : this.domElement;
 
 	// API
 
 	// Set to false to disable this control
 	this.enabled = true;
+	this.viewportW = 0
+	this.viewportH = 0
 
 	// "target" sets the location of focus, where the control orbits around
 	// and where it pans with respect to.
@@ -221,7 +224,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 	// right and down are positive
 	this.pan = function ( deltaX, deltaY ) {
 
-		var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+		var width = scope.viewportW || scope.element.clientWidth
+		var height = scope.viewportH || scope.element.clientHeight
 
 		if ( scope.object.fov !== undefined ) {
 
@@ -233,8 +237,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 			// half of the fov is center to top of screen
 			targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
-			var dx = 2 * deltaX * targetDistance / element.clientHeight
-			,   dy = 2 * deltaY * targetDistance / element.clientHeight
+			var dx = 2 * deltaX * targetDistance / height
+			,   dy = 2 * deltaY * targetDistance / height
 			// we actually don't use screenWidth, since perspective camera is fixed to screen height
 			scope.panLeft(dx)
 			if(scope.orthoMode) {
@@ -246,8 +250,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 		} else if ( scope.object.top !== undefined ) {
 
 			// orthographic
-			scope.panLeft( deltaX * (scope.object.right - scope.object.left) / element.clientWidth );
-			scope.panUp( deltaY * (scope.object.top - scope.object.bottom) / element.clientHeight );
+			scope.panLeft( deltaX * (scope.object.right - scope.object.left) / width );
+			scope.panUp( deltaY * (scope.object.top - scope.object.bottom) / height );
 
 		} else {
 
@@ -280,6 +284,11 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		scale *= dollyScale;
 
+	};
+
+	this.setSize = function(w, h) {
+		this.viewportW = w
+		this.viewportH = h
 	};
 
 	this.update = function () {
@@ -445,9 +454,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		event.preventDefault();
 
-		var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
-		var width = element.clientWidth;
-		var height = element.clientHeight;
+		var width = scope.viewportW || scope.element.clientWidth
+		var height = scope.viewportH || scope.element.clientHeight
 		var position = scope.object.position;
 		var offset = position.clone().sub( scope.target );
 		var targetDistance = offset.length();
@@ -463,10 +471,10 @@ THREE.OrbitControls = function ( object, domElement ) {
 			rotateDelta.subVectors( rotateEnd, rotateStart );
 
 			// rotating across whole screen goes 360 degrees around
-			scope.rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientWidth * scope.rotateSpeed );
+			scope.rotateLeft( 2 * Math.PI * rotateDelta.x / width * scope.rotateSpeed );
 
 			// rotating up and down along whole screen attempts to go 360, but limited to 180
-			scope.rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight * scope.rotateSpeed );
+			scope.rotateUp( 2 * Math.PI * rotateDelta.y / height * scope.rotateSpeed );
 
 			rotateStart.copy( rotateEnd );
 
@@ -647,7 +655,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 		event.preventDefault();
 		event.stopPropagation();
 
-		var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+		var width = scope.viewportW || scope.element.clientWidth
+		var height = scope.viewportH || scope.element.clientHeight
 
 		switch ( event.touches.length ) {
 
@@ -660,9 +669,9 @@ THREE.OrbitControls = function ( object, domElement ) {
 				rotateDelta.subVectors( rotateEnd, rotateStart );
 
 				// rotating across whole screen goes 360 degrees around
-				scope.rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientWidth * scope.rotateSpeed );
+				scope.rotateLeft( 2 * Math.PI * rotateDelta.x / width * scope.rotateSpeed );
 				// rotating up and down along whole screen attempts to go 360, but limited to 180
-				scope.rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight * scope.rotateSpeed );
+				scope.rotateUp( 2 * Math.PI * rotateDelta.y / height * scope.rotateSpeed );
 
 				rotateStart.copy( rotateEnd );
 
