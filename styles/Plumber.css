@@ -341,34 +341,34 @@ body .dg .property-name {
 	padding: 8px 14px 8px 14px;
 	margin: 4px;
 	font-size: 14px;
-	background-color: #296fd6;
-	background-color: #34a592;
-	border-left: 3px solid #102e84;
-	border-left: 3px solid #167d6c;
+	background-color: #083f84;
+	background-color: #198875;
+	border-left: 3px solid #000;
+	border-left: 3px solid #064a3f;
 	color: #fff;
 	color: #e8e8e8;
 }
 .prompt-button:hover {
-	background-color: #083f84;
-	background-color: #198875;
-	border-left-color: #000;
-	border-left-color: #064a3f;
+	background-color: #296fd6;
+	background-color: #34a592;
+	border-left-color: #102e84;
+	border-left-color: #167d6c;
 }
 
 
 
-.view-preloader-box {
+.loading-box {
 	width: 130px;
 	height: 25px;
 	border: 1px solid #546f7a;
 	pointer-events: none;
 	padding: 0 1px 1px 0;
 }
-.view-preloader-box.hidden {
+.loading-box.hidden {
 	visibility: hidden;
 	opacity: 0;
 }
-.view-preloader-block {
+.loading-block {
 	display: inline-block;
 	width: 12px;
 	height: 24px;
