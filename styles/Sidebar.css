@@ -48,6 +48,7 @@
 }
 .sample-item.thumbed {
 	height: 156px;
+	height: 14vw;
 }
 .sample-item:last-child {
 	border-bottom: none;
