@@ -305,13 +305,13 @@ Block.Toggle = f.unit(Block, {
 		if(emitEvent) {
 			this.events.emit('change', next)
 			this.events.emit(next ? 'active' : 'inactive', next)
-
-			var scope = this
-			if(!force && this.reset) setTimeout(function() {
-				scope.set(prev, emitEvent, true)
-
-			}, this.resetTime)
 		}
+
+		var scope = this
+		if(!force && this.reset) setTimeout(function() {
+			scope.set(prev, emitEvent, true)
+
+		}, this.resetTime)
 
 		return true
 	},
