@@ -13,8 +13,6 @@ UI.NodeMarker = f.unit(UI.Marker, {
 		var upcon = this.node.upcon
 
 
-		// this.label = dom.div('marker-info', this.content)
-		// dom.text(this.label, node.sample.src)
 		dom.text(this.elemInfo, '['+ this.node.id +'] '+ this.node.sample.src)
 		dom.addclass(this.elemInfo, 'marker-label')
 
@@ -30,35 +28,39 @@ UI.NodeMarker = f.unit(UI.Marker, {
 				einam: '',
 				eventScope: this,
 				reset: true
-			},
+			}
+		})
 
-			items: [{
+		if(upcon) {
+			this.buttons.addItem({
 				action: 'node_explode',
-				eicon: 'i-explode',
+				attr: { icon: 'i-explode' },
 				reset: false,
-				hidden: !upcon,
-				active: upcon && !upcon.connected.tween.target.connected,
+				active: !upcon.connected.connTween.target.connected,
 				events: { 'hover': this.onHoverButton }
-
-			}, {
+			})
+			this.buttons.addItem({
 				action: 'node_rotate',
-				eicon: 'i-rotate',
+				attr: { icon: 'i-rotate' },
 				events: { 'hover': this.onHoverButton }
-
-			}, {
+			})
+		}
+		if(true) {
+			this.buttons.addItem({
 				action: 'node_delete',
-				eicon: 'i-delete'
-
-			}, {
-				eicon: 'i-info',
-				hidden: !this.node.sample.link,
+				attr: { icon: 'i-delete' }
+			})
+		}
+		if(this.node.sample.link) {
+			this.buttons.addItem({
 				etag: 'a',
 				attr: {
+					'icon': 'i-info',
 					'href': this.node.sample.link,
 					'target': '_blank'
 				}
-			}]
-		})
+			})
+		}
 	},
 
 	onAddButton: function(block) {

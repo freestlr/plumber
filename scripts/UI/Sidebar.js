@@ -17,13 +17,10 @@ UI.Sidebar = f.unit(Block, {
 				visibleMethod: dom.visible,
 				ename: 'mode-item'
 			},
-			items: [{
-				data: 'connect',
-				text: 'CONNECT'
-			}, {
-				data: 'replace',
-				text: 'REPLACE'
-			}]
+			items: [
+				{ data: 'connect', attr: { text: 'CONNECT' } },
+				{ data: 'replace', attr: { text: 'REPLACE' } }
+			]
 		})
 		this.modeMenu.set(0)
 		this.modeMenu.events.on('change', this.onModeChange, this)
