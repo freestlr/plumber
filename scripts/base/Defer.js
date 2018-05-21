@@ -7,6 +7,7 @@ Defer.all = function(list) {
 	var defer  = new Defer
 	,   length = list && list.length || 0
 	,   result = new Array(list.length)
+	,   progri = new Array(list.length)
 	,   loaded = 0
 	,   failed = 0
 
@@ -18,12 +19,23 @@ Defer.all = function(list) {
 	for(var i = 0; i < length; i++) {
 		var item = list[i]
 		if(item instanceof Defer) {
-			item.then(check, check, item)
+			progri[i] = 0
+			item.then(check, check, progress, item)
 
 		} else {
+			progri[i] = 1
 			result[i] = item
 			loaded++
 		}
+	}
+
+	function progress(value) {
+		var index = list.indexOf(this)
+		if(index === -1) return
+
+		progri[index] = value
+
+		defer.progress(progri)
 	}
 
 	function check(value, success) {
@@ -73,13 +85,13 @@ Defer.timer = function(duration) {
 
 Defer.prototype = {
 	unsafe: false,
-	soft: false,
+	soft: true,
 
-	set: function(onresolve, onreject, scope, unsafe) {
-		this.onresolve = typeof onresolve === 'function' ? onresolve : null
-		this.onreject  = typeof onreject  === 'function' ? onreject  : null
-		this.scope  = this.onreject ? scope  : onreject || scope
-		this.unsafe = !!unsafe
+	set: function(onresolve, onreject, onprogress, scope) {
+		this.onresolve  = typeof onresolve  === 'function' ? onresolve  : null
+		this.onreject   = typeof onreject   === 'function' ? onreject   : null
+		this.onprogress = typeof onprogress === 'function' ? onprogress : null
+		this.scope = this.onprogress ? scope : this.onreject ? onprogress : onreject || scope
 		return this
 	},
 
@@ -89,12 +101,12 @@ Defer.prototype = {
 		return this.set(null)
 	},
 
-	then: function(onresolve, onreject, scope, unsafe) {
-		return this.push(new Defer(onresolve, onreject, scope, unsafe))
+	then: function(onresolve, onreject, onprogress, scope) {
+		return this.push(new Defer(onresolve, onreject, onprogress, scope))
 	},
 
-	anyway: function(func, scope, unsafe) {
-		return this.push(new Defer(func, func, scope, unsafe))
+	anyway: function(func, scope) {
+		return this.push(new Defer(func, func, scope))
 	},
 
 	delay: function(duration) {
@@ -112,12 +124,47 @@ Defer.prototype = {
 		return defer
 	},
 
-	resolve: function(value, defer) {
-		return this.transition(true, value, defer)
+	willProgress: function() {
+		var defer = this
+		return function(value) { defer.progress(value) }
 	},
 
-	reject: function(value, defer) {
-		return this.transition(false, value, defer)
+	willResolve: function(value) {
+		return this.willTransition(true, value)
+	},
+
+	willReject: function(value) {
+		return this.willTransition(false, value)
+	},
+
+	willTransition: function(success, bound) {
+		var defer = this
+		return function(value) { defer.transition(success, bound == null ? value : bound) }
+	},
+
+	progress: function(value) {
+		if(!this.pending) return this
+
+		if(this.onprogress) {
+			this.onprogress.call(this.scope, value, this)
+
+		} else {
+			var defer = this.head
+			while(defer) {
+				defer.progress(value)
+				defer = defer.next
+			}
+		}
+
+		return this
+	},
+
+	resolve: function(value) {
+		return this.transition(true, value)
+	},
+
+	reject: function(value) {
+		return this.transition(false, value)
 	},
 
 	transition: function(success, value) {
@@ -164,12 +211,13 @@ Defer.prototype = {
 				this.value.push(defer)
 
 			} else while(defer) {
-				defer.transition(this.success, this.value, this)
+				defer.transition(this.success, this.value)
 				defer = defer.next
 			}
 
-		} else if(!this.success && !this.soft) {
-			throw this.value
+		} else if(!this.success) {
+			if(this.soft) console.error(this.value)
+			else throw this.value
 		}
 
 		return this
