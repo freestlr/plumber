@@ -635,6 +635,68 @@ Imagery.prototype = {
 		+')'
 	},
 
+	displayImage: function(image, duration) {
+		if(this.displayedImage) {
+			dom.remove(this.displayedImage)
+			delete this.displayedImage
+		}
+
+		this.displayedImage = image
+
+		if(!this.displayRoot) {
+			this.displayRoot = this.createDisplayRoot()
+		}
+
+		if(image) {
+			image.style.cssFloat = 'left'
+			image.style.imageRendering = 'pixelated'
+			dom.append(this.displayRoot, image)
+
+			if(duration) setTimeout(dom.remove, duration, image)
+		}
+	},
+
+	createDisplayRoot: function() {
+		var root = dom.div('display-root', document.body)
+		var scale = 1
+
+		f.copy(root.style, {
+			position: 'absolute',
+			backgroundColor: 'black',
+			border: '1px dashed white',
+			zIndex: 1
+		})
+
+		new EventHandler(reset, this).listen('tap', root)
+		new EventHandler(wheel, this).listen('wheel', root)
+
+		function wheel(e) {
+			var delta = e.wheelDeltaY || -e.deltaY
+			,   value = delta / Math.abs(delta)
+			if(isNaN(value)) return
+
+			zoom.call(this, Math.pow(2, Math.ceil(Math.log2(scale)) + value))
+		}
+
+		function reset() {
+			dom.remove(this.displayedImage)
+			delete this.displayedImage
+			zoom.call(this, 1)
+		}
+
+		function zoom(s) {
+			var img = this.displayedImage
+			if(!img) return
+
+			var w = img.naturalWidth || img.width
+			img.style.width = (w * s) +'px'
+
+			scale = s
+		}
+
+		return root
+	},
+
 	unwrapCubemap3x2: function(image) {
 		var s = image.height / 2
 
