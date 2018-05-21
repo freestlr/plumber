@@ -5,9 +5,9 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
 
-	<script src="build/three.js"></script>
-	<script src="build/plumber-engine.js"></script>
-	<link rel="stylesheet" href="build/plumber-engine.css">
+	<script src="../../build/three.js"></script>
+	<script src="../../build/plumber-engine.js"></script>
+	<link rel="stylesheet" href="../../build/plumber-engine.css">
 
 	<style>
 		body {
@@ -17,10 +17,11 @@
 			position: relative;
 		}
 		.item1 {
-			display: inline-block;
+			display: block;
 			width: 640px;
 			height: 480px;
 			margin-right: 24px;
+			margin-bottom: 24px;
 		}
 		.button {
 			display: inline-block;
@@ -47,9 +48,9 @@
 <script>
 	var plumber = new Plumber({
 		eroot: document.querySelector('.item1'),
-		srcAtlas: 'build/plumber-atlas.svg',
-		srcCubemap: 'build/plumber-cubemap.png',
-		dirSamples: 'samples/',
+		srcAtlas: '../../build/plumber-atlas.svg',
+		srcCubemap: '../../build/plumber-cubemap.png',
+		dirSamples: '../../samples/',
 		mode: 'constructor'
 	})
 
