@@ -585,7 +585,7 @@ Block.Tip = f.unit(Block.Fade, {
 		this.content = dom.div('tip-content', this.element)
 
 		if(!this.tipRoot) {
-			this.tipRoot = this.eroot || this.element.parentNode || document.body
+			this.tipRoot = this.eroot || this.element.parentNode
 		}
 
 		this.arrowPoint   = { x: 0, y: 0 }
