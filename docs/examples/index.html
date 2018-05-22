@@ -21,6 +21,7 @@
 		}
 		.list a[href] {
 			display: block;
+			position: relative;
 			padding: 8px;
 			color: white;
 			text-decoration: none;
@@ -31,6 +32,19 @@
 		.list a[href].active {
 			color: teal;
 			background-color: white;
+		}
+		.list a[href].loaded:after {
+			content: "";
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			right: 16px;
+			margin: auto;
+			width: 0;
+			height: 0;
+			border-left: 8px solid teal;
+			border-top: 4px solid transparent;
+			border-bottom: 4px solid transparent;
 		}
 		.view {
 			position: absolute;
@@ -56,8 +70,12 @@
 	<script>
 		var iframe = document.querySelector('#viewFrame')
 		,   elist = document.querySelector('.list')
+		,   active_link = null
 
 		var examples = [{
+		// 	name: "Default Constructor",
+		// 	url: "../../index.html"
+		// }, {
 			name: "Basic viewer",
 			url: "api1-viewer.html"
 		}, {
@@ -93,14 +111,22 @@
 
 
 		function onhashchange() {
+			active_link = null
+
 			var page = location.hash.slice(1) || examples[0].url
 			for(var i = 0; i < examples.length; i++) {
 				var item = examples[i]
+				var active = item.url === page
 
-				item.link.className = item.url === page ? 'active' : ''
+				if(active) active_link = item
+				item.link.className = active ? 'active' : ''
 			}
 
 			iframe.src = page
+		}
+
+		iframe.onload = function() {
+			if(active_link) active_link.link.className += ' loaded'
 		}
 
 		window.addEventListener('hashchange', onhashchange)
