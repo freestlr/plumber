@@ -7,86 +7,6 @@ Defer.safe = true
 Defer.soft = true
 Defer.silent = false
 
-Defer.all = function(list) {
-	var defer  = new Defer
-	,   length = list && list.length || 0
-	,   result = new Array(list.length)
-	,   progri = new Array(list.length)
-	,   loaded = 0
-	,   failed = 0
-
-	if(!length) {
-		defer.resolve(result)
-		return defer
-	}
-
-	for(var i = 0; i < length; i++) {
-		var item = list[i]
-		if(item instanceof Defer) {
-			progri[i] = 0
-			item.then(check, check, progress, item)
-
-		} else {
-			progri[i] = 1
-			result[i] = item
-			loaded++
-		}
-	}
-
-	function progress(value) {
-		var index = list.indexOf(this)
-		if(index === -1) return
-
-		progri[index] = value
-
-		defer.progress(progri)
-	}
-
-	function check(value, success) {
-		var index = list.indexOf(this)
-
-		if(value instanceof Defer) {
-			list[index] = value
-			value.then(check, check)
-			return
-		}
-
-		success ? ++loaded : ++failed
-		if(success) result[index] = value
-
-		if(loaded + failed >= length) {
-			setTimeout(function() {
-				defer.transition(!failed, result)
-			}, 0)
-		}
-	}
-
-	return defer
-}
-
-Defer.complete = function(success, value) {
-	var defer = new Defer
-	defer.pending = false
-	defer.success = success
-	defer.value = value
-
-	return defer
-}
-
-Defer.timer = function(duration) {
-	function func(value, success) {
-		var defer = new Defer
-
-		setTimeout(function() {
-			defer.transition(value, success)
-		}, duration || 0)
-
-		return defer
-	}
-
-	return new Defer(func, func)
-}
-
 Defer.prototype = {
 
 	set: function(onresolve, onreject, onprogress, scope) {
@@ -224,4 +144,86 @@ Defer.prototype = {
 
 		return this
 	}
+}
+
+
+
+Defer.all = function(list) {
+	var defer  = new Defer
+	,   length = list && list.length || 0
+	,   result = new Array(list.length)
+	,   progri = new Array(list.length)
+	,   loaded = 0
+	,   failed = 0
+
+	if(!length) {
+		defer.resolve(result)
+		return defer
+	}
+
+	for(var i = 0; i < length; i++) {
+		var item = list[i]
+		if(item instanceof Defer) {
+			progri[i] = 0
+			item.then(check, check, progress, item)
+
+		} else {
+			progri[i] = 1
+			result[i] = item
+			loaded++
+		}
+	}
+
+	function progress(value) {
+		var index = list.indexOf(this)
+		if(index === -1) return
+
+		progri[index] = value
+
+		defer.progress(progri)
+	}
+
+	function check(value, success) {
+		var index = list.indexOf(this)
+
+		if(value instanceof Defer) {
+			list[index] = value
+			value.then(check, check)
+			return
+		}
+
+		success ? ++loaded : ++failed
+		if(success) result[index] = value
+
+		if(loaded + failed >= length) {
+			setTimeout(function() {
+				defer.transition(!failed, result)
+			}, 0)
+		}
+	}
+
+	return defer
+}
+
+Defer.complete = function(success, value) {
+	var defer = new Defer
+	defer.pending = false
+	defer.success = success
+	defer.value = value
+
+	return defer
+}
+
+Defer.timer = function(duration) {
+	function func(value, success) {
+		var defer = new Defer
+
+		setTimeout(function() {
+			defer.transition(value, success)
+		}, duration || 0)
+
+		return defer
+	}
+
+	return new Defer(func, func)
 }
