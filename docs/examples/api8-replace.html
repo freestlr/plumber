@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<head>
+	<title>fit test</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+
+	<script src="../../build/three.js"></script>
+	<script src="../../build/plumber-engine.js"></script>
+	<link rel="stylesheet" href="../../build/plumber-engine.css">
+
+	<style>
+		body {
+			margin: 24px;
+		}
+		.view {
+			position: relative;
+		}
+		.item1 {
+			display: block;
+			width: 640px;
+			height: 480px;
+			margin-right: 24px;
+		}
+		.button {
+			display: inline-block;
+			vertical-align: top;
+			padding: 8px 12px;
+			background-color: #eee;
+			user-select: none;
+		}
+		.button:hover {
+			color: #eee;
+			background-color: #333;
+			cursor: pointer;
+		}
+		.button[data-success] {
+			background-color: #86cc88;
+		}
+		.button[data-failed] {
+			background-color: #f97d58;
+		}
+		fieldset {
+			display: inline-block;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="view item1"></div>
+
+	<fieldset class="element-left">
+		<legend>Left Elment</legend>
+		<div class="button button-model button-tee">tee</div>
+		<div class="button button-model button-porx">porx</div>
+		<div class="button button-model button-b100">b100</div>
+		<div class="button button-action button-rotate">rotate</div>
+	</fieldset><br />
+
+	<fieldset class="element-right">
+		<legend>Right Elment</legend>
+		<div class="button button-model button-tee">tee</div>
+		<div class="button button-model button-porx">porx</div>
+		<div class="button button-model button-b100">b100</div>
+		<div class="button button-action button-rotate">rotate</div>
+	</fieldset><br />
+
+	<fieldset class="element-top">
+		<legend>Top Elment</legend>
+		<div class="button button-model button-tee">tee</div>
+		<div class="button button-model button-porx">porx</div>
+		<div class="button button-model button-b100">b100</div>
+		<div class="button button-action button-rotate">rotate</div>
+	</fieldset><br />
+</body>
+
+<script>
+
+var pb = new Plumber({
+	eroot: document.querySelector('.item1'),
+	srcAtlas: '../../build/plumber-atlas.svg',
+	srcCubemap: '../../build/plumber-cubemap.png',
+	dirSamples: '../../samples/',
+	clearButton: false,
+	mode: 'viewer'
+})
+
+var model = {
+	tee: 'BSP T-piece B240-12.json',
+	porx: '12G-12FBSPORX_v2.json',
+	b100: 'B100_12MP-12MP.json'
+}
+
+pb.addElement('rootNode', model.tee).then(function() {
+	pb.connectElement(model.tee,  0, 'rootNode', 1, true, 'leftNode')
+	pb.connectElement(model.tee,  0, 'rootNode', 2, true, 'rightNode')
+	pb.connectElement(model.porx, 0, 'rootNode', 0, true, 'topNode')
+})
+
+function onButton(selector, listener) {
+	document.querySelector(selector).addEventListener('click', listener)
+}
+
+onButton('.element-left  .button-tee', e => pb.replaceElement(model.tee, 'leftNode'))
+onButton('.element-right .button-tee', e => pb.replaceElement(model.tee, 'rightNode'))
+onButton('.element-top   .button-tee', e => pb.replaceElement(model.tee, 'topNode'))
+
+onButton('.element-left  .button-porx', e => pb.replaceElement(model.porx, 'leftNode'))
+onButton('.element-right .button-porx', e => pb.replaceElement(model.porx, 'rightNode'))
+onButton('.element-top   .button-porx', e => pb.replaceElement(model.porx, 'topNode'))
+
+onButton('.element-left  .button-b100', e => pb.replaceElement(model.b100, 'leftNode'))
+onButton('.element-right .button-b100', e => pb.replaceElement(model.b100, 'rightNode'))
+onButton('.element-top   .button-b100', e => pb.replaceElement(model.b100, 'topNode'))
+
+onButton('.element-left  .button-rotate', e => pb.rotateNode('leftNode',  Math.PI / 4)) 
+onButton('.element-right .button-rotate', e => pb.rotateNode('rightNode', Math.PI / 4)) 
+onButton('.element-top   .button-rotate', e => pb.rotateNode('topNode',   Math.PI / 4)) 
+
+
+pb.events.on('onReplaceElement', function(e) {
+	var src = e.params[0]
+	,   id  = e.params[1]
+
+	var name = {
+		'leftNode': '.element-left',
+		'rightNode': '.element-right',
+		'topNode': '.element-top',
+	}[id]
+
+	var element = document.querySelector(name)
+	for(var key in model) {
+		var modelSrc = model[key]
+
+		var button = element.querySelector('.button-'+ key)
+
+		if(src === modelSrc) {
+			button.setAttribute(e.status === 'replaced' ? 'data-success' : 'data-failed', '1')
+
+		} else {
+			button.removeAttribute('data-success')
+			button.removeAttribute('data-failed')
+		}
+	}
+})
+
+
+</script>
