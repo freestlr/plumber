@@ -18002,7 +18002,7 @@
 
 			console.error( 'THREE.WebGLProgram: shader error: ', gl.getError(), 'gl.VALIDATE_STATUS', gl.getProgramParameter( program, gl.VALIDATE_STATUS ), 'gl.getProgramInfoLog', programLog, vertexLog, fragmentLog );
 
-		} else if ( programLog !== '' ) {
+		} else if ( programLog !== '' && programLog.indexOf('GL_ARB_gpu_shader5') === -1 ) {
 
 			console.warn( 'THREE.WebGLProgram: gl.getProgramInfoLog()', programLog );
 
