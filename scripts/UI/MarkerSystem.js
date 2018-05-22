@@ -234,7 +234,7 @@ UI.Marker = f.unit(Block.Tip, {
 		if(!this.system) return
 
 		if(this.connection) {
-			this.connection.getPosition(this.point.world)
+			this.connection.getOuterPosition(this.point.world)
 			this.connection.getInnerPosition(this.inner.world)
 		}
 

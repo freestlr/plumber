@@ -2,21 +2,14 @@ TNode = f.unit({
 	unitName: 'TNode',
 
 	init: function(sample) {
-		this.id        = ++TNode.count
-		this.object    = new THREE.Object3D
-		this.events    = new EventEmitter
+		this.object = new THREE.Object3D
+		this.events = new EventEmitter
+		this.local  = new TDimensions
 
-		this.localBox    = new THREE.Box3
-		this.localCenter = new THREE.Vector3
-		this.localSize   = new THREE.Vector3
-		this.localLength = 1
-		this.localSphere = new THREE.Sphere
-
-		this.objectCenter = new THREE.Object3D
-
+		this.meshes = []
 		this.connections = []
 
-		this.object.add(this.objectCenter)
+		this.setId(++TNode.count)
 
 
 		// this.debugBox = new THREE.Mesh(
@@ -29,13 +22,18 @@ TNode = f.unit({
 		else console.warn('new TNode with no sample')
 	},
 
+	setId: function(id) {
+		this.id = id
+		this.object.name = 'TN'+ this.id
+	},
+
 	traverse: function(func, scope, data) {
 		var sig = func.call(scope || this, this, data)
 		if(sig === TNode.TRSTOP) return sig
 
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
-			if(!con.connected || !con.master) continue
+			if(!con || !con.connected || !con.master) continue
 
 			var sig = con.target.traverse(func, scope, data)
 			if(sig === TNode.TRSTOP) return sig
@@ -47,6 +45,7 @@ TNode = f.unit({
 
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
+			if(!con) continue
 
 			func.call(scope || this, con, data, level)
 
@@ -54,7 +53,7 @@ TNode = f.unit({
 		}
 	},
 
-	includeConnection: function(con, extra) {
+	testConnection: function(con, extra) {
 		if(!extra || !extra.list) return
 
 		for(var name in extra.test) {
@@ -69,7 +68,7 @@ TNode = f.unit({
 
 	retrieveConnections: function(test, binary) {
 		var cons = []
-		this.traverseConnections(this.includeConnection, this, {
+		this.traverseConnections(this.testConnection, this, {
 			test: test,
 			binary: binary,
 			list: cons
@@ -78,47 +77,85 @@ TNode = f.unit({
 	},
 
 	setSample: function(sample) {
-		if(this.sample) {
-			return console.warn('TN.setSample: node already has sample')
+		for(var i = this.meshes.length -1; i >= 0; i--) {
+			var mesh = this.meshes[i]
+
+			mesh.parentNode = null
+			this.object.remove(mesh)
+			this.meshes.splice(i, 1)
+		}
+		for(var i = this.connections.length -1; i >= 0; i--) {
+			var con = this.connections[i]
+
+			this.connections.splice(i, 1)
 		}
 
-		var object = sample.clone()
-		if(!object) {
-			return console.warn('TN.setSample: got no sample object')
-		}
+
 
 		this.sample = sample
+
+		if(!this.sample) {
+			this.type = null
+			return
+		}
+
 		this.type = sample.src
-		this.sampleObject = object
-		this.sample.traverse(this.sampleObject, this.setObjectParent, this)
 
-		this.sample.box.getCenter(this.objectCenter.position)
+		for(var i = 0; i < sample.meshes.length; i++) {
+			var original = sample.meshes[i]
 
-		// this.debugBox.position.copy(this.sample.boxCenter)
-		// this.debugBox.scale.copy(this.sample.boxSize)
-		// this.debugBox.updateMatrix()
+			var mesh = original.clone()
+			original.matrixWorld.decompose(mesh.position, mesh.rotation, mesh.scale)
+			mesh.updateMatrix()
+			mesh.parentNode = this
 
-		this.object.add(this.sampleObject)
+			this.object.add(mesh)
+			this.meshes.push(mesh)
+		}
 
-		this.connections = []
-		sample.joints.forEach(this.addConnection, this)
+		for(var i = 0; i < sample.joints.length; i++) {
+			var joint = sample.joints[i]
+
+			var con = new TConnection(this, joint, this.connections.length)
+			con.events.link(this.events)
+
+			this.connections.push(con)
+		}
 	},
 
-	setObjectParent: function(object) {
-		object.node = this
+	getRoot: function() {
+		var node = this
+		while(node.upnode) node = node.upnode
+		return node
 	},
 
+	goRoot: function(origin) {
+		if(!this.upcon) return
 
-	addConnection: function(joint) {
-		var con = new TConnection(this, joint, this.connections.length)
+		if(origin) {
+			this.object.matrixWorld.identity()
+		}
 
-		con.events.link(this.events)
+		this.object.matrixWorld.decompose(
+			this.object.position,
+			this.object.quaternion,
+			this.object.scale)
+		this.object.updateMatrix()
 
-		this.connections.push(con)
+		var next = this.upcon
+		,   prev = null
+		while(next) {
+			prev = next
+			next = next.target.upcon
+			prev.goMaster()
+		}
+
+		this.upcon = null
+		this.upnode = null
 	},
 
-	remConnection: function() {
-
+	getCenter: function(target) {
+		if(target) target.copy(this.sample.dim.center).applyMatrix4(this.object.matrixWorld)
 	},
 
 
@@ -196,14 +233,15 @@ TNode = f.unit({
 		var rootNodes = []
 		,   thisNodes = []
 
-		var root = f.follow(this, 'upnode').pop()
+		var root = this.getRoot()
 
-		root.traverse(function(n) { rootNodes.push(n.id) })
-		this.traverse(function(n) { thisNodes.push(n.id) })
+		root.traverse(function(n) { rootNodes.push(n) })
+		this.traverse(function(n) { thisNodes.push(n) })
 
-		var maxList = f.snot(rootNodes, thisNodes)
+		var removeRoot = this
+		,   removeCon = this.upcon
+		,   maxList = f.snot(rootNodes, thisNodes)
 		,   maxRoot = root
-		,   removeRoot = this
 
 		for(var i = 0; i < this.connections.length; i++) {
 			var con = this.connections[i]
@@ -211,29 +249,30 @@ TNode = f.unit({
 
 			var node = con.connected.node
 			var nodes = []
-			node.traverse(function(n) { nodes.push(n.id) })
+			node.traverse(function(n) { nodes.push(n) })
 
 			if(nodes.length > maxList.length) {
 				removeRoot = root
+				removeCon = con.connected
 				maxList = nodes
 				maxRoot = node
 			}
 		}
 
 		return {
-			root: removeRoot,
 			nodes: f.snot(rootNodes, maxList),
+			removeCon: removeCon,
 			nextRoot: maxRoot
 		}
 	},
 
 	pinchr: function() {
 		var nodes = []
-		this.traverse(function(n) { nodes.push(n.id) })
+		this.traverse(function(n) { nodes.push(n) })
 
 		return {
-			root: this,
 			nodes: nodes,
+			removeCon: null,
 			nextRoot: null
 		}
 	},
@@ -259,8 +298,6 @@ TNode = f.unit({
 			return console.warn('TN.connect to used joint')
 		}
 
-		node.events.link(this.events)
-
 		conA.connect(conB)
 	},
 
@@ -284,30 +321,75 @@ TNode = f.unit({
 		}
 	},
 
-	rotate: function(angle) {
+	rotate: function(angle, animate) {
 		if(this.upcon) {
-			this.upcon.rotate(angle)
+			this.upcon.rotate(angle, animate)
 
 		} else {
-			this.object.rotateOnAxis(this.object.up, angle)
-			this.object.updateMatrixWorld()
+			// nope
+			// this.object.rotateOnAxis(this.object.up, angle)
+			// this.object.updateMatrixWorld()
 		}
 	},
 
-	getRotation: function() {
-		// TODO
+	setConnectedState: function(state) {
+		this.traverseConnections(function(con) {
+			if(con.connected && con.master) {
+				con.transitionProgress(state == null ? con.connTween.source.connected : state)
+			}
+		}, this)
 	},
 
-	updateBox: function() {
+	getDimensions: function(global) {
+		if(!global) global = new Dimensions
+
+		global.box.makeEmpty()
+		global.center.set(0, 0, 0)
+		global.mass = 0
+
+		this.object.updateMatrixWorld(true)
+
+		this.traverse(function(node) {
+			node.updateBox()
+
+			var dim = node.local
+			var mass = 1 // dim.mass
+
+			global.box.union(dim.box)
+			global.center.x += mass * dim.center.x
+			global.center.y += mass * dim.center.y
+			global.center.z += mass * dim.center.z
+			global.mass += mass
+		})
+
+		if(Math.abs(global.mass) > 1e-6) {
+			global.center.multiplyScalar(1 / global.mass)
+		} else {
+			global.center.set(0, 0, 0)
+		}
+
+		global.box.getCenter(global.size)
+		global.center.add(global.size).multiplyScalar(0.5)
+		global.box.getSize(global.size)
+		global.length = global.size.length()
+		global.box.getBoundingSphere(global.sphere)
+	},
+
+	updateBox: function(dim) {
+		if(!dim) dim = this.local
+
 		if(this.sample) {
-			this.localBox.copy(this.sample.box).applyMatrix4(this.object.matrixWorld)
+			dim.box.copy(this.sample.dim.box).applyMatrix4(this.object.matrixWorld)
+			dim.center.copy(this.sample.dim.center).applyMatrix4(this.object.matrixWorld)
+
 		} else {
-			this.localBox.makeEmpty()
+			dim.box.makeEmpty()
+			dim.center.set(0, 0, 0)
 		}
 
-		this.localBox.getSize(this.localSize)
-		this.localCenter.copy(this.sample.boxCenter).applyMatrix4(this.object.matrixWorld)
-		this.localLength = this.localSize.length()
+		dim.box.getSize(dim.size)
+		dim.length = dim.size.length()
+		dim.mass = dim.size.x * dim.size.y * dim.size.z
 	}
 })
 

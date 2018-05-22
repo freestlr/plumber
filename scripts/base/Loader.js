@@ -42,34 +42,24 @@ Loader.prototype = {
 		return unit.defer
 	},
 
-	progress: function() {
-		this.unitsTotal  = this.units.length
-		this.unitsLoaded = 0
-		this.bytesTotal  = 0
-		this.bytesLoaded = 0
-
-		for(var i = 0; i < this.unitsTotal; i++) {
-			var unit = this.units[i]
-
-			this.unitsLoaded += unit.deferTail.pending ? 0 : 1
-			this.bytesTotal  += unit.bytesTotal
-			this.bytesLoaded += unit.bytesLoaded
-		}
-
-		if(typeof this.onProgressCallback === 'function') {
-			this.onProgressCallback.call(this.onProgressScope, this.bytesLoaded, this.bytesTotal)
-		}
-	},
-
-	onProgress: function(func, scope) {
-		this.onProgressCallback = func
-		this.onProgressScope = scope
-	},
-
-	ready: function(done, fail, scope) {
-		var ready = Defer.all(this.defers)
-		return arguments.length ? ready.then(done, fail, scope) : ready
+	ready: function() {
+		return Defer.all(this.defers, Loader.commonProgress)
 	}
+}
+
+Loader.commonProgress = function(list) {
+	var bytesTotal  = 0
+	,   bytesLoaded = 0
+
+	for(var i = 0; i < list.length; i++) {
+		var e = list[i]
+		if(!e || !e.lengthComputable) continue
+
+		bytesLoaded += e.loaded
+		bytesTotal  += e.total
+	}
+
+	return bytesTotal ? bytesLoaded / bytesTotal : 0
 }
 
 Loader.imageTransport = function() {
@@ -85,9 +75,7 @@ Loader.imageTransport = function() {
 		unit.deferHead.reject(e)
 	}
 	image.onprogress = function(e) {
-		unit.bytesLoaded = e.loaded
-		unit.bytesTotal  = e.total
-		unit.loader.progress()
+		unit.deferHead.progress(e)
 	}
 	image.src = unit.source
 }
@@ -131,9 +119,7 @@ Loader.ajaxTransport = function() {
 		}
 	}
 	req.onprogress = function(e) {
-		unit.bytesLoaded = e.loaded
-		unit.bytesTotal  = e.lengthComputable ? e.total : e.loaded * 3
-		unit.loader.progress()
+		unit.deferHead.progress(e)
 	}
 
 	req.send(unit.requestType === 'POST' ? querystring : null)

@@ -6,6 +6,63 @@ f.identity = function(a) {
 	return a
 }
 
+f.nextprime = function(primes) {
+	if(!primes) return [2, 3]
+
+	next_number:
+	for(var i = primes[primes.length -1] +2; 1; i++) {
+		for(var j = 0; j < primes.length; j++) {
+			if(i % primes[j] === 0) continue next_number
+		}
+		primes.push(i)
+		return primes
+	}
+}
+
+f.factorize = function(n, primes) {
+	if(!primes) primes = f.nextprime()
+
+	var np = []
+	,   nr = n
+	,   pi = 0
+	while(nr > 1) {
+		while(pi > primes.length -1) f.nextprime(primes)
+
+		var pc = 0
+		var p = primes[pi]
+		while(nr / p % 1 === 0) {
+			nr /= p
+			pc++
+		}
+
+		np.push(pc)
+		pi++
+	}
+
+	return np
+}
+
+f.lcm = function(values) {
+	var factors = []
+	,   longest = 0
+	,   primes = f.nextprime()
+	for(var i = 0; i < values.length; i++) {
+		var x = f.factorize(values[i], primes)
+
+		var longest = Math.max(x.length, factors.length)
+		for(var j = 0; j < longest; j++) {
+			factors[j] = Math.max(x[j] || 0, factors[j] || 0)
+		}
+	}
+
+	var lcm = 1
+	for(var i = 0; i < factors.length; i++) {
+		lcm *= factors[i] * primes[i]
+	}
+
+	return lcm
+}
+
 f.sum = function(a, b) {
 	return a + b
 }

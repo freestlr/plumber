@@ -57,8 +57,8 @@ function Imagery() {
 
 		norcon    : { color: 0xFFFFFF },
 		subtract  : { color: 0xff3977 },
-
-		wireframe : {},
+		connection: { color: 'black'  },
+		wireframe : { color: 'black'  },
 		normal    : {},
 		void      : {}
 	}
@@ -151,27 +151,24 @@ Imagery.prototype = {
 			reflectivity: 0.8,
 			side: THREE.FrontSide
 		},
-		corner: {
-			makeAlpha: true,
-			transparent: true
-		},
-		pcorner: {
-			makeAlpha: true,
-			transparent: true
-		},
-		cut: {
-			transparent: true,
-			opacity: 0
-		},
 
-		wall: { makeNormal: true },
-		roof: { makeNormal: true },
+		connection: {
+			makeMap: false,
+			factory: THREE.LineBasicMaterial,
+			transparent: true,
+			opacity: 0.5
+		},
 
 		normal: {
 			factory: THREE.MeshNormalMaterial,
 			makeMap: false
 		},
-		wireframe: { wireframe: true }
+
+		wireframe: {
+			factory: THREE.MeshBasicMaterial,
+			wireframe: true,
+			color: 0
+		}
 	},
 
 	textureOptions: {

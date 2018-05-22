@@ -86,7 +86,7 @@ View3 = f.unit({
 	init: function(options) {
 		for(var name in options) this[name] = options[name]
 
-		this.element   = dom.div('view-3', this.eroot)
+		this.element   = dom.div(this.ename, this.eroot)
 		this.events    = new EventEmitter
 		this.scene     = new THREE.Scene
 		this.ambLight  = new THREE.AmbientLight(0xFFFFFF, 0.7)
@@ -95,10 +95,11 @@ View3 = f.unit({
 		this.orbit     = new THREE.OrbitControls(this.camera, this.element)
 		this.raycaster = new THREE.Raycaster
 		this.root      = new THREE.Object3D
-		this.grid      = new THREE.Object3D
 		this.lastcam   = new THREE.Matrix4
 
+		this.elementOffset = { x: 0, y: 0 }
 		this.highlightedNodes = []
+		this.globalConnections = []
 		this.animatedConnections = []
 
 		this.scene.autoUpdate = false
@@ -132,6 +133,7 @@ View3 = f.unit({
 		this.smACAA    = this.makeShader(THREE.ACAAShader)
 		this.smSSAO    = this.makeShader(THREE.SSAOShader)
 		this.smDepth   = this.makeShader(THREE.DepthShader)
+		this.smDepth.side = THREE.DoubleSide
 		// this.smDepth   = new THREE.MeshDepthMaterial
 		// this.smDepth.depthPacking = THREE.RGBADepthPacking
 
@@ -164,8 +166,11 @@ View3 = f.unit({
 
 
 
-		this.wireMaterial = new THREE.MeshBasicMaterial({ wireframe: true, color: 0 })
 
+		this.connectionLine = new THREE.LineSegments(
+			new THREE.BufferGeometry,
+			this.imagery.materials.connection)
+		this.connectionLine.frustumCulled = false
 
 		this.cameraTween = new TWEEN.Tween({ x: 0, y: 0, z: 0 })
 			.easing(TWEEN.Easing.Cubic.Out)
@@ -174,18 +179,15 @@ View3 = f.unit({
 			.easing(TWEEN.Easing.Cubic.Out)
 
 
-		this.makeGridSystem()
-		this.makePreloader()
-
 
 		this.dirLight.position.set(-100, 100, 100)
 		this.dirLight.target.position.set(0, 0, 0)
 
 		this.camera.position.set(1, 1, 1)
 
-		this.explodeDim  = this.makeDimensions()
-		this.assembleDim = this.makeDimensions()
-		this.currentDim  = this.makeDimensions()
+		this.explodeDim  = new TDimensions
+		this.assembleDim = new TDimensions
+		this.currentDim  = new TDimensions
 
 		this.focusOnTree(0)
 
@@ -193,8 +195,8 @@ View3 = f.unit({
 		this.scene.add(this.ambLight)
 		this.scene.add(this.dirLight)
 		this.scene.add(this.root)
-		this.scene.add(this.grid)
-		this.scene.add(this.transform)
+		// this.scene.add(this.transform)
+		this.scene.add(this.connectionLine)
 
 		new EventHandler(this.onMouseMove, this).listen('mousemove', this.element)
 		new EventHandler(this.onMouseOut,  this).listen('mouseout',  this.element)
@@ -202,130 +204,12 @@ View3 = f.unit({
 	},
 
 
-	makeDimensions: function() {
-		return {
-			box: new THREE.Box3,
-			sphere: new THREE.Sphere,
-			center: new THREE.Vector3,
-			size: new THREE.Vector3,
-			mass: 0,
-			length: 1
-		}
-	},
-
 	makeShader: function(source) {
 		if(source) return new THREE.ShaderMaterial({
 			vertexShader: source.vertexShader,
 			fragmentShader: source.fragmentShader,
 			uniforms: THREE.UniformsUtils.clone(source.uniforms)
 		})
-	},
-
-	makeGrid: function() {
-		var size = 10
-		,   divisions = 200
-
-		var color1 = new THREE.Color(0x333333)
-		,   color2 = new THREE.Color(0xBBBBBB)
-
-		var step = (size * 2) / divisions
-		,   vertices = []
-		,   colors   = []
-
-		for(var i = -divisions, j = 0, k = -size; i <= divisions; i++, k += step) {
-
-			vertices.push(-size, 0, k, size, 0, k)
-			vertices.push(k, 0, -size, k, 0, size)
-
-			var color = i % 10 === 0 ? color1 : color2
-
-			color.toArray( colors, j ); j += 3
-			color.toArray( colors, j ); j += 3
-			color.toArray( colors, j ); j += 3
-			color.toArray( colors, j ); j += 3
-		}
-
-		var geometry = new THREE.BufferGeometry()
-		geometry.addAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
-		geometry.addAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
-
-		var material = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors })
-		material.transparent = true
-
-		return new THREE.LineSegments(geometry, material)
-	},
-
-	makeGridSystem: function() {
-		this.gridXZ = this.makeGrid()
-		this.gridXY = this.makeGrid()
-		this.gridYZ = this.makeGrid()
-
-		this.gridXZ.normal = new THREE.Vector3(0, 1, 0)
-		this.gridXY.normal = new THREE.Vector3(0, 0, 1)
-		this.gridYZ.normal = new THREE.Vector3(1, 0, 0)
-
-		this.grid.add(this.gridXZ)
-		this.grid.add(this.gridXY)
-		this.grid.add(this.gridYZ)
-
-		this.gridXY.rotation.x = Math.PI/2
-		this.gridYZ.rotation.z = Math.PI/2
-	},
-
-	makePreloader: function() {
-		this.preloaderBox = dom.div('view-preloader-box absmid out-03 hidden', this.element)
-		this.preloaderBlocks = []
-		for(var i = 0; i < 10; i++) {
-			this.preloaderBlocks.push(dom.div('view-preloader-block', this.preloaderBox))
-		}
-	},
-
-	setLoading: function(enabled) {
-		if(this.preloaderEnabled === !!enabled) return
-		this.preloaderEnabled = !!enabled
-
-		dom.togclass(this.preloaderBox, 'hidden', !enabled)
-	},
-
-	setProgress: function(progress) {
-		if(this.preloaderProgress === progress) return
-		this.preloaderProgress = progress
-
-		var blox = this.preloaderBlocks.length
-		,   prog = f.clamp(progress, 0, 1) * blox
-		,   full = Math.floor(prog)
-		,   frac = prog - full
-
-		for(var i = 0; i < blox; i++) {
-			this.preloaderBlocks[i].style.opacity = i < full ? 1 : i > full ? 0 : frac
-		}
-	},
-
-	setPreloader: function(samples) {
-		this.preloaderSamples = samples
-		this.updatePreloader()
-	},
-
-	updatePreloader: function() {
-		var progress = 1
-
-		var items = this.preloaderSamples && this.preloaderSamples.length
-		if(items) {
-
-			progress = 0
-			for(var i = 0; i < items; i++) {
-				progress += this.preloaderSamples[i].progress
-			}
-
-			progress /= items
-		}
-
-		this.setProgress(progress)
-		this.setLoading(progress < 1)
-
-		if(progress >= 1) {
-			delete this.preloaderSamples
-		}
 	},
 
 	updateLights: function() {
@@ -343,27 +227,10 @@ View3 = f.unit({
 		this.dirLight.updateMatrixWorld()
 	},
 
-	updateGrid: function() {
-		if(!this.enableGrid) return
+	orbitTo: function(nextTarget, time, distance, theta, lerp, easing) {
+		if(kbd.state.SHIFT) return
+		// console.trace(nextTarget, time, distance, theta, lerp)
 
-		this.raycaster.setFromCamera({ x: 0, y: 0 }, this.camera)
-
-		var direction = this.raycaster.ray.direction
-
-		var projXZ = direction.dot(this.gridXZ.normal)
-		,   projXY = direction.dot(this.gridXY.normal)
-		,   projYZ = direction.dot(this.gridYZ.normal)
-
-		this.gridXZ.material.opacity = Math.abs(projXZ)
-		this.gridXY.material.opacity = Math.abs(projXY)
-		this.gridYZ.material.opacity = Math.abs(projYZ)
-
-		// this.gridXZ.position.y = 0.4 * projXZ + this.camera.position.y
-		// this.gridXY.position.z = 0.4 * projXY + this.camera.position.z
-		// this.gridYZ.position.x = 0.4 * projYZ + this.camera.position.x
-	},
-
-	orbitTo: function(nextTarget, time, distance, theta, lerp) {
 		var EPS = 1e-9
 
 		var camera = this.camera.position
@@ -410,12 +277,16 @@ View3 = f.unit({
 		this.cameraTween.stop()
 
 		if(time) {
+			if(easing == null) {
+				easing = TWEEN.Easing.Quadratic.Out
+			}
+
 			if(target.distanceToSquared(nextTarget) > EPS) {
-				this.orbitTween.from(target).to(nextTarget, time).start()
+				this.orbitTween.from(target).to(nextTarget, time).easing(easing).start()
 			}
 
 			if(camera.distanceToSquared(nextCamera) > EPS) {
-				this.cameraTween.from(camera).to(nextCamera, time).start()
+				this.cameraTween.from(camera).to(nextCamera, time).easing(easing).start()
 			}
 
 		} else if(lerp != null) {
@@ -436,8 +307,11 @@ View3 = f.unit({
 		this.needsRedraw = true
 	},
 
-	focusOnTree: function(time, dim, lerp) {
+	focusOnTree: function(time, dim, fit, lerp, aspect, easing) {
 		// return this.focusOnNode(null, time)
+		if(!this.tree) {
+			time = 0
+		}
 
 		if(time == null) {
 			time = this.focusDuration
@@ -447,9 +321,13 @@ View3 = f.unit({
 			dim = this.currentDim
 		}
 
-		var distance = this.getFitDistance(dim.size, 4/3, 4/3)
+		if(fit == null) {
+			fit = 4/3
+		}
 
-		this.orbitTo(dim.center, time, distance, null, lerp)
+		var distance = this.getFitDistance(dim.size, fit, fit, aspect)
+
+		this.orbitTo(dim.center, time, distance, null, lerp, easing)
 	},
 
 	focusOnNode: function(node, time) {
@@ -457,22 +335,23 @@ View3 = f.unit({
 			time = this.focusDuration
 		}
 
-		this.orbitTo(node.localCenter, time)
+		this.orbitTo(node.local.center, time)
 	},
 
-	getFitDistance: function(size, factorX, factorY) {
+	getFitDistance: function(size, factorX, factorY, aspect, fov) {
 		if(size    == null) size = this.currentDim.size
 		if(factorX == null) factorX = 1.5
 		if(factorY == null) factorY = 1.5
 
-		var fov = this.camera.fov * f.xrad / 2
-		,   asp = this.camera.aspect
+		if(aspect == null) aspect = this.camera.aspect
+		if(fov    == null) fov    = this.camera.fov
 
 		var half = Math.max(size.x, size.y, size.z) / 2
-		,   fitH = half * (factorX || 1) / Math.tan(fov * asp)
-		,   fitV = half * (factorY || 1) / Math.tan(fov)
+		,   beta = fov * f.xrad / 2
+		,   fitH = half * (factorX || 1) / Math.tan(beta * aspect)
+		,   fitV = half * (factorY || 1) / Math.tan(beta)
 
-		return asp ? Math.max(fitH, fitV) : fitV
+		return isFinite(aspect) ? Math.max(fitH, fitV) : fitV
 	},
 
 
@@ -491,19 +370,23 @@ View3 = f.unit({
 		}
 
 		this.tree = node
+		this.scene.updateMatrixWorld(true)
 
 		if(this.tree) {
 			this.root.add(this.tree.object)
 
 			this.tree.traverse(this.updateNodeStencil, this)
-			this.tree.events.on('connect_start', this.onConnectStart, this)
+			this.tree.events.on('animate_start', this.onConnectStart, this)
+
+		} else {
+			// this.camera.position.set(1, 1, 1)
 		}
 
 		this.animatedConnections.forEach(this.onConnectEnd, this)
 
-		this.updateTreeSize(this.explodeDim, true, 0)
+		this.updateTreeSize(this.explodeDim,  true, 0)
 		this.updateTreeSize(this.assembleDim, true, 1)
-		this.updateTreeSize(this.currentDim, true)
+		this.updateTreeSize(this.currentDim,  true, null)
 		this.updateProjection()
 		this.updateConnectionTree()
 
@@ -516,7 +399,7 @@ View3 = f.unit({
 		var index = this.animatedConnections.indexOf(con)
 		if(index === -1) {
 			this.animatedConnections.push(con)
-			con.events.on('connect_end', this.onConnectEnd, this)
+			con.events.on('animate_end', this.onConnectEnd, this)
 		}
 	},
 
@@ -530,50 +413,25 @@ View3 = f.unit({
 		}
 	},
 
-	updateTreeSize: function(cont, forceState, state) {
-		cont.box.makeEmpty()
-		cont.center.set(0, 0, 0)
-		cont.mass = 0
-
+	updateTreeSize: function(dim, forceState, state) {
 		if(this.tree) {
-			if(forceState) this.tree.traverseConnections(function(con) {
-				if(!con.connected || !con.master) return
-
-				con.transitionProgress(state == null ? con.tween.source.connected : state)
-			}, this)
-
-			this.scene.updateMatrixWorld(true)
-
-			this.tree.traverse(function(node) {
-				node.updateBox()
-				cont.box.union(node.localBox)
-
-				var s = node.sample.boxLength
-				cont.center.x += s * node.localCenter.x
-				cont.center.y += s * node.localCenter.y
-				cont.center.z += s * node.localCenter.z
-
-				cont.mass += s
-			}, this)
-
-			if(Math.abs(cont.mass) > 1e-6) {
-				cont.center.multiplyScalar(1 / cont.mass)
-			} else {
-				cont.center.set(0, 0, 0)
-			}
-
-			cont.box.getSize(cont.size)
+			if(forceState) this.tree.setConnectedState(state)
+			this.tree.getDimensions(dim)
 
 		} else {
-			cont.size.set(1, 1, 1).normalize()
+			dim.box.makeEmpty()
+			dim.center.set(0, 0, 0)
+			dim.mass = 0
+			dim.size.set(1, 1, 1).normalize()
+			dim.length = 1
+			dim.sphere.set(dim.center, dim.length)
 		}
-
-		cont.length = cont.size.length()
-		cont.box.getBoundingSphere(cont.sphere)
 	},
 
 	updateConnectionTree: function() {
 		var remove = this.markers.markers.slice()
+
+		this.globalConnections = []
 
 		if(this.tree) {
 			this.tree.traverseConnections(this.updateConnection, this, remove)
@@ -582,6 +440,38 @@ View3 = f.unit({
 		for(var i = 0; i < remove.length; i++) {
 			this.markers.removeMarker(remove[i])
 		}
+
+		var g = this.connectionLine.geometry
+		,   c = this.globalConnections.length * 3 * 2
+		if(!g.attributes.position || g.attributes.position.array.length !== c) {
+			g.removeAttribute('position')
+			g.addAttribute('position', new THREE.BufferAttribute(new Float32Array(c), 3))
+		}
+
+		this.updateConnectionLine(this.globalConnections)
+	},
+
+	updateConnectionLine: function(cons) {
+		var g = this.connectionLine.geometry
+		,   a = g.attributes.position
+		if(!a) return
+
+		var v1 = new THREE.Vector3
+
+		for(var i = 0; i < cons.length; i++) {
+			var c = cons[i]
+			if(!c.connected || !c.master) continue
+
+			var vi = c.viewGlobalIndex * 2 * 3
+			,   mt = c.node.object.matrixWorld
+			,   mp = c.object.position
+			,   sp = c.connected.object.position
+
+			v1      .copy(mp    ).applyMatrix4(mt).toArray(a.array, vi +0)
+			v1.addVectors(mp, sp).applyMatrix4(mt).toArray(a.array, vi +3)
+		}
+
+		a.needsUpdate = true
 	},
 
 	updateConnection: function(con, remove) {
@@ -594,6 +484,11 @@ View3 = f.unit({
 
 		if(con.animating) {
 			this.onConnectStart(con)
+		}
+
+		if(con.connected && con.master) {
+			con.viewGlobalIndex = this.globalConnections.length
+			this.globalConnections.push(con)
 		}
 	},
 
@@ -651,6 +546,7 @@ View3 = f.unit({
 			case 'x':
 				this.debug = !this.debug
 				this.enableWireframe = this.debug
+				this.litNode(this.tree, this.debug)
 				this.needsRedraw = true
 
 				dom.togclass(this.markers.element, 'debug', this.debug)
@@ -705,7 +601,9 @@ View3 = f.unit({
 		          : node.lit      ? this.stencilLit   .value
 		          :                 this.stencilNone  .value
 
-		node.sample.traverse(node.sampleObject, this.updateMeshStencil, this, value)
+		for(var i = 0; i < node.meshes.length; i++) {
+			node.meshes[i].stencilValue = value
+		}
 	},
 
 	selectConnection: function(con) {
@@ -824,12 +722,12 @@ View3 = f.unit({
 		this.projector.viewportToWorld(this.mouse2, this.mouse3, true)
 		this.raycaster.setFromCamera(this.mouse2, this.camera)
 
-		var inter = this.raycaster.intersectObject(this.scene, true)
+		var inter = this.raycaster.intersectObject(this.tree.object, true)
 		for(var i = 0; i < inter.length; i++) {
 			var object = inter[i].object
 
 			if(object.stencilValue & this.stencilRaycastMask) {
-				this.hoverNode(object.node)
+				this.hoverNode(object.parentNode)
 				return
 			}
 		}
@@ -895,44 +793,65 @@ View3 = f.unit({
 	},
 
 	resizeRenderTargets: function(w, h) {
-		this.fullW = w
-		this.fullH = h
+		var fullW = w
+		,   fullH = h
+		,   halfW = fullW >> 1
+		,   halfH = fullH >> 1
 
-		this.halfW = this.fullW >> 1
-		this.halfH = this.fullH >> 1
+		if(this.fullW !== fullW
+		|| this.fullH !== fullH) {
+			this.fullW = fullW
+			this.fullH = fullH
 
-		this.rtDepthStencil = new THREE.WebGLRenderTarget(this.fullW, this.fullH, {
-			minFilter: THREE.NearestFilter,
-			magFilter: THREE.NearestFilter,
-			format: THREE.RGBAFormat
-		})
+			this.rtDepthStencil = new THREE.WebGLRenderTarget(this.fullW, this.fullH, {
+				minFilter: THREE.NearestFilter,
+				magFilter: THREE.NearestFilter,
+				format: THREE.RGBAFormat
+			})
 
-		this.rt1 = new THREE.WebGLRenderTarget(this.halfW, this.halfH, {
-			minFilter: THREE.LinearFilter,
-			magFilter: THREE.LinearFilter,
-			format: THREE.RGBAFormat
-		})
-		this.rt2 = this.rt1.clone()
+			this.rtB1 = new THREE.WebGLRenderTarget(this.fullW, this.fullH, {
+				minFilter: THREE.LinearFilter,
+				magFilter: THREE.LinearFilter,
+				format: THREE.RGBAFormat
+			})
+			this.rtB2 = this.rtB1.clone()
+		}
 
+		if(this.halfW !== halfW
+		|| this.halfH !== halfH) {
+			this.halfW = halfW
+			this.halfH = halfH
 
-		this.rtB1 = new THREE.WebGLRenderTarget(this.fullW, this.fullH, {
-			minFilter: THREE.LinearFilter,
-			magFilter: THREE.LinearFilter,
-			format: THREE.RGBAFormat
-		})
-		this.rtB2 = this.rtB1.clone()
+			this.rt1 = new THREE.WebGLRenderTarget(this.halfW, this.halfH, {
+				minFilter: THREE.LinearFilter,
+				magFilter: THREE.LinearFilter,
+				format: THREE.RGBAFormat
+			})
+			this.rt2 = this.rt1.clone()
+		}
 	},
 
 	onResize: function() {
-		this.width  = this.element.offsetWidth  || 1
-		this.height = this.element.offsetHeight || 1
-
 		this.elementOffset = dom.offset(this.element)
+		this.setSize(
+			this.element.offsetWidth  || 1,
+			this.element.offsetHeight || 1)
+	},
+
+	setSize: function(w, h) {
+		if(this.width  === w
+		&& this.height === h) return
+
+		this.width  = w
+		this.height = h
+
 		this.projector.resize(this.width, this.height)
 
 
 		if(!this.viewport) {
-			this.renderer.setSize(this.width, this.height)
+			if(!this.renderTarget) {
+				this.renderer.setSize(this.width, this.height)
+			}
 			this.resizeRenderTargets(this.width, this.height)
 		}
 
@@ -1016,7 +935,6 @@ View3 = f.unit({
 		gl.enable(gl.DEPTH_TEST)
 
 		if(this.enableRender) {
-			this.grid.visible = false
 			this.root.visible = true
 
 			this.renderer.stencilWrite = false
@@ -1024,15 +942,16 @@ View3 = f.unit({
 		}
 
 		if(this.enableGrid) {
-			this.grid.visible = true
 			this.root.visible = false
 
 			draw(this.renderTarget, this.scene, this.camera)
 		}
 
 		if(this.enableWireframe) {
-			this.scene.overrideMaterial = this.wireMaterial
+			this.scene.overrideMaterial = this.imagery.materials.wireframe
+			this.connectionLine.visible = false
 			draw(this.renderTarget, this.scene, this.camera)
+			this.connectionLine.visible = true
 			this.scene.overrideMaterial = null
 		}
 
@@ -1045,8 +964,8 @@ View3 = f.unit({
 			this.renderer.stencilWrite = true
 			this.scene.overrideMaterial = this.smDepth
 
-			// this.renderer.setClearColor(0xFFFFFF, 1)
-			this.renderer.setClearColor(0, 1)
+			this.renderer.setClearColor(0xFFFFFF, 1)
+			// this.renderer.setClearColor(0, 1)
 			clear(target)
 			draw(target, this.scene, this.camera)
 
@@ -1187,10 +1106,6 @@ View3 = f.unit({
 	},
 
 	onTick: function(dt) {
-		if(this.preloaderSamples) {
-			this.updatePreloader()
-		}
-
 		if(this.orbit.autoRotate) {
 			this.orbit.update()
 			this.needsRedraw = true
@@ -1205,6 +1120,7 @@ View3 = f.unit({
 			this.needsProjection = true
 
 			this.updateTreeSize(this.currentDim)
+			this.updateConnectionLine(this.globalConnections)
 		}
 
 		if(this.orbitTween.playing) {
@@ -1237,7 +1153,7 @@ View3 = f.unit({
 
 			this.projector.updateMatrices()
 			this.updateLights()
-			this.updateGrid()
+			// this.updateGrid()
 
 			this.needsRetrace = true
 			this.needsRedraw = true
@@ -1259,7 +1175,7 @@ View3 = f.unit({
 			}
 		}
 
-		if(this.needsRedraw) {
+		if(this.needsRedraw && this.width && this.height) {
 			this.needsRedraw = false
 
 			this.draw()
@@ -1274,6 +1190,8 @@ THREE.Object3D.prototype.onBeforeRender = function(renderer, scene, camera, geom
 	if(!renderer.stencilWrite) return
 
 	var gl = renderer.context
+
+	// var value = this.parentNode ? this.parentNode.stencilValue : this.stencilValue
 
 	gl.stencilFunc(gl.ALWAYS, +this.stencilValue || 0, 0xff)
 }

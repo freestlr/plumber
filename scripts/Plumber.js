@@ -1,13 +1,13 @@
 Plumber = f.unit({
 	unitName: 'Plumber',
 
-	version: 0.02,
+	version: 3,
 
 	mode: 'constructor',
 
-	explode: 0,
 	explodeEnabled: false,
 	explodeStepped: false,
+	explodeTimeScale: 1,
 
 	catchFiles: false,
 	catchSamples: true,
@@ -54,21 +54,30 @@ Plumber = f.unit({
 		this.tiles = new TileView
 		this.element = this.tiles.element
 
+		this.clipboard = dom.elem('textarea', null, this.element)
+		dom.style(this.clipboard, {
+			position: 'absolute',
+			zIndex: '-1'
+		})
+
 		this.view = new View3({
-			// eroot: document.body,
+			ename: 'view-3 view-3-1',
 			renderer: this.renderer,
+			imagery: this.imagery,
 			// clearColor: 0xFF00FF
 		})
 
 		this.view2 = new View3({
-			// eroot: document.body,
+			ename: 'view-3 view-3-2',
 			renderer: this.renderer,
+			imagery: this.imagery,
 			// enableSSAO: false,
-			enableStencil: false,
+			// enableStencil: false,
 			enableRaycast: false
 			// clearColor: 0x00FF00
 		})
 
+		this.loading = new UI.LoadingBox
 
 		this.viewTween = new TWEEN.Tween({ split: 0 })
 			.to({ split: 0 }, 400)
@@ -80,126 +89,87 @@ Plumber = f.unit({
 
 
 
+		this.createDOM()
+
+		this.setParams(options)
+		this.setMode(this.mode, true)
+
+		this.fetch()
+	},
+
+
+	createDOM: function() {
 		this.buttonRoot = dom.div('vp-button-root', this.element)
 
-		this.explodeButton = new Block.Toggle({
-			eroot: this.element,
-			ename: 'vp-button vp-button-explode out-01',
-			eicon: 'i-explode',
-			title: 'Exploded view'
-		})
-
-		this.zoomInButton = new Block.Toggle({
+		this.actionList = new Block.List({
 			eroot: this.buttonRoot,
-			ename: 'vp-button vp-button-zoom-in out-01',
-			reset: true,
-			eicon: 'i-zoom-in',
-			title: 'Zoom in'
-		})
+			ename: 'vp-list vp-list-action',
+			template: {
+				factory: Block.Toggle,
+				ename: 'vp-button out-01',
+				reset: true
+			},
 
-		this.zoomOutButton = new Block.Toggle({
-			eroot: this.buttonRoot,
-			ename: 'vp-button vp-button-zoom-out out-01',
-			reset: true,
-			eicon: 'i-zoom-out',
-			title: 'Zoom out'
-		})
+			items: [
+				{ data: 'zoom_in',    attr: { icon: 'i-zoom-in',  title: 'Zoom in'    } },
+				{ data: 'zoom_out',   attr: { icon: 'i-zoom-out', title: 'Zoom out'   } },
+				{ data: 'zoom_fit',   attr: { icon: 'i-zoom-fit', title: 'Fit screen' } },
+				{ data: 'explode',    attr: { icon: 'i-explode',  title: 'Exploded view' }, reset: false, eroot: this.element },
+				{ data: 'screenshot', attr: { icon: 'i-photo',    title: 'Screen shot' } },
+				{ data: 'rotate',     attr: { icon: 'i-autorotate', title: 'Auto rotate' }, reset: false },
+			],
 
-		this.zoomFitButton = new Block.Toggle({
-			eroot: this.buttonRoot,
-			ename: 'vp-button vp-button-zoom-fit out-01',
-			reset: true,
-			eicon: 'i-zoom-fit',
-			title: 'Fit screen'
-		})
-
-		this.screenshotButton = new Block.Toggle({
-			eroot: this.buttonRoot,
-			ename: 'vp-button vp-button-screenshot out-01',
-			reset: true,
-			eicon: 'i-photo',
-			title: 'Screen shot'
-		})
-
-		this.rotateButton = new Block.Toggle({
-			eroot: this.buttonRoot,
-			ename: 'vp-button vp-button-rotate out-01',
-			eicon: 'i-autorotate',
-			title: 'Auto rotate'
+			events: {
+				'block_add': function(block) {
+					block.events.on(block.reset ? 'active' : 'change', this.onAction, this, block.data)
+				}
+			},
+			eventScope: this
 		})
 
 		this.displayMenu = new Block.Menu({
 			eroot: this.buttonRoot,
 			ename: 'vp-menu vp-menu-display',
 			template: {
-				factory: Block.Toggle,
 				deselect: false,
-				ename: 'vp-button'
+				ename: 'vp-button out-01'
 			},
-			items: [{
-				data: 'transparent',
-				eicon: 'i-dis-transparent',
-				title: 'Transparent view'
-			}, {
-				data: 'normal',
-				eicon: 'i-dis-normal',
-				title: 'Normal view'
-			}, {
-				data: 'wireframe',
-				eicon: 'i-dis-wireframe',
-				title: 'Wireframe view'
-			}],
-			active: 1
+			items: [
+				{ data: 'transparent', attr: { icon: 'i-dis-transparent', title: 'Transparent view' } },
+				{ data: 'normal',      attr: { icon: 'i-dis-normal',      title: 'Normal view'      } },
+				{ data: 'wireframe',   attr: { icon: 'i-dis-wireframe',   title: 'Wireframe view'   } }
+			],
+			active: 1,
+
+			events: {
+				'change': this.onDisplayChange
+			},
+			eventScope: this
 		})
 
 		this.projectionMenu = new Block.Menu({
 			eroot: this.buttonRoot,
 			ename: 'vp-menu vp-menu-projection',
 			template: {
-				factory: Block.Toggle,
 				deselect: false,
-				ename: 'vp-button'
+				ename: 'vp-button out-01'
 			},
-			items: [{
-				data: 'perspective',
-				eicon: 'i-prj-perspective',
-				title: 'Perspective'
-			}, {
-				data: 'left',
-				eicon: 'i-prj-left',
-				title: 'Left'
-			}, {
-				data: 'right',
-				eicon: 'i-prj-right',
-				title: 'Right'
-			}, {
-				data: 'top',
-				eicon: 'i-prj-top',
-				title: 'Top'
-			}, {
-				data: 'bottom',
-				eicon: 'i-prj-bottom',
-				title: 'Bottom'
-			}, {
-				data: 'front',
-				eicon: 'i-prj-front',
-				title: 'Front'
-			}, {
-				data: 'back',
-				eicon: 'i-prj-back',
-				title: 'Back'
-			}],
-			active: 0
-		})
+			items: [
+				{ data: 'perspective', camera: [ 1,  1,  1], attr: { icon: 'i-prj-perspective', title: 'Perspective' } },
+				{ data: 'left',        camera: [-1,  0,  0], attr: { icon: 'i-prj-left',        title: 'Left'        } },
+				{ data: 'right',       camera: [ 1,  0,  0], attr: { icon: 'i-prj-right',       title: 'Right'       } },
+				{ data: 'top',         camera: [ 0,  1,  0], attr: { icon: 'i-prj-top',         title: 'Top'         } },
+				{ data: 'bottom',      camera: [ 0, -1,  0], attr: { icon: 'i-prj-bottom',      title: 'Bottom'      } },
+				{ data: 'front',       camera: [ 0,  0,  1], attr: { icon: 'i-prj-front',       title: 'Front'       } },
+				{ data: 'back',        camera: [ 0,  0, -1], attr: { icon: 'i-prj-back',        title: 'Back'        } }
+			],
+			active: 0,
 
-		this.explodeButton.events.on('change', this.onExplode, this)
-		this.zoomInButton.events.on('change', this.onZoom, this, 'in')
-		this.zoomOutButton.events.on('change', this.onZoom, this, 'out')
-		this.zoomFitButton.events.on('change', this.onZoom, this, 'fit')
-		this.screenshotButton.events.on('change', this.onScreenshot, this)
-		this.rotateButton.events.on('change', this.onRotate, this)
-		this.displayMenu.events.on('change', this.onDisplayChange, this)
-		this.projectionMenu.events.on('change', this.onProjectionChange, this)
+			events: {
+				'change': this.onProjectionChange
+			},
+			eventScope: this
+		})
 
 
 		splitViewMessage: {
@@ -228,8 +198,6 @@ Plumber = f.unit({
 		}
 
 
-
-
 		dom.addclass(this.element, 'ontouchstart' in window ? 'touch' : 'no-touch')
 		dom.addclass(this.element, 'plumber')
 		dom.addclass(this.canvas, 'canvas-main')
@@ -237,39 +205,45 @@ Plumber = f.unit({
 		dom.append(this.element, this.splitViewMessage)
 		dom.append(this.element, this.emptyViewMessage)
 		dom.display(this.canvas, false)
+	},
 
-
-		for(var name in options) switch(name) {
+	setParams: function(params) {
+		for(var name in params) switch(name) {
 			case 'eroot':
-				dom.append(options.eroot, this.element)
+				dom.append(params.eroot, this.element)
 			break
 
 			case 'mode':
-				this.mode = options.mode
+				this.mode = params.mode
 			break
 
 			case 'dirSamples':
-				this.sampler.folder = options.dirSamples
+				this.sampler.folder = params.dirSamples
 			break
 
 			case 'initFromHash':
-				this.initFromHash = !!options.initFromHash
+				this.initFromHash = !!params.initFromHash
 			break
 
 			default:
-				if(name in this) this[name] = options[name]
+				if(name in this) this[name] = params[name]
 			break
 		}
-
-
-		this.setMode(this.mode, true)
-
-		this.fetch()
 	},
 
 	setMode: function(mode, force) {
+		if(mode !== 'constructor' && mode !== 'viewer') {
+			console.warn('unknown mode given:', mode, 'fallback to "viewer"')
+			mode = 'viewer'
+		}
+
 		if(this.mode === mode && !force) return
 		this.mode = mode
+
+		this.modeis = {
+			ctr: mode === 'constructor',
+			vwr: mode === 'viewer'
+		}
 
 		var layout
 		,   clients
@@ -277,22 +251,22 @@ Plumber = f.unit({
 			case 'constructor':
 				layout = ['h', 0, 0, 1]
 				clients = [this.view, this.view2]
+
+				this.view.enableRaycast = true
 			break
 
 			default:
-				console.warn('unknown mode given:', mode, 'fallback to "viewer"')
-				mode = 'viewer'
-
 			case 'viewer':
 				layout = 0
-				clients = [this.view2]
+				clients = [this.view]
+
+				this.view.enableRaycast = false
 			break
 		}
 
-		this.modeis = {
-			ctr: mode === 'constructor',
-			vwr: mode === 'viewer'
-		}
+		this.tiles.setLayout(layout)
+		this.tiles.setClients(clients)
+
 
 		dom.setclass(this.element, {
 			'mode-constructor' : this.modeis.ctr,
@@ -303,21 +277,13 @@ Plumber = f.unit({
 		dom.display(this.view2.clearButton, this.modeis.ctr)
 		dom.display(this.buttonRoot, this.modeis.vwr)
 
-		// this.view.setTree(null)
-		this.clearTree()
+
+		this.splitViewFrame = this.tiles.splits[0]
+		this.splitScreen(false)
 		this.view2.setTree(null)
+		// this.clearTree()
 
 
-		this.tiles.setLayout(layout)
-		this.tiles.setClients(clients)
-
-
-		this.splitView = this.tiles.splits[0]
-		this.viewTween.target.split = 0
-		this.viewTween.source.split = 0
-
-
-		this.splitViewMessageVisible.set(this.modeis.ctr, 'g_svm_mode')
 
 
 		this.updateMarkerVisibility()
@@ -330,141 +296,202 @@ Plumber = f.unit({
 		// this.tiles.update()
 	},
 
-	onZoom: function(zoom) {
-		switch(zoom) {
-			case 'in':
+	makeGUI: function() {
+		var self = this
+
+		this.gui = new dat.GUI({
+			// autoPlace: false,
+			hideable: false
+		})
+
+
+		var slots = [
+			'stencilLit',
+			'stencilHover',
+			'stencilSelect'
+		]
+
+		this.gui.closed = true
+
+		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
+		this.gui.add(this.view, 'enableRender').name('Render').onChange(redraw)
+		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
+		this.gui.add(this.view, 'enableStencil').name('Enable Stencil').onChange(redraw)
+		this.gui.add(this.view, 'enableStencilAA').name('AA Stencil').onChange(redraw)
+		this.gui.add(this.view, 'enableStencilBloom').name('Bloom Stencil').onChange(redraw)
+		this.gui.add(this.view, 'enableSSAO').name('SSAO').onChange(redraw)
+		this.gui.add(this.view, 'enableOnlyAO').name('Only AO').onChange(redraw)
+		this.gui.add(this.view, 'enableAAAO').name('AA AO').onChange(redraw)
+		this.gui.add(this.view, 'enableBlurAO').name('Blur AO').onChange(redraw)
+		this.gui.add(this.view, 'enableBloomAO').name('Bloom AO').onChange(redraw)
+
+		var au = this.view.smSSAO.uniforms
+		,   ao = this.gui.addFolder('Occlusion')
+		// ao.add(au.cameraNear, 'value').min(0).max(1000).name('cameraNear').onChange(redraw)
+		// ao.add(au.cameraFar,  'value').min(0).max(1000).name('cameraFar').onChange(redraw)
+		ao.add(au.diffArea,   'value').min(0).max(2).name('diffArea').onChange(redraw)
+		ao.add(au.gDisplace,  'value').min(0).max(2).name('gDisplace').onChange(redraw)
+		ao.add(au.radius,     'value').min(0).max(50).name('radius').onChange(redraw)
+		ao.add(au.aoClamp,    'value').min(0).max(2).name('aoClamp').onChange(redraw)
+		ao.add(au.aoMin,      'value').min(0).max(1).name('aoMin').onChange(redraw)
+
+		slots.forEach(function(slot) {
+			var fd = this.gui.addFolder(slot)
+			var params = this.view[slot].params
+
+			fd.addColor(params, 'drawColor').onChange(redraw)
+			fd.add(params, 'drawAlpha').min(0).max(1).onChange(redraw)
+			fd.add(params, 'lineAlpha').min(0).max(1).onChange(redraw)
+			fd.add(params, 'lineAngle').min(0).max(360).onChange(redraw)
+			fd.add(params, 'edgeAlpha').min(0).max(1).onChange(redraw)
+			fd.add(params, 'fillAlpha').min(0).max(1).onChange(redraw)
+		}, this)
+
+
+		this.gui.add(this, 'explodeStepped').name('Explode Step')
+
+		var light = this.gui.addFolder('Light')
+		light.add(this.view, 'directAngle').min(-1).max(1).name('Direct Angle').onChange(relight)
+		light.add(this.view, 'directK').min(-1).max(1).name('Direct K').onChange(relight)
+		light.add(this.view, 'directLift').min(-1).max(1).name('Direct Lift').onChange(relight)
+		light.add(this.view.dirLight, 'intensity').min(0).max(1).name('Direct Power').onChange(redraw)
+		light.add(this.view.ambLight, 'intensity').min(0).max(1).name('Ambient Power').onChange(redraw)
+
+		this.gui.add(this.viewTween, 'durationTime').min(400).max(10000).name('Split Time')
+		this.gui.add(this, 'explodeTimeScale').min(0.1).max(90).name('Conn Scale')
+
+
+		function relight() {
+			self.view.updateLights()
+			self.view.needsRedraw = true
+		}
+
+		function redraw() {
+			self.view.needsRedraw = true
+			self.view2.needsRedraw = true
+		}
+
+		function explode(value) {
+			if(!self.tree) return
+
+			self.tree.traverseConnections(f.func('transitionProgress', 1 - value))
+			self.view.needsRedraw = true
+		}
+	},
+
+	fetch: function() {
+		this.get.xml(this.srcAtlas)
+			.then(Atlas.setSource)
+
+		this.get.image(this.srcCubemap)
+			.then(this.imagery.unwrapCubemap3x2, this.imagery)
+
+		this.get.ready().then(this.run, this, null, true)
+	},
+
+	run: function() {
+		this.makeGUI()
+
+		new EventHandler(this.onresize, this).listen('resize',  window)
+		new EventHandler(this.onkey,    this).listen('keydown', window, true)
+		new EventHandler(this.onkey,    this).listen('keyup',   window, true)
+		new EventHandler(this.onTap,    this).listen('tap',     this.element)
+
+		new EventHandler(this.onDragOver, this).listen('dragover', this.view .element)
+		new EventHandler(this.onDragOver, this).listen('dragover', this.view2.element)
+		new EventHandler(this.onDrop,     this).listen('drop',     this.view .element)
+		new EventHandler(this.onDrop,     this).listen('drop',     this.view2.element)
+
+
+		this.tiles.events.on('update', this.onTilesUpdate, this)
+
+		this.view.events.on('connection_select', this.onConnectionSelect, this, [this.view, 0])
+		this.view2.events.on('connection_select', this.onConnectionSelect, this, [this.view2, 1])
+
+		this.view.events.on('view_clear', this.onViewClear, this)
+		this.view2.events.on('view_clear', this.onViewClear2, this)
+
+		this.view.events.on('node_select', this.onNodeSelect, this)
+
+		dom.display(this.canvas, true)
+		this.onresize()
+
+
+
+		this.view.onTick(0)
+		this.view2.onTick(0)
+
+		if(typeof bootProgress === 'function') bootProgress(1)
+
+		this.ready.resolve(true)
+
+		if(this.initFromHash) {
+			this.loadFromHash()
+		}
+
+		this.timer.play()
+	},
+
+	loadFromHash: function() {
+		var hash = location.hash.slice(1)
+		if(hash) try {
+			this.importString(hash, true)
+			location.hash = ''
+
+		} catch(e) {
+			console.warn('loadFromHash failed:', e)
+		}
+	},
+
+
+
+
+
+	onAction: function(action, active) {
+		switch(action) {
+			case 'zoom_in':
 				this.view.zoom(1.5)
 				this.view2.zoom(1.5)
 			break
 
-			case 'out':
+			case 'zoom_out':
 				this.view.zoom(1/1.5)
 				this.view2.zoom(1/1.5)
 			break
 
-			case 'fit':
+			case 'zoom_fit':
 				this.view.focusOnTree()
 				this.view2.focusOnTree()
 			break
+
+			case 'explode':
+				this.explode(active)
+			break
+
+			case 'rotate':
+				this.autorotate(active)
+			break
+
+			case 'screenshot':
+				this.makeScreenshot()
+			break
 		}
-	},
-
-	onRotate: function(rotate) {
-		this.view.orbit.autoRotate = rotate
-		this.view2.orbit.autoRotate = rotate
-	},
-
-	onDisplayChange: function(display) {
-		var isTransparent = display === 'transparent'
-		,   isNormal      = display === 'normal'
-		,   isWireframe   = display === 'wireframe'
-
-		this.imagery.sampleMaterials.forEach(function(m) {
-
-			if(isTransparent) {
-				m.__pl_display_set = true
-				m.__pl_transparent = m.transparent
-				m.__pl_opacity     = m.opacity
-				m.__pl_depthtest   = m.depthTest
-				m.__pl_depthwrite  = m.depthWrite
-
-				m.transparent = true
-				m.opacity     = 0.5
-				m.depthTest   = false
-				m.depthWrite  = false
-
-				m.needsUpdate = true
-
-			} else if(m.__pl_display_set) {
-				m.transparent = m.__pl_transparent
-				m.opacity     = m.__pl_opacity
-				m.depthTest   = m.__pl_depthtest
-				m.depthWrite  = m.__pl_depthwrite
-
-				delete m.__pl_transparent
-				delete m.__pl_opacity
-				delete m.__pl_depthtest
-				delete m.__pl_depthwrite
-				delete m.__pl_display_set
-
-				m.needsUpdate = true
-			}
-
-		}, this)
-
-		this.view.enableRender = isNormal || isTransparent
-		this.view.enableWireframe = isWireframe
-		this.view.needsRedraw = true
-
-		this.view2.enableRender = isNormal || isTransparent
-		this.view2.enableWireframe = isWireframe
-		this.view2.needsRedraw = true
-	},
-
-	onProjectionChange: function(projection) {
-		var pos = {
-			perspective : [ 1,  1,  1],
-			left        : [-1,  0,  0],
-			right       : [ 1,  0,  0],
-			top         : [ 0,  1,  0],
-			bottom      : [ 0, -1,  0],
-			front       : [ 0,  0,  1],
-			back        : [ 0,  0, -1]
-		}
-
-		var isPerspective = projection === 'perspective'
-
-		this.view.camera.fov = isPerspective ? 30 : 0.5
-		this.view.camera.updateProjectionMatrix()
-
-		this.view2.camera.fov = isPerspective ? 30 : 0.5
-		this.view2.camera.updateProjectionMatrix()
-
-		this.view.camera.position
-			.fromArray(pos[projection])
-			.setLength(this.view.getFitDistance())
-			.add(this.view.treeCenter)
-
-		this.view2.camera.position
-			.fromArray(pos[projection])
-			.setLength(this.view2.getFitDistance())
-			.add(this.view2.treeCenter)
-
-		this.view.orbit.target.copy(this.view.treeCenter)
-		this.view2.orbit.target.copy(this.view2.treeCenter)
-
-		this.view.orbit.orthoMode = !isPerspective
-		this.view2.orbit.orthoMode = !isPerspective
-
-		this.view.orbit.update()
-		this.view2.orbit.update()
-		this.view.needsRedraw = true
-		this.view2.needsRedraw = true
-	},
-
-	onScreenshot: function() {
-		var time = new Date().toISOString().split('.')[0].replace(/:/g, '.')
-
-		this.canvas.toBlob(function(blob) {
-			saveAs(blob, 'pb-screen-'+ time +'.jpg')
-
-		}, 'image/jpeg', 0.95)
 	},
 
 	getConnectionsArray: function() {
 		return this.tree.retrieveConnections({ connected: true }, true)
 	},
 
-	exportJSON: function() {
-		return TSerial.toJSON(this.tree)
+	exportJSON: function(tree) {
+		return TSerial.toJSON(tree || this.tree)
 	},
 
 	importJSON: function(json, animate) {
-		return TSerial.fromJSON(json, this.sampler, animate).then(this.absolutelySetMainTree, this)
+		return TSerial.fromJSON(json, this.sampler, animate).then(this.setTree1, this)
 	},
 
-	exportString: function() {
-		return TSerial.toString(this.exportJSON())
+	exportString: function(tree) {
+		return TSerial.toString(this.exportJSON(tree))
 	},
 
 	importString: function(string, animate) {
@@ -472,104 +499,7 @@ Plumber = f.unit({
 	},
 
 
-	replaceElement: function(src, param) {
-		var sample = this.getSample(src)
-
-		if(!this.tree || !sample) {
-			this.events.emit('onReplaceElement', {
-				status: 'rejected',
-				reason: sample ? 'no tree' : 'bad sample'
-			})
-
-		} else {
-			sample.load().then(function() {
-				this.replaceElementBySample(sample, param)
-			}, function(e) {
-				this.events.emit('onReplaceElement', {
-					status: 'rejected',
-					reason: 'bad element: '+ src
-				})
-			}, this)
-		}
-	},
-
-	replaceElementBySample: function(sample, param) {
-		var events = this.events
-		function replaceOne(node) {
-			replaceMany([node])
-		}
-		function replaceMany(nodes) {
-			events.emit('onReplaceElement', { status: 'replaced', nodes: nodes.map(f.prop('id')) })
-		}
-		function replaceBad(e) {
-			events.emit('onReplaceElement', { status: 'rejected', reason: e })
-		}
-
-
-		if(!this.tree || !sample) {
-			return replaceBad(sample ? 'no tree' : 'bad sample')
-		}
-
-		switch(param) {
-			case -1:
-				var replaceable = []
-
-				this.tree.traverse(function(node) {
-					if(node.canBeReplacedBy(sample)) replaceable.push(node)
-				}, this)
-
-				if(replaceable.length) {
-					var defers = replaceable.map(function(node) {
-						return this.replaceNode(node, sample)
-					}, this)
-
-					Defer.all(defers).then(replaceMany, replaceBad)
-
-				} else replaceBad('no suitable nodes')
-			break
-
-			case 0:
-				var replaceable = []
-
-				this.tree.traverse(function(node) {
-					this.view.litNode(node, node.canBeReplacedBy(sample))
-
-					if(node.lit) replaceable.push(node)
-				}, this)
-
-
-				switch(replaceable.length) {
-					case 0:
-						replaceBad('no suitable nodes')
-					return
-
-					case 1:
-						var node = replaceable[0]
-
-						this.view.litNode(node, false)
-						this.replaceNode(node, sample, true).then(replaceOne, replaceBad)
-					break
-
-					default:
-						this.issuedReplace = sample
-						this.litModeStart('replace')
-					break
-				}
-			break
-
-			default:
-				var node = param instanceof TNode ? param : this.getElementById(param)
-				if(node) {
-					this.replaceNode(node, sample, true).then(replaceOne, replaceBad)
-
-				} else replaceBad('invalid param: '+ param)
-			break
-		}
-
-		this.view.needsRedraw = true
-	},
-
-	litModeStart: function(mode) {
+	litModeStart: function(mode, nodes) {
 		switch(mode) {
 			case 'replace':
 				this.view.stencilLit.params.drawColor = this.stencilReplaceColor
@@ -589,6 +519,10 @@ Plumber = f.unit({
 				this.view.stencilRaycastMask = 0
 			break
 		}
+
+		if(nodes) {
+			this.view.litNodeList(nodes, true)
+		}
 	},
 
 	litModeClear: function() {
@@ -598,47 +532,49 @@ Plumber = f.unit({
 		this.view.stencilRaycastMask = ~0
 	},
 
-	addElement: function(id, src, link) {
-		var sample = this.getSample(src, link)
-
-		if(sample) {
-			this.displayFigure(sample.src)
-
-		} else {
-			this.events.emit('onAddElement', {
-				status: 'error',
-				error: 'bad element source: "'+ src +'"'
+	shotElement: function(src, w, h) {
+		var view = this.viewN
+		if(!view) {
+			view = this.viewN = new View3({
+				renderer: this.renderer,
+				imagery: this.imagery,
+				enableStencil: false,
+				enableRaycast: false
 			})
 		}
+
+		return this.sampler.prepare(src).then(function(sample) {
+			var target = view.renderTarget
+			if(!target || target.width !== w || target.height !== h) {
+				target = view.renderTarget = new THREE.WebGLRenderTarget(w, h, {
+					minFilter: THREE.LinearFilter,
+					magFilter: THREE.LinearFilter,
+					format: THREE.RGBAFormat
+				})
+			}
+
+			view.setSize(w, h)
+			view.setTree(new TNode(sample))
+			view.focusOnTree(0)
+			view.onTick(0)
+
+			var gl = this.renderer.context
+			,   fb = target.__webglFramebuffer
+
+			var ctx = this.imagery.makeCanvas(w, h)
+			,   pix = ctx.createImageData(w, h)
+			,   arr = new Uint8Array(pix.data.buffer)
+
+			gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
+			gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, arr)
+
+			view.setTree(null)
+
+			ctx.putImageData(pix, 0, 0)
+			return ctx.canvas
+		}, this)
 	},
 
-	getSample: function(src, link) {
-		return f.apick(this.sampler.samples, 'src', src)
-			|| this.sampler.addSample({ src: src, link: link })
-	},
-
-	addFigure: function(json) {
-
-	},
-
-	addComplex: function(id, json) {
-		if(!json || !json.types) return
-
-		for(var i = 0; i < json.types.length; i++) {
-
-		}
-
-	},
-
-	fetch: function() {
-		this.get.xml(this.srcAtlas)
-			.then(Atlas.setSource)
-
-		this.get.image(this.srcCubemap)
-			.then(this.imagery.unwrapCubemap3x2, this.imagery)
-
-		this.get.ready().then(this.run, this, null, true)
-	},
 
 
 	deleteNodeWithPrompt: function(node) {
@@ -656,8 +592,7 @@ Plumber = f.unit({
 
 		this.view.selectNode(null)
 		this.view.hoverNode(null)
-		this.litModeStart('delete')
-		this.view.litNodeList(list.nodes.map(this.getElementById, this), true)
+		this.litModeStart('delete', list.nodes)
 
 
 		this.deletePromptTip = new UI.Prompt({
@@ -719,123 +654,131 @@ Plumber = f.unit({
 	},
 
 
-	makeGUI: function() {
-		var self = this
-
-		this.gui = new dat.GUI({
-			// autoPlace: false,
-			hideable: false
-		})
 
 
-		var slots = [
-			'stencilLit',
-			'stencilHover',
-			'stencilSelect'
-		]
 
-		this.gui.closed = true
-
-		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
-		this.gui.add(this.view, 'enableRender').name('Render').onChange(redraw)
-		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
-		this.gui.add(this.view, 'enableStencil').name('Enable Stencil').onChange(redraw)
-		this.gui.add(this.view, 'enableStencilAA').name('AA Stencil').onChange(redraw)
-		this.gui.add(this.view, 'enableStencilBloom').name('Bloom Stencil').onChange(redraw)
-		this.gui.add(this.view, 'enableSSAO').name('SSAO').onChange(redraw)
-		this.gui.add(this.view, 'enableOnlyAO').name('Only AO').onChange(redraw)
-		this.gui.add(this.view, 'enableAAAO').name('AA AO').onChange(redraw)
-		this.gui.add(this.view, 'enableBlurAO').name('Blur AO').onChange(redraw)
-		this.gui.add(this.view, 'enableBloomAO').name('Bloom AO').onChange(redraw)
-
-		var au = this.view.smSSAO.uniforms
-		,   ao = this.gui.addFolder('Occlusion')
-		// ao.add(au.cameraNear, 'value').min(0).max(1000).name('cameraNear').onChange(redraw)
-		// ao.add(au.cameraFar,  'value').min(0).max(1000).name('cameraFar').onChange(redraw)
-		ao.add(au.diffArea,   'value').min(0).max(2).name('diffArea').onChange(redraw)
-		ao.add(au.gDisplace,  'value').min(0).max(2).name('gDisplace').onChange(redraw)
-		ao.add(au.radius,     'value').min(0).max(50).name('radius').onChange(redraw)
-		ao.add(au.aoClamp,    'value').min(0).max(2).name('aoClamp').onChange(redraw)
-		ao.add(au.aoMin,      'value').min(0).max(1).name('aoMin').onChange(redraw)
-
-		slots.forEach(function(slot) {
-			var fd = this.gui.addFolder(slot)
-			var params = this.view[slot].params
-
-			fd.addColor(params, 'drawColor').onChange(redraw)
-			fd.add(params, 'drawAlpha').min(0).max(1).onChange(redraw)
-			fd.add(params, 'lineAlpha').min(0).max(1).onChange(redraw)
-			fd.add(params, 'lineAngle').min(0).max(360).onChange(redraw)
-			fd.add(params, 'edgeAlpha').min(0).max(1).onChange(redraw)
-			fd.add(params, 'fillAlpha').min(0).max(1).onChange(redraw)
-		}, this)
-
-
-		this.gui.add(this, 'explode').min(0).max(1).name('Explode').onChange(explode)
-		this.gui.add(this, 'explodeStepped').name('Explode Step')
-
-		var light = this.gui.addFolder('Light')
-		light.add(this.view, 'directAngle').min(-1).max(1).name('Direct Angle').onChange(relight)
-		light.add(this.view, 'directK').min(-1).max(1).name('Direct K').onChange(relight)
-		light.add(this.view, 'directLift').min(-1).max(1).name('Direct Lift').onChange(relight)
-		light.add(this.view.dirLight, 'intensity').min(0).max(1).name('Direct Power').onChange(redraw)
-		light.add(this.view.ambLight, 'intensity').min(0).max(1).name('Ambient Power').onChange(redraw)
-
-		this.gui.add(this.viewTween, 'durationTime').min(400).max(10000).name('T')
-
-
-		function relight() {
-			self.view.updateLights()
-			self.view.needsRedraw = true
-		}
-
-		function redraw() {
-			self.view.needsRedraw = true
-			self.view2.needsRedraw = true
-		}
-
-		function explode(value) {
-			if(!self.tree) return
-
-			self.tree.traverseConnections(f.func('transitionProgress', 1 - value))
-			self.view.needsRedraw = true
-		}
+	autorotate: function(rotate) {
+		this.view.orbit.autoRotate = rotate
+		this.view2.orbit.autoRotate = rotate
 	},
 
+	onDisplayChange: function(display) {
+		var isTransparent = display === 'transparent'
+		,   isNormal      = display === 'normal'
+		,   isWireframe   = display === 'wireframe'
 
+		this.imagery.sampleMaterials.forEach(function(m) {
 
+			if(isTransparent) {
+				m.__pl_display_set = true
+				m.__pl_transparent = m.transparent
+				m.__pl_opacity     = m.opacity
+				m.__pl_depthtest   = m.depthTest
+				m.__pl_depthwrite  = m.depthWrite
+
+				m.transparent = true
+				m.opacity     = 0.5
+				m.depthTest   = false
+				m.depthWrite  = false
+
+				m.needsUpdate = true
+
+			} else if(m.__pl_display_set) {
+				m.transparent = m.__pl_transparent
+				m.opacity     = m.__pl_opacity
+				m.depthTest   = m.__pl_depthtest
+				m.depthWrite  = m.__pl_depthwrite
+
+				delete m.__pl_transparent
+				delete m.__pl_opacity
+				delete m.__pl_depthtest
+				delete m.__pl_depthwrite
+				delete m.__pl_display_set
+
+				m.needsUpdate = true
+			}
+
+		}, this)
+
+		this.view.enableRender = isNormal || isTransparent
+		this.view.enableWireframe = isWireframe
+		this.view.needsRedraw = true
+
+		this.view2.enableRender = isNormal || isTransparent
+		this.view2.enableWireframe = isWireframe
+		this.view2.needsRedraw = true
+	},
+
+	onProjectionChange: function(projection) {
+		var block = this.projectionMenu.getBlock(projection)
+
+		var isPerspective = projection === 'perspective'
+
+		this.view.camera.fov = isPerspective ? 30 : 0.5
+		this.view.camera.updateProjectionMatrix()
+
+		this.view2.camera.fov = isPerspective ? 30 : 0.5
+		this.view2.camera.updateProjectionMatrix()
+
+		this.view.camera.position
+			.fromArray(block.camera)
+			.setLength(this.view.getFitDistance())
+			.add(this.view.currentDim.center)
+
+		this.view2.camera.position
+			.fromArray(block.camera)
+			.setLength(this.view2.getFitDistance())
+			.add(this.view2.currentDim.center)
+
+		this.view.orbit.target.copy(this.view.currentDim.center)
+		this.view2.orbit.target.copy(this.view2.currentDim.center)
+
+		this.view.orbit.orthoMode = !isPerspective
+		this.view2.orbit.orthoMode = !isPerspective
+
+		this.view.orbit.update()
+		this.view2.orbit.update()
+		this.view.needsRedraw = true
+		this.view2.needsRedraw = true
+	},
+
+	makeScreenshot: function() {
+		var time = new Date().toISOString().split('.')[0].replace(/:/g, '.')
+
+		this.canvas.toBlob(function(blob) {
+			saveAs(blob, 'pb-screen-'+ time +'.jpg')
+
+		}, 'image/jpeg', 0.95)
+	},
 
 	onViewClear: function() {
-		this.clear()
+		this.clearTree()
 	},
 
 	onViewClear2: function() {
-		this.displayFigure(null)
-		this.events.emit('onAddElement', { status: 'canceled' })
+		this.splitScreen(false)
+		if(this.addElementDefer) {
+			this.addElementDefer.reject({ status: 'canceled' })
+		}
 	},
 
-	clear: function() {
-		this.displayFigure(null)
-		this.view.setPreloader(null)
-		this.view2.setPreloader(null)
-		this.clearTree()
+	clearTree: function() {
+		this.splitScreen(false)
+
+		if(this.tree) this.deleteNodeList(this.tree.pinchr())
 	},
 
 
 	onViewTweenUpdate: function(t) {
-		if(!this.splitView) return
+		if(!this.splitViewFrame) return
 
-		this.splitView.position = 1 - this.viewTween.source.split / 2
+		this.splitViewFrame.position = 1 - this.viewTween.source.split / 2
 		this.tiles.update()
 
+		var dim = this.explodeEnabled ? this.view.explodeDim : this.view.assembleDim
+		var fit = this.splitScreenEnabled ? 5/4 : 5/3
 
-		this.view.focusOnTree(0,
-			this.explodeEnabled ? this.view.explodeDim : this.view.assembleDim,
-			t)
-
-		this.view2.focusOnTree(0,
-			this.explodeEnabled ? this.view2.explodeDim : this.view2.assembleDim,
-			t)
+		this.view.focusOnTree(0, dim, fit, t)
 	},
 
 	onViewTweenHalfway: function() {
@@ -847,27 +790,31 @@ Plumber = f.unit({
 	},
 
 	onViewTweenComplete: function() {
-		if(!this.splitScreen) {
+		if(!this.splitScreenEnabled) {
 			this.view2.setTree(null)
 			this.sampleView2 = null
 		}
 
-		dom.display(this.tiles.ehelpers, this.splitScreen)
+		dom.display(this.tiles.ehelpers, this.splitScreenEnabled)
 	},
 
-	onExplode: function(enabled) {
+	explode: function(enabled) {
 		if(this.explodeStepDefer) {
 			this.explodeStepDefer.abort()
 			delete this.explodeStepDefer
 		}
 
+		if(this.explodeEnabled === enabled) return
 		this.explodeEnabled = enabled
+
+		this.actionList.getBlock('explode').set(enabled)
 
 		var view = this.view.tree ? this.view : this.view2
 		,   tree = view.tree
 		if(!tree) return
 
-		view.focusOnTree(null, enabled ? view.explodeDim : view.assembleDim)
+		var scale = this.explodeTimeScale
+		var focusTime = 1500
 
 		if(this.explodeStepped) {
 			var list = []
@@ -893,7 +840,7 @@ Plumber = f.unit({
 
 					var defer = new Defer
 					con.events.once('connect_end', defer.resolve, defer)
-					con.playConnection(enabled ? 0 : 1, null, 0.4)
+					con.playConnection(enabled ? 0 : 1, null, 0.4 * scale)
 
 					defers.push(defer)
 				}
@@ -905,9 +852,19 @@ Plumber = f.unit({
 
 		} else {
 			tree.traverseConnections(function(con) {
-				if(con.connected && con.master) con.playConnection(enabled ? 0 : 1)
+				if(con.connected && con.master) {
+					con.playConnection(enabled ? 0 : 1, null, scale)
+					if(focusTime < con.transitionTime) focusTime = con.transitionTime
+				}
 			})
 		}
+
+		var time = focusTime * scale
+		,   dim = enabled ? view.explodeDim : view.assembleDim
+		,   fit = enabled ? 5/4 : 4/3
+		,   easing = enabled ? TWEEN.Easing.Quadratic.Out : TWEEN.Easing.Quadratic.InOut
+
+		view.focusOnTree(time, dim, fit, null, null, easing)
 	},
 
 	explodeNode: function(node, exploded) {
@@ -915,100 +872,84 @@ Plumber = f.unit({
 
 		var master = node.upcon.connected
 
-		master.playConnection(exploded ? 0 : 1, null, 0.6)
+		master.playConnection(exploded ? 0 : 1, null, 0.6 * this.explodeTimeScale)
 	},
 
-	displayFigure: function(figure) {
-		var sample = f.apick(this.sampler.samples, 'src', figure)
-		if(sample) figure = sample
-
-		if(this.issuedReplace) {
-			delete this.issuedReplace
-			this.litModeClear()
-		}
-
-		if(this.sampleView2 === figure) return
-
-		if(this.tree || this.mode === 'viewer') {
-			this.sampleView2 = figure
-
-		} else {
-			this.sampleView2 = null
-		}
-
-		this.splitScreen = !!this.sampleView2
+	splitScreen: function(enabled) {
+		if(this.mode === 'viewer' && enabled) return
+		if(this.splitScreenEnabled === !!enabled) return
+		this.splitScreenEnabled = !!enabled
 
 
-		this.splitViewMessageVisible.set(this.splitScreen, 'g_svm_screen')
-		this.emptyViewMessageVisible.set(!this.tree && !figure, 'g_evm_tree')
+		this.splitViewMessageVisible.set(this.splitScreenEnabled, 'g_svm_screen')
 
-		this.view.enableRaycast = !this.splitScreen
+		this.view.enableRaycast = !this.splitScreenEnabled
 
 		this.view.hoverNode(null)
 		this.view.selectNode(null)
 		this.view.selectConnection(null)
 
-		this.view2.setTree(null)
-
-		var split = this.splitScreen ? 1 : 0
+		var split = this.splitScreenEnabled ? 1 : 0
 		if(split !== this.viewTween.target.split) {
 			this.viewTween.target.split = split
 			this.viewTween.start()
 		}
 
 		this.updateMarkerVisibility()
-
-
-		if(!figure) {
-
-		} else if(this.sampleView2) {
-			this.constructNode(figure, this.view2)
-				.then(this.setTree2, this.constructError, this)
-
-		} else {
-			this.constructNode(figure, this.view)
-				.then(this.setTree1, this.constructError, this)
-		}
-
 	},
 
 	isComplexFigure: function(figure) {
 		return figure && figure.types && figure.types.length
 	},
 
-	constructNode: function(figure, targetView) {
+	isAlias: function(alias) {
+		return alias && typeof alias === 'string'
+	},
+
+	constructNode: function(src, alias) {
+		if(!src) return Defer.complete(true)
+
+		if(alias && !this.isAlias(alias)) {
+			alias = null
+			console.error('construct: only string aliases allowed: ', alias)
+		}
+
 		if(this.ready.pending) {
+			// wait for env map
 			return this.ready.then(f.binda(this.constructNode, this, arguments))
 		}
 
-		if(targetView) targetView.setPreloader(null)
-
-
-		if(figure instanceof Sample) {
-			if(targetView) targetView.setPreloader([figure])
-
-			return figure.load().then(TNode.New)
-
-
-		} else if(this.isComplexFigure(figure)) {
-			var samples = TSerial.prepareSamples(figure.types, this.sampler)
-
-			if(targetView) targetView.setPreloader(samples)
-
-			return Defer.all(samples.map(f.func('load'))).then(function() {
-				return TSerial.constructJSON(figure, samples, false)
-			}, this)
-
-		} else {
-			return Defer.complete(false, 'bad sample')
+		var parentView = this.splitScreenEnabled ? this.view2 : this.view
+		if(this.loading.element.parentNode !== parentView.element) {
+			dom.append(parentView.element, this.loading.element)
 		}
-	},
 
-	constructError: function(e) {
-		this.events.emit('onAddElement', {
-			status: 'error',
-			error: e
-		})
+		this.loading.setProgress(0)
+		this.loading.visible.on()
+
+		this.emptyViewMessageVisible.off('g_evm_tree')
+
+		return this.sampler.prepare(src).then(function(sample) {
+			this.loading.setProgress(1)
+			this.loading.visible.off()
+
+			var node = TSerial.isComplex(sample)
+				? TSerial.constructJSON(sample, this.sampler, false)
+				: new TNode(sample)
+
+			if(alias) node.setId(alias)
+
+			return node
+
+		}, function(e) {
+			this.loading.setProgress(1)
+			this.loading.visible.off()
+			throw e
+
+		}, function(p) {
+			this.loading.setProgress(Loader.commonProgress([].concat(p)))
+
+		}, this)
 	},
 
 
@@ -1016,26 +957,25 @@ Plumber = f.unit({
 		if(!node) return
 
 		this.view2.setTree(node)
-		this.updateConnectionGroups(this.tree, node)
+
+		if(this.viewTween.source.split !== this.viewTween.target.split) {
+			var kw = 1 - this.viewTween.target.split / 2
+			,   tw = this.tiles.width * kw
+			,   th = this.tiles.height
+
+			this.view2.focusOnTree(0, null, 5/4, null, tw / th)
+		}
+
+		this.updateConnectionGroups(this.view.tree, this.view2.tree)
 		this.updateMarkerVisibility()
 	},
 
-	setTree1: function(node) {
-		this.absolutelySetMainTree(node)
-
-		if(!node) return
-
-		var nodes = []
-		node.traverse(function(n) {
-			nodes.push(n.id)
-		})
-
-		this.events.emit('onAddElement', {
-			status: 'connected',
-			root: node,
-			nodes: nodes
-		})
+	setTree1: function(tree) {
+		this.tree = tree
+		this.view.setTree(this.tree)
+		this.emptyViewMessageVisible.set(!this.tree, 'g_evm_tree')
 	},
+
 
 	getElementIdList: function() {
 		var list = []
@@ -1116,8 +1056,8 @@ Plumber = f.unit({
 		this.updateSplitViewMessagePosition()
 		this.updateConnectionVisibilitySets()
 
-		if(!this.hasAvailableConnections) {
-			this.events.emit('onAddElement', { status: 'rejected' })
+		if(this.addElementDefer && !this.hasAvailableConnections) {
+			this.addElementDefer.reject({ status: 'rejected', reason: 'no match' })
 		}
 
 		this.view.needsRetrace = true
@@ -1147,9 +1087,8 @@ Plumber = f.unit({
 	connectRandomNode: function() {
 		var samples = f.sort(this.sampler.samples.slice(), Math.random)
 
-		if(!this.tree) {
-			return this.constructNode(samples[0], this.view)
-				.then(this.setTree1, this.constructError, this)
+		if(!this.tree && samples.length) {
+			return this.constructNode(samples[0].src).then(this.setTree1, this)
 		}
 
 		var cons = this.tree.retrieveConnections({ connected: false }, true)
@@ -1163,7 +1102,7 @@ Plumber = f.unit({
 				var sample = samples[j]
 
 				if(!sample.object) {
-					sample.load()
+					this.sampler.prepare(sample.src)
 					continue
 				}
 
@@ -1171,9 +1110,8 @@ Plumber = f.unit({
 					var jointB = sample.joints[k]
 					if(!jointA.canConnect(jointB)) continue
 
-					this.constructNode(sample, this.view).then(function(node) {
-						this.makeViewConnection(conA, node.connections[k], true)
-					}, this.constructError, this)
+					var node = new TNode(sample)
+					this.makeConnection(conA, node.connections[k], true)
 
 					return
 				}
@@ -1181,7 +1119,7 @@ Plumber = f.unit({
 		}
 	},
 
-	connectNode: function(node) {
+	connectNodeSomewhere: function(node) {
 		if(!node) return
 
 		if(!this.tree) return this.setTree1(node)
@@ -1199,74 +1137,335 @@ Plumber = f.unit({
 				var conB = node.connections[j]
 				if(!conB.canConnect(conA)) continue
 
-				this.makeViewConnection(conA, conB, true)
+				this.makeConnection(conA, conB, true)
 
 
 				break loop_cons
+
+				if(conB.canConnect(conA)) {
+					this.makeConnection(conA, conB, true)
+					break loop_cons
+				}
 			}
 		}
 
-		if(this.splitScreen) {
-			this.updateConnectionGroups(this.tree, this.view2.tree)
+		if(this.splitScreenEnabled) {
+			this.updateConnectionGroups(this.view.tree, this.view2.tree)
 		}
 	},
 
-	connectElement: function(src, indexA, id, indexB, animate) {
-		var sample = this.getSample(src)
-		if(!sample) {
-			return this.connectElementError('src', { src: src })
-		}
+
+	commonMethodMessages: {
+		src: 'bad element: [#{src}]',
+		id: 'invalid node id: [#{id}]',
+		con: 'node [#{type}] don\'t have connection: [#{index}]',
+		used: 'connection [#{type}][#{index}] already used',
+		match: 'connections [#{typeA}][#{indexA}] and [#{typeB}][#{indexB}] don\'t match'
+	},
+
+	deferMethod: function(method, params, eventName, messages) {
+		return new Defer().anyway(function(value, success) {
+			var result = {
+				method: method,
+				params: params,
+				success: success,
+				status: success ? 'connected' : 'rejected'
+			}
+
+			if(typeof value === 'object') {
+				f.copy(result, value)
+			}
+
+			if(!success) {
+				var messages = this.commonMethodMessages
+				result.reason = !value ? 'unknown error'
+					: !value.msg ? value
+					: !messages[value.msg] ? 'undefined error'
+					: f.implode(messages[value.msg], value)
+			}
+
+			this.events.emit(eventName, result)
+			if(success) return value
+			else throw result
+		}, this)
+	},
+
+
+
+	addElement: function(alias, src, link) {
+		var defer = this.deferMethod('addElement', arguments, 'onAddElement')
+
+
+		this.view2.setTree(null)
+
+		var split = this.tree && this.mode !== 'viewer'
+		this.splitScreen(split)
+
+		return this.constructNode(src, alias).then(function(node) {
+			if(split) {
+				this.setTree2(node)
+				return this.addElementDefer = new Defer
+
+			} else {
+				this.setTree1(node)
+
+				var nodes = []
+				node.traverse(function(n) {
+					nodes.push(n.id)
+				})
+
+				return {
+					root: node,
+					nodes: nodes
+				}
+			}
+		}, this).push(defer)
+	},
+
+
+	connectElement: function(src, indexA, id, indexB, animate, alias) {
+		var defer = this.deferMethod('connectElement', arguments, 'onConnectElement')
 
 		var nodeB = this.getElementById(id)
 		if(!nodeB) {
-			return this.connectElementError('id', { id: id })
+			defer.reject({ msg: 'id', id: id })
 		}
 
 		var conB = nodeB.connections[indexB]
 		if(!conB) {
-			return this.connectElementError('con', { type: nodeB.type, index: indexB })
+			defer.reject({ msg: 'con', type: nodeB.type, index: indexB })
 		}
 
 		if(conB.connected) {
-			return this.connectElementError('used', { type: nodeB.type, index: indexB })
+			defer.reject({ msg: 'used', type: nodeB.type, index: indexB })
 		}
 
-		this.constructNode(sample).then(function(nodeA) {
+		this.constructNode(src, alias).then(function(nodeA) {
 			var conA = nodeA.connections[indexA]
 			if(!conA) {
-				return this.connectElementError('con', { type: nodeA.type, index: indexA })
+				defer.reject({ msg: 'con', type: nodeA.type, index: indexA })
 			}
 
 			if(!conB.canConnect(conA)) {
-				return this.connectElementError('match', { typeA: nodeA.type, indexA: indexA, typeB: nodeB.type, indexB: indexB })
+				defer.reject({ msg: 'match', typeA: nodeA.type, indexA: indexA, typeB: nodeB.type, indexB: indexB })
 			}
 
-			this.makeViewConnection(conB, conA, animate, 'onConnectElement')
+			var nodes = []
+			,   rootA = conA.node
+			rootA.traverse(function(node) { nodes.push(node.id) })
 
-		}, function(e) {
-			this.connectElementError('raw', e)
+			this.makeConnection(conB, conA, animate)
+
+			defer.resolve({
+				root: rootA,
+				nodes: nodes
+			})
+
+		}, function() {
+			defer.reject({ msg: 'src', src: src })
 
 		}, this)
+
+		return defer
 	},
 
-	connectElementError: function(type, data) {
-		var messages = {
-			src: 'bad element src: [#{src}]',
-			id: 'invalid node id: [#{id}]',
-			con: 'node [#{type}] don\'t have connection: [#{index}]',
-			used: 'connection [#{type}][#{index}] already used',
-			match: 'connections [#{typeA}][#{indexA}] and [#{typeB}][#{indexB}] don\'t match'
+
+
+	replaceElement: function(src, param) {
+		var defer = this.deferMethod('replaceElement', arguments, 'onReplaceElement')
+
+		if(this.tree) {
+			this.sampler.prepare(src).then(function(sample) {
+				return this.replaceElementBySample(sample, param)
+
+			}, this).push(defer)
+
+		} else {
+			defer.reject('nothing to replace')
 		}
 
-		this.events.emit('onConnectElement', {
-			status: 'rejected',
-			reason: type === 'raw' ? data : f.implode(messages[type] || 'unknown error', data)
+		return defer
+	},
+
+	replaceElementBySample: function(sample, param) {
+		if(!this.tree) throw 'nothing to replace'
+		if(!sample) throw 'bad element'
+
+
+		var replaceable = []
+
+		if(param === -1 || param === 0) {
+			this.tree.traverse(function(node) {
+				if(node.canBeReplacedBy(sample)) replaceable.push(node)
+			}, this)
+
+		} else {
+			var node = param instanceof TNode ? param : this.getElementById(param)
+			if(!node) {
+				throw 'invalid param: '+ param
+			}
+			if(!node.canBeReplacedBy(sample)) {
+				throw 'sample can\'t replace this node: '+ param
+			}
+
+			replaceable.push(node)
+		}
+
+		if(!replaceable.length) {
+			throw 'no suitable nodes'
+		}
+
+		// replace one of list
+		if(param === 0 && replaceable.length > 1) {
+			this.litModeStart('replace', replaceable)
+
+			return this.issuedReplaceDefer = new Defer(function(node) {
+				delete this.issuedReplaceDefer
+				this.litModeClear()
+
+				var replacedByOne = this.replaceNode(node, sample, true)
+
+				return {
+					status: 'replaced',
+					replaced: [node.id],
+					nodes: [replacedByOne.id]
+				}
+			}, this)
+		}
+
+
+		var select = this.mode === 'constructor' && replaceable.length === 1
+
+		var replacedBy = []
+		replaceable.forEach(function(node) {
+			var replacedByOne = this.replaceNode(node, sample, select, param)
+			replacedBy.push(replacedByOne.id)
+		}, this)
+
+		this.view.needsRedraw = true
+
+
+		return {
+			status: 'replaced',
+			replaced: replaceable.map(f.prop('id')),
+			nodes: replacedBy
+		}
+	},
+
+	replaceNode: function(node, sample, select, alias) {
+		if(!node || !sample || !node.canBeReplacedBy(sample)) {
+			return null
+		}
+
+		var replacer = new TNode(sample)
+		,   nextRoot = node.upcon ? this.view.tree : replacer
+		,   rotation = node.upcon ? node.upcon.rotar : 0
+
+		if(this.isAlias(alias)) {
+			replacer.setId(alias)
+		}
+
+		replacer.replace(node)
+
+		if(rotation && replacer.upcon) {
+			replacer.upcon.rotate(rotation, false)
+		}
+
+		this.setTree1(nextRoot)
+
+		if(select) this.view.selectNode(replacer)
+
+		return replacer
+	},
+
+	getNodeReplacers: function(node, list) {
+
+		var replacers = []
+		if(node) for(var i = 0; i < list.length; i++) {
+			var sample = list[i]
+
+			if(node.canBeReplacedBy(sample)) {
+				replacers.push(sample)
+			}
+		}
+
+		return replacers
+	},
+
+	preloadAllSamples: function() {
+		// this.sampler.samples.forEach(f.func('load'))
+	},
+
+
+	showNodeParent: function(node, enabled) {
+		var parent = node && node.upnode
+		if(!parent) return
+
+		if(enabled) {
+			this.litModeStart('parent')
+		} else {
+			this.litModeClear()
+		}
+		this.view.litNode(parent, enabled)
+	},
+
+	rotateNode: function(node, angle, animate) {
+		if(typeof angle !== 'number') {
+			angle = Math.PI / 6
+		}
+		if(node instanceof TNode === false) {
+			node = this.getElementById(node)
+		}
+		if(node) {
+			node.rotate(angle, true)
+			this.view.needsRedraw = true
+		}
+	},
+
+
+	deleteNodeList: function(list) {
+		if(!list) return
+
+		if(list.nextRoot && this.tree !== list.nextRoot) {
+			list.nextRoot.goRoot(false)
+		}
+		if(list.removeCon) {
+			list.removeCon.disconnect()
+		}
+
+		this.setTree1(list.nextRoot)
+
+
+		this.events.emit('onRemoveElement', {
+			nodes: list.nodes.map(function(node) { return node.id })
 		})
 	},
 
 
 	onkey: function(e) {
-		if(e.ctrlKey || e.shiftKey || e.altKey) {
+		if(e.altKey) {
+
+		} else if(this.pasting && !kbd.down) {
+			this.pasting = false
+			this.onPasteEnd()
+
+		} else if(kbd.down && e.ctrlKey) switch(kbd.key) {
+			case 'c':
+				this.onCopy()
+			return
+
+			case 'x':
+				this.onCopy()
+			return
+
+			case 'v':
+				this.onPasteEnd()
+			return
+
+			case 'a':
+				console.log('select all')
+				e.preventDefault()
+			return
 
 		} else if(kbd.down && kbd.changed) switch(kbd.key) {
 			case 'ENTER':
@@ -1285,6 +1484,17 @@ Plumber = f.unit({
 				location.hash = this.exportString()
 			return
 
+			case 'o':
+				this.explode(!this.explodeEnabled)
+			return
+
+			case 'm':
+				if(this.view.nodeSelected) {
+					this.view.nodeSelected.goRoot()
+					this.setTree1(this.view.nodeSelected)
+				}
+			return
+
 			case 'x':
 				this.debug = !this.debug
 				this.imagery.materials.subtract.visible = !!this.debug
@@ -1295,7 +1505,11 @@ Plumber = f.unit({
 			break
 
 			case 'r':
-				this.onViewClear()
+				if(kbd.state.SHIFT) {
+					this.rotateNode(this.view.nodeSelected)
+				} else {
+					this.onViewClear()
+				}
 			break
 
 			case 'e':
@@ -1312,114 +1526,25 @@ Plumber = f.unit({
 		this.view2.onKey(e)
 	},
 
-	replaceNode: function(node, sample, select) {
-		if(!node || !sample || !node.canBeReplacedBy(sample)) {
-			return Defer.complete(false, 'bad replacement')
-		}
-
-		return this.constructNode(sample).then(function(replacer) {
-			replacer.replace(node)
-
-			this.absolutelySetMainTree(node.upcon ? this.view.tree : replacer)
-
-			if(select) this.view.selectNode(replacer)
-
-			return replacer
-
-		}, function(e) {
-			this.events.emit('onReplaceElement', {
-				status: 'rejected',
-				reason: 'construct error',
-				error: e
-			})
-		}, this)
+	onCopy: function() {
+		dom.text(this.clipboard, this.exportString())
+		this.clipboard.focus()
+		this.clipboard.select()
+		console.log('onCopy', this.clipboard.textContent)
 	},
 
-	getNodeReplacers: function(node, list) {
-
-		var replacers = []
-		if(node) for(var i = 0; i < list.length; i++) {
-			var sample = list[i]
-
-			if(node.canBeReplacedBy(sample)) {
-				replacers.push(sample)
-			}
-		}
-
-		return replacers
+	onPaste: function() {
+		dom.text(this.clipboard, '')
+		this.clipboard.focus()
+		this.clipboard.select()
+		console.log('onPaste')
 	},
 
-	preloadAllSamples: function() {
-		this.sampler.samples.forEach(f.func('load'))
-		this.view.setPreloader(this.sampler.samples)
+	onPasteEnd: function() {
+		var figure = TSerial.fromString(this.clipboard.textContent)
+		this.addElement(null, figure)
+		console.log('onPasteEnd', figure)
 	},
-
-
-	showNodeParent: function(node, enabled) {
-		var parent = node && node.upnode
-		if(!parent) return
-
-		if(enabled) {
-			this.litModeStart('parent')
-		} else {
-			this.litModeClear()
-		}
-		this.view.litNode(parent, enabled)
-	},
-
-	rotateNode: function(node) {
-		if(!node) return
-
-		node.rotate(Math.PI / 6)
-
-		this.view.needsRedraw = true
-	},
-
-	clearTree: function() {
-		if(!this.tree) return
-
-		this.deleteNodeList(this.tree.pinchr())
-	},
-
-	absolutelySetMainTree: function(tree) {
-		this.tree = tree
-		var view = this.mode === 'constructor' ? this.view : this.view2
-
-		view.setTree(this.tree)
-
-		this.emptyViewMessageVisible.set(!this.tree, 'g_evm_tree')
-	},
-
-
-	deleteNodeList: function(list) {
-		if(!list) return
-
-		var root = list.nextRoot
-		if(root) {
-			root.object.matrixWorld.decompose(
-				root.object.position,
-				root.object.quaternion,
-				root.object.scale)
-			root.object.updateMatrix()
-		}
-
-		list.root.disconnect()
-
-		if(root && root !== list.root) {
-			if(root.upcon) root.upcon.disconnect()
-			this.absolutelySetMainTree(root)
-
-		} else {
-			this.absolutelySetMainTree(null)
-		}
-
-		this.view.selectNode(null)
-
-		this.events.emit('onRemoveElement', {
-			nodes: list.nodes
-		})
-	},
-
 
 	onresize: function() {
 		var e = this.tiles.element
@@ -1444,10 +1569,10 @@ Plumber = f.unit({
 	},
 
 	updateSplitViewMessagePosition: function() {
-		if(!this.splitView) return
+		if(!this.splitViewFrame) return
 
 		var elem = this.splitViewMessage
-		,   vp   = this.splitView
+		,   vp   = this.splitViewFrame
 		,   svw  = elem.offsetWidth
 		,   svh  = elem.offsetHeight
 		,   sx   = vp.split === TileView.VERTICAL_SPLIT   ? 0.5 : vp.position
@@ -1466,7 +1591,7 @@ Plumber = f.unit({
 		}
 
 		// var canvas = this.canvas
-		// ,   frame  = this.splitView
+		// ,   frame  = this.splitViewFrame
 
 		// if(canvas.width  !== frame.w
 		// || canvas.height !== frame.h) {
@@ -1504,12 +1629,10 @@ Plumber = f.unit({
 
 		} else {
 			if(this.catchSamples) {
-				var sid = dt.getData('text/sid')
-				,   sample = f.apick(this.sampler.samples, 'src', sid)
+				var src = dt.getData('text/sid')
 
-				if(sample) {
-					this.constructNode(sample, this.view)
-						.then(this.connectNode, this.constructError, this)
+				if(src) {
+					this.constructNode(src).then(this.connectNodeSomewhere, this)
 				}
 			}
 		}
@@ -1518,21 +1641,11 @@ Plumber = f.unit({
 	},
 
 	importFile: function(file) {
-		return this.sampler.readFile(file)
-			.then(this.onSampleImport, this.onSampleImportFail, this)
+		return this.sampler.readFile(file).anyway(function(value, success) {
+			this.events.emit('onImportElement', success ? value : null)
+		}, this)
 	},
 
-
-
-	onSampleImport: function(sample) {
-		// this.displayFigure(sample.src)
-		this.events.emit('onImportElement', sample)
-		return sample
-	},
-
-	onSampleImportFail: function(e) {
-		console.warn('File import error:', e)
-	},
 
 
 
@@ -1543,11 +1656,8 @@ Plumber = f.unit({
 			prev.nodeMarker = null
 		}
 
-		if(node && node.lit && this.issuedReplace) {
-			this.replaceNode(node, this.issuedReplace, true)
-			this.litModeClear()
-			delete this.issuedReplace
-
+		if(this.issuedReplaceDefer && node && node.lit) {
+			this.issuedReplaceDefer.resolve(node)
 			return
 		}
 
@@ -1561,19 +1671,17 @@ Plumber = f.unit({
 				hidden: false,
 				node: node,
 				events: {
-					'node_rotate': this.rotateNode,
-					'node_delete': this.deleteNodeWithPrompt,
-					'node_explode': this.explodeNode,
-					'node_parent':  this.showNodeParent
+					'node_rotate'  : this.rotateNode,
+					'node_delete'  : this.deleteNodeWithPrompt,
+					'node_explode' : this.explodeNode,
+					'node_parent'  : this.showNodeParent
 				},
 				eventScope: this
 			})
 
-			if(!kbd.state.SHIFT) {
-				this.view.focusOnNode(node)
-			}
-
+			this.view.focusOnNode(node)
 			this.closeDeletePrompt()
+
 		} else {
 			this.closeDeletePromptAndSelectNode()
 		}
@@ -1589,109 +1697,41 @@ Plumber = f.unit({
 		var master = this.connectionParts[0]
 		,   slave  = this.connectionParts[1]
 
-		if(master && slave) this.makeViewConnection(master, slave, true)
+		if(master && slave) {
+			this.view.selectConnection(null)
+			this.view2.selectConnection(null)
+			this.view2.setTree(null)
+
+			var nodes = []
+			slave.node.traverse(function(n) {
+				nodes.push(n.id)
+			})
+
+			this.makeConnection(master, slave, true)
+			this.splitScreen(false)
+
+			if(this.addElementDefer) this.addElementDefer.resolve({
+				root: slave.node,
+				nodes: nodes
+			})
+		}
 	},
 
-	makeViewConnection: function(master, slave, animate, eventType) {
-		this.view.selectConnection(null)
-		this.view2.selectConnection(null)
-		this.view2.setTree(null)
-
-		var nodes = []
-		slave.node.traverse(function(n) {
-			nodes.push(n.id)
-		})
-
+	makeConnection: function(master, slave, animate) {
+		slave.node.goRoot(true)
 		slave.object.updateMatrixWorld()
 
 		master.node.connect(master.index, slave.node, slave.index)
-
-		this.displayFigure(null)
-
-		this.view.setTree(this.tree)
-		this.view.focusOnTree(null, this.view.assembleDim)
-
 
 		if(!animate || this.explodeEnabled) {
 			var state = this.explodeEnabled ? 0 : 1
 			master.playConnection(state, state, 0)
 
 		} else if(animate) {
-			master.playConnection(1, 0)
+			master.playConnection(1, 0, this.explodeTimeScale)
 		}
 
-
-		this.events.emit(eventType || 'onAddElement', {
-			status: 'connected',
-			root: slave.node,
-			nodes: nodes
-		})
-	},
-
-	removeSample: function(src) {
-		var sample = f.apick(this.sampler.samples, 'src', src)
-		if(sample) {
-			f.adrop(this.sampler.samples, sample)
-		}
-	},
-
-	run: function() {
-		this.makeGUI()
-
-		new EventHandler(this.onresize, this).listen('resize',  window)
-		new EventHandler(this.onkey,    this).listen('keydown', window)
-		new EventHandler(this.onkey,    this).listen('keyup',   window)
-		new EventHandler(this.onTap,    this).listen('tap',     this.element)
-		// new EventHandler(this.onHash,   this).listen('hashchange', window)
-
-		new EventHandler(this.onDragOver, this).listen('dragover', this.view .element)
-		new EventHandler(this.onDragOver, this).listen('dragover', this.view2.element)
-		new EventHandler(this.onDrop,     this).listen('drop',     this.view .element)
-		new EventHandler(this.onDrop,     this).listen('drop',     this.view2.element)
-
-
-		this.tiles.events.on('update', this.onTilesUpdate, this)
-
-		this.view.events.on('connection_select', this.onConnectionSelect, this, [this.view, 0])
-		this.view2.events.on('connection_select', this.onConnectionSelect, this, [this.view2, 1])
-
-		this.view.events.on('view_clear', this.onViewClear, this)
-		this.view2.events.on('view_clear', this.onViewClear2, this)
-
-		this.view.events.on('node_select', this.onNodeSelect, this)
-
-		dom.display(this.canvas, true)
-		this.onresize()
-
-
-
-		this.view.onTick(0)
-		this.view2.onTick(0)
-
-		if(typeof bootProgress === 'function') bootProgress(1)
-
-		this.ready.resolve(true)
-
-		if(this.initFromHash) {
-			this.loadFromHash()
-		}
-
-		this.timer.play()
-	},
-
-	loadFromHash: function() {
-		var hash = location.hash.slice(1)
-		if(hash) try {
-			this.importString(hash, true)
-			location.hash = ''
-
-		} catch(e) {
-			console.warn('loadFromHash failed:', e)
-		}
-	},
-
-	onHash: function() {
-		this.loadFromHash()
+		this.view.setTree(this.tree)
 	},
 
 	onTick: function(t, dt) {
@@ -1705,7 +1745,7 @@ Plumber = f.unit({
 
 		var marker = this.view.nodeSelected && this.view.nodeSelected.nodeMarker
 		if(marker) {
-			marker.point.world.setFromMatrixPosition(this.view.nodeSelected.objectCenter.matrixWorld)
+			this.view.nodeSelected.getCenter(marker.point.world)
 			this.view.projector.updatePoint(marker.point)
 			marker.update()
 		}
@@ -1714,7 +1754,7 @@ Plumber = f.unit({
 			var node = this.deletePromptTip.deletingNode
 			,   point = this.deletePromptTip.point
 
-			point.world.setFromMatrixPosition(node.objectCenter.matrixWorld)
+			node.getCenter(point.world)
 			this.view.projector.updatePoint(point)
 			this.deletePromptTip.move(point.screen.x, point.screen.y)
 		}

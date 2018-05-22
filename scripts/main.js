@@ -47,10 +47,12 @@ function addSample(item) {
 		sidebar.addSample(item, item.name, item.thumb, false)
 
 	} else {
-		var sample = main.getSample(item.src, item.link)
-		if(sample) {
-			var block = sidebar.addSample(sample.src, sample.name, item.thumb, false)
+		var sample = main.sampler.getSample(item.src)
 
+		if(sample) {
+			if(item.link) sample.link = item.link
+
+			var block = sidebar.addSample(sample.src, sample.name, item.thumb, false)
 			block.replacer = item.replacer
 		}
 	}
@@ -58,17 +60,17 @@ function addSample(item) {
 
 function changeSample(src) {
 	if(!src) {
-		main.displayFigure(null)
+		main.splitScreen(false)
 
 	} else if(main.isComplexFigure(src)) {
 		// main.clear()
-		main.displayFigure(src)
+		main.addElement(null, src)
 
 	} else {
 		var mode = sidebar.modeMenu.activeItem
 		switch(mode) {
 			case 'connect':
-				main.displayFigure(src)
+				main.addElement(null, src)
 			break
 
 			case 'replace':

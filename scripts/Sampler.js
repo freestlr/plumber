@@ -10,19 +10,132 @@ Sampler.prototype = {
 	},
 
 	addSample: function(def) {
-		if(!def || def.hide) return
-		if(!def.object && !def.src) return
-
 		var sample = new Sample(def, this)
 
 		var prev = f.apick(this.samples, 'src', sample.src)
 		if(prev) {
 			f.adrop(this.samples, prev)
-			console.warn('Sample with src', sample.src, 'already exists')
+			console.warn('Overwrite sample with src:', sample.src)
 		}
 
 		this.samples.push(sample)
 		return sample
+	},
+
+	remSample: function(src) {
+		var sample = f.apick(this.samples, 'src', src)
+		if(sample) f.adrop(this.samples, sample)
+	},
+
+	getSample: function(src) {
+		var sample = f.apick(this.samples, 'src', src)
+		if(!sample) {
+			sample = this.addSample({
+				src    :  src,
+				name   : (src +'').replace(/\.[^\.]*$/, '').split('/').pop(),
+				format : (src +'').replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
+			})
+		}
+		return sample
+	},
+
+	prepare: function(src) {
+		if(!src) {
+			return Defer.complete(false, 'no source')
+		}
+		if(TSerial.isComplex(src)) {
+			return this.prepareComplex(src)
+		}
+		var sample = this.getSample(src)
+		if(!sample.defer) {
+			sample.defer = this.loadSample(sample)
+		}
+		return sample.defer
+	},
+
+	prepareComplex: function(complex) {
+		if(!TSerial.isComplex(complex)) {
+			return Defer.complete(true, null)
+		}
+
+		return Defer.all(complex.types.map(this.prepare, this)).then(function() {
+			return complex
+			// return TSerial.constructJSON(complex, this)
+		}, this)
+	},
+
+	loadSample: function(sample) {
+		var url = this.folder + sample.src
+
+		var defer = new Defer(function(data) {
+			sample.setData(data)
+			return sample
+
+		}, function(err) {
+			console.error('Sample load error', sample.src, err)
+		}, this)
+
+
+		var loader = null
+		switch(sample.format) {
+			case 'obj':
+				loader = new Loader
+				loader.obj(url).push(defer)
+			break
+
+			case 'fbx':
+				loader = new THREE.FBXLoader
+				loader.load(url,
+					defer.willResolve(),
+					defer.willProgress(),
+					defer.willReject())
+			break
+
+			default:
+			case 'json':
+				loader = new Loader
+				loader.json(url).then(function(data) {
+					if(TSerial.isComplex(data)) {
+						return this.prepareComplex(data)
+
+					} else {
+						var loader = new THREE.ObjectLoader
+						,   defer = new Defer
+
+						loader.parse(data, defer.willResolve())
+						return defer
+					}
+
+				}, this).push(defer)
+			break
+		}
+
+		return defer
+	},
+
+	checkCirculars: function(src, types) {
+		var types_checked = []
+		,   types_tocheck = [src]
+
+		while(types_tocheck.length) {
+			var type = types_tocheck.shift()
+
+			if(types_checked.indexOf(type) !== -1) {
+				return true
+			}
+
+			var sample = this.getSample(src)
+			if(!sample.data) {
+				console.error('checkCirculars cant prove not loaded samples')
+
+			} else if(TSerial.isComplex(sample.data)) {
+				types_tocheck = f.sor(types_tocheck, sample.data.types)
+			}
+
+			types_checked.push(type)
+		}
+
+		return false
 	},
 
 	readFile: function(file) {
@@ -54,33 +167,27 @@ Sampler.prototype = {
 
 
 
-function Sample(def, parent) {
+function Sample(def, sampler) {
 	for(var name in def) this[name] = def[name]
 
-	this.progress = 0
-	this.parent = parent
+	this.parentSampler = sampler
+	this.dim = new TDimensions
+
 	this.joints = []
 	this.meshes = []
 
-	this.box       = new THREE.Box3
-	this.boxSize   = new THREE.Vector3
-	this.boxCenter = new THREE.Vector3
-	this.boxLength = 1
-
-	if(!this.name && this.src) {
-		this.name = this.src.replace(/\.[^\.]*$/, '').split('/').pop()
-	}
-
-	if(this.object) {
-		this.configure(this.object)
-
-	} else if(this.src) {
-		this.format = this.src.replace(/^.*\.([^.]+)$/, '$1').toLowerCase()
-		// this.load()
-	}
+	if(this.object) this.setData(this.object)
 }
 
 Sample.prototype = {
+
+	src: null,
+	name: null,
+	format: null,
+
+	data: null,
+	object: null,
+	progress: 0,
 
 	traverse: function(object, func, scope, data, inc, level) {
 		if(!object) return
@@ -93,102 +200,77 @@ Sample.prototype = {
 
 		var l = object.children.length
 		for(var i = inc ? 0 : l - 1; inc ? i < l : i >= 0; inc ? i++ : i--) {
-			this.traverse(object.children[i], func, scope, data, inc, level +1)
+			Sample.prototype.traverse(object.children[i], func, scope, data, inc, level +1)
 		}
 	},
 
-	load: function() {
-		if(this.object) {
-			this.deferLoad = new Defer().resolve(this)
-		}
-
-		if(this.deferLoad) return this.deferLoad
-
-		var defer = new Defer
-		,   url = this.parent.folder + this.src
-
-		if(!this.src) {
-			defer.resolve(null)
-			return defer
-		}
-
-		this.broken = false
-
-		switch(this.format) {
-			case 'obj':
-				var loader = new Loader
-				loader.obj(url).defer.push(defer)
-			break
-
-			case 'fbx':
-				var loader = new THREE.FBXLoader
-				loader.load(url, function(data) {
-					defer.resolve(data)
-
-				}, undefined, function(err) {
-					defer.reject(err)
-				})
-			break
-
-			default:
-			case 'json':
-				var loader = new Loader
-				loader.onProgress(function() {
-					if(!this.broken) this.progress = loader.bytesLoaded / loader.bytesTotal
-				}, this)
-
-				loader.json(url).then(function(data) {
-					var loader = new THREE.ObjectLoader
-					// return loader.parse(data)
-					var defer = new Defer
-					loader.parse(data, function(object) {
-						defer.resolve(object)
-					})
-					return defer
-
-				}, this).push(defer)
-			break
-		}
-
-		this.deferLoad = defer.then(this.configure, this.loadError, this)
-		return this.deferLoad
+	isLoaded: function() {
+		return this.complex ? this.complex.types.every(function(src) {
+			return this.parentSampler.getSample(src).isLoaded()
+		}, this) : !!this.data
 	},
 
-	loadError: function(err) {
-		this.broken = true
-		this.progress = 0
-		console.warn('Sample load error', this.src, err)
-		this.deferLoad = null
-		throw err
+	setData: function(data) {
+		this.data = data
+		this.joints = []
+		this.meshes = []
+
+		if(TSerial.isComplex(data)) {
+			this.setComplex(data)
+		} else {
+			this.setObject(data)
+		}
 	},
 
-	configure: function(object) {
-		if(!object) return
+	setComplex: function(complex) {
+		this.complex = complex
+		this.node = TSerial.constructJSON(complex, this.parentSampler, false)
+		this.object = this.node.object
+		this.object.updateMatrixWorld()
 
-		if(object.position.length()) {
-			console.error('sample', this.src, 'not zero position:', object.position)
-		}
+		this.node.getDimensions(this.dim)
 
-		this.progress = 1
+		this.node.traverse(function(node) {
+			this.meshes = this.meshes.concat(node.meshes)
+		}, this)
+	},
+
+	setObject: function(object) {
+		var tempBox = new THREE.Box3
+
+		this.dim.box.makeEmpty()
+
 		this.object = object
 		this.object.updateMatrixWorld()
+		this.traverse(this.object, this.configureObject, this, tempBox)
 
-		if(!this.config) this.config = {}
-		if(!this.width ) this.width  = this.config.width  || 1
-		if(!this.height) this.height = this.config.height || 1
-		if(!this.depth ) this.depth  = this.config.depth  || 1
-		if(!this.meshes) this.meshes = this.config.meshes || []
+		this.dim.box.getCenter(this.dim.center)
+		this.dim.box.getSize(this.dim.size)
+		this.dim.length = this.dim.size.length()
+	},
 
-		this.parts = []
+	configureObject: function(object, tempBox) {
+		var imagery = this.parentSampler.imagery
 
-		this.box.makeEmpty()
-		this.object.updateMatrixWorld()
-		this.traverse(this.object, this.configureObject)
-		this.box.getCenter(this.boxCenter)
-		this.box.getSize(this.boxSize)
-		this.boxLength = this.boxSize.length()
+		if(object.name.indexOf(':') === 0) {
+			this.joints.push(new SampleJoint(object.name, object.matrixWorld))
 
-		return this
+		} else if(object.name === 'subtract') {
+
+		} else if(object.geometry) {
+			if(imagery) imagery.configureSampleMaterial(object)
+
+			if(!object.geometry.boundingBox) {
+				object.geometry.computeBoundingBox()
+			}
+
+			tempBox.copy(object.geometry.boundingBox)
+				.applyMatrix4(object.matrixWorld)
+
+			this.dim.box.union(tempBox)
+
+			this.meshes.push(object)
+		}
 	},
 
 	canReplace: function(connected) {
@@ -211,162 +293,41 @@ Sample.prototype = {
 		}
 
 		return true
-	},
-
-
-	configureSubtract: function(mesh) {
-		mesh.parent.remove(mesh)
-
-		if(!mesh.geometry) {
-			console.error('sample', this.src, 'subtract mesh without geometry')
-			return
-		}
-
-		if(this.subtractMesh) {
-			console.warn('sample', this.src, 'has multiple subtract meshes')
-		}
-
-		this.subtractMesh = mesh
-		mesh.visible = true
-	},
-
-	configureObject: function(object) {
-		var imagery = this.parent.imagery
-
-		if(object.name.indexOf(':') === 0) {
-			object.visible = false
-
-			var joint = new SampleJoint(object)
-
-			if(joint.makeDebugLine) {
-				var line = joint.makeDebugLine()
-				if(imagery) line.material = imagery.materials.norcon
-				this.object.add(line)
-			}
-
-			this.joints.push(joint)
-			return
-		}
-
-		if(object.name === 'subtract') {
-			this.configureSubtract(object)
-			return
-		}
-
-
-		if(object.geometry) {
-			if(imagery) imagery.configureSampleMaterial(object)
-
-
-			object.geometry.persistent = true
-
-			if(!object.geometry.boundingBox) {
-				object.geometry.computeBoundingBox()
-			}
-
-			var tempBox = new THREE.Box3
-			tempBox.copy(object.geometry.boundingBox).applyMatrix4(object.matrixWorld)
-			this.box.union(tempBox)
-
-
-			// object.geometry = this.smoothShadeGeometry(object.geometry)
-			// object.geometry.computeVertexNormals()
-		}
-	},
-
-	smoothShadeGeometry: function(geometry) {
-		var g = new THREE.Geometry
-
-		if(geometry instanceof THREE.BufferGeometry) {
-			g.fromBufferGeometry(geometry)
-		} else {
-			g.copy(geometry)
-		}
-
-		g.mergeVertices()
-		g.computeVertexNormals()
-		g.computeFaceNormals()
-
-		return g
-	},
-
-	clone: function() {
-		if(this.object) return this.object.clone(true)
-	},
-
-	describeObject: function(object, data, level) {
-		var fields = []
-		if(level) {
-			fields.push(Array(level +1).join('\t'))
-		}
-
-		fields.push(object.type)
-		fields.push('name: {'+ object.name +'}')
-
-		if(object.material) {
-			fields.push('mat: {'+ object.material.name +'}')
-		}
-
-		if(object.geometry) {
-			fields.push('v:', object.geometry instanceof THREE.BufferGeometry
-				? object.geometry.attributes.position.count
-				: object.geometry.vertices.length)
-		}
-
-		fields.push('pos: ['+ [
-			f.mround(object.position.x, 3),
-			f.mround(object.position.y, 3),
-			f.mround(object.position.z, 3),
-		].join(', ') +']')
-
-		fields.push('rot: ['+ [
-			f.hround(f.xdeg * object.rotation.x),
-			f.hround(f.xdeg * object.rotation.y),
-			f.hround(f.xdeg * object.rotation.z),
-		].join(', ') +']')
-
-		console.log.apply(console, fields)
-	},
-
-	describe: function() {
-		console.log('sample src: {'+ (this.src || '') +'}')
-		this.traverse(this.object, this.describeObject, this, null, true)
 	}
 }
 
 
 
-function SampleJoint(object) {
-	var parts = object.name.slice(1).split('_')
-
-	this.object = object
-	this.name   = object.name
-
-	this.parts  = parts
-	this.id     = parts[0]
-	this.param  = parts[1]
-	this.extra  = parts[2]
-	this.depth  = parts[3]
-
+function SampleJoint(name, matrix) {
 	this.point  = new THREE.Vector3
 	this.normal = new THREE.Vector3
 	this.up     = new THREE.Vector3
 	this.matrix = new THREE.Matrix4
 
-	this.setFromMatrix(object.matrixWorld)
+	this.setName(name)
+	this.setMatrix(matrix)
 }
 
 SampleJoint.prototype = {
 
-	setFromMatrix: function(matrix) {
+	setName: function(name, matrix) {
+		this.name   = name
+		this.parts  = this.name.slice(1).split('_')
+		this.id     = this.parts[0]
+		this.param  = this.parts[1]
+		this.extra  = this.parts[2]
+		this.depth  = this.parts[3]
+	},
+
+	setMatrix: function(matrix) {
 		this.matrix.copy(matrix)
 		this.point.setFromMatrixPosition(this.matrix)
-		this.normal.set(1, 0, 0).applyMatrix4(this.matrix).sub(this.point)
-		this.up.set(0, 1, 0).applyMatrix4(this.matrix).sub(this.point)
+		this.normal.set(1, 0, 0).applyMatrix4(this.matrix).sub(this.point).normalize()
+		this.up    .set(0, 1, 0).applyMatrix4(this.matrix).sub(this.point).normalize()
 	},
 
 	clone: function() {
-		return new SampleJoint(this.object)
+		return new SampleJoint(this.name, this.matrix)
 	},
 
 	paramPairsAllow: [
@@ -400,6 +361,44 @@ SampleJoint.prototype = {
 
 
 
+	makeDebugTip: function() {
+		var l = 6
+
+		var geom = new THREE.BufferGeometry
+
+		var pos = new Float32Array(l * 3)
+		,   col = new Float32Array(l * 3)
+
+		var v = new THREE.Vector3
+		,   c = new THREE.Color
+
+		v.set(0,  2,  0).toArray(pos,  0)
+		v.set(5,  0,  0).toArray(pos,  3)
+		v.set(0,  0, -1).toArray(pos,  6)
+		v.set(0,  0,  1).toArray(pos,  9)
+		v.set(0,  2,  0).toArray(pos, 12)
+		v.set(5,  0,  0).toArray(pos, 15)
+
+		c.set(0x00FF00).toArray(col,  0)
+		c.set(0xFF0000).toArray(col,  3)
+		c.set(0x000000).toArray(col,  6)
+		c.set(0x000000).toArray(col,  9)
+		c.set(0x00FF00).toArray(col, 12)
+		c.set(0xFF0000).toArray(col, 15)
+
+		geom.addAttribute('position', new THREE.BufferAttribute(pos, 3))
+		geom.addAttribute('color',    new THREE.BufferAttribute(col, 3))
+
+		var mat = new THREE.MeshBasicMaterial({
+			vertexColors: THREE.VertexColors,
+			side: THREE.DoubleSide
+		})
+
+		var mesh = new THREE.Mesh(geom, mat)
+		mesh.drawMode = THREE.TriangleStripDrawMode
+
+		return mesh
+	},
 
 	makeDebugLine: function() {
 		var debugLine = new THREE.Line(new THREE.Geometry)

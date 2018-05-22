@@ -1,78 +1,8 @@
 TConnection = f.unit({
 	unitName: 'TConnection',
 
-	init: function(node, joint, index) {
-		this.node   = node
-		this.index  = index
-		this.target = null
-		this.master = null
-		this.connected = null
-
-		this.inactive = new Gate(Gate.AND, false)
-
-		this.events = new EventEmitter
-		// this.point  = new THREE.Vector3
-		// this.normal = new THREE.Vector3
-		// this.up     = new THREE.Vector3
-		// this.matrix = new THREE.Matrix4
-		this.object = new THREE.Object3D
-
-		this.joint = joint.clone()
-
-		this.depth = parseFloat(this.joint.depth) || 0
-		this.screw = this.joint.extra === 'screw'
-		this.rotation = 0
-
-		this.makeTween()
-
-		this.marker = new UI.Marker({
-			connection: this
-		})
-
-		this.objectInner = new THREE.Object3D
-		this.objectOuter = new THREE.Object3D
-
-		this.connectionLine = new THREE.Line(
-			new THREE.BufferGeometry,
-			new THREE.LineBasicMaterial({ color: 0x000000 }))
-
-		this.connectionLine.geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3))
-
-		this.node.object.add(this.objectInner)
-		this.node.object.add(this.objectOuter)
-		this.node.object.add(this.connectionLine)
-
-		this.updatePosition()
-	},
-
-	updatePosition: function() {
-		this.objectInner.position.copy(this.joint.point)
-		this.objectOuter.position.copy(this.joint.normal).setLength(this.depth).add(this.joint.point)
-	},
-
-	makeTween: function() {
-		this.tween = new TWEEN.Tween({ connected: 1 })
-			.to({ connected: 1 }, 1000)
-			.easing(TWEEN.Easing.Linear.None)
-			.onStart(this.onTweenStart, this)
-			.onUpdate(this.onTweenUpdate, this)
-			.onComplete(this.onTweenComplete, this)
-	},
-
-	onTweenStart: function() {
-
-	},
-
-	onTweenUpdate: function() {
-		this.transitionProgress(this.tween.source.connected)
-	},
-
-	onTweenComplete: function() {
-		this.animating = false
-		this.events.emit('connect_end', this)
-	},
-
-
+	transitionStages: null,
+	transitionTime: null,
 
 	transitionStageDuration: {
 		approachDelay: 100,
@@ -80,6 +10,84 @@ TConnection = f.unit({
 		screwDelay: 100,
 		screwTime: 1200
 	},
+
+	init: function(node, joint, index) {
+		this.node   = node
+		this.index  = index
+		this.target = null
+		this.master = null
+		this.connected = null
+		this.blocked = false
+
+		this.inactive = new Gate(Gate.AND, false)
+
+		this.events = new EventEmitter
+		this.object = new THREE.Object3D
+		this.object.name = 'TN'+ this.node.id + '-TC'+ this.index
+
+		this.joint = joint.clone()
+
+		this.depth = parseFloat(this.joint.depth) || 0
+		this.screw = this.joint.extra === 'screw'
+		this.rotar = 0
+
+		this.connTween = new TWEEN.Tween({ connected: 1 })
+			.to({ connected: 1 }, 1000)
+			.easing(TWEEN.Easing.Linear.None)
+			.onStart(this.onTweenStart, this)
+			.onUpdate(this.onTweenUpdate, this)
+			.onComplete(this.onTweenComplete, this)
+			.onStop(this.onTweenComplete, this)
+
+		this.rotaTween = new TWEEN.Tween({ angle: 0 })
+			.to({ angle: 0 }, 277)
+			.easing(TWEEN.Easing.Cubic.Out)
+			.onStart(this.onTweenStart, this)
+			.onUpdate(this.onRotaTweenUpdate, this)
+			.onComplete(this.onTweenComplete, this)
+			.onStop(this.onTweenComplete, this)
+
+		this.marker = new UI.Marker({
+			connection: this
+		})
+
+
+		this.pointInner = new THREE.Vector3
+		this.pointOuter = new THREE.Vector3
+
+
+		// this.connectionTip = this.joint.makeDebugTip(main.imagery.materials.normat)
+		// this.joint.matrix.decompose(
+		// 	this.connectionTip.position,
+		// 	this.connectionTip.rotation,
+		// 	this.connectionTip.scale)
+
+		// this.node.object.add(this.connectionTip)
+
+		this.updatePosition()
+	},
+
+	updatePosition: function() {
+		this.pointInner.copy(this.joint.point)
+		this.pointOuter.copy(this.joint.normal).setLength(this.depth).add(this.joint.point)
+	},
+
+
+	onTweenUpdate: function() {
+		this.transitionProgress(this.connTween.source.connected)
+	},
+
+	onTweenStart: function() {
+		this.animating = true
+		this.events.emit('animate_start', this)
+	},
+
+	onTweenComplete: function() {
+		this.animating = false
+		this.events.emit('animate_end', this)
+	},
+
+
 
 	getTransitionStages: function() {
 		if(!this.connected || !this.master) return [0]
@@ -96,23 +104,21 @@ TConnection = f.unit({
 	},
 
 	transitionProgress: function(progress) {
-		if(!this.connected || !this.master) return
+		if(!this.connected || !this.master || !this.transitionTime) return
 
 		var master = this
 		,   slave = this.connected
 
-		var stages = this.getTransitionStages()
+		var timeNow = Math.max(0, Math.min(1, progress)) * this.transitionTime
+
+		var stages = this.transitionStages
+		,   stageTime = 0
 		,   stageIndex = -1
 		,   stageProgress = 0
 
-		var timeTotal = stages.reduce(f.sum)
-		,   timeNow = Math.max(0, Math.min(1, progress)) * timeTotal
-
-		if(!timeTotal) return
-
 		var easing = TWEEN.Easing.Cubic.InOut
 		for(var i = 0; i < stages.length; i++) {
-			var stageTime = stages[i]
+			stageTime = stages[i]
 
 			if(timeNow <= stageTime) {
 				stageIndex = i
@@ -131,7 +137,7 @@ TConnection = f.unit({
 
 		var depth = master.depth + slave.depth
 		,   screw = master.screw || slave.screw ? Math.PI * 2 : 0
-		,   distance = (master.node.sample.boxLength + slave.node.sample.boxLength) /4
+		,   distance = (master.node.sample.dim.length + slave.node.sample.dim.length) /4
 
 
 		var par_distance = 0
@@ -160,52 +166,31 @@ TConnection = f.unit({
 			break
 		}
 
-		var mpos = master.object.position
-		,   spos = slave.object.position
-
 		master.object.quaternion.setFromAxisAngle(master.joint.normal, par_screw)
-		spos.copy(master.joint.normal).setLength(par_distance)
-
-
-
-		var lineGeometry = master.connectionLine.geometry
-		,   linePosition = lineGeometry.attributes.position
-
-		linePosition.array[0] = mpos.x
-		linePosition.array[1] = mpos.y
-		linePosition.array[2] = mpos.z
-		linePosition.array[3] = mpos.x + spos.x
-		linePosition.array[4] = mpos.y + spos.y
-		linePosition.array[5] = mpos.z + spos.z
-
-		lineGeometry.computeBoundingBox()
-		lineGeometry.computeBoundingSphere()
-		linePosition.needsUpdate = true
+		slave.object.position.copy(master.joint.normal).setLength(par_distance)
 	},
 
 	playConnection: function(to, from, timeScale) {
 		if(!this.connected || !this.master) return
 
-		var duration = this.getTransitionStages().reduce(f.sum)
+		var duration = this.transitionStages.reduce(f.sum)
 		if(!isNaN(timeScale)) {
 			duration *= timeScale
 		}
 
 		if(to != null) {
-			this.tween.target.connected = +to
+			this.connTween.target.connected = +to
 		} else {
-			this.tween.target.connected = 1
+			this.connTween.target.connected = 1
 		}
 		if(from != null) {
-			this.tween.source.connected = +from
+			this.connTween.source.connected = +from
 		}
 
 		this.onTweenUpdate()
 
 		if(duration) {
-			this.animating = true
-			this.events.emit('connect_start', this)
-			this.tween.duration(duration).start()
+			this.connTween.duration(duration).start()
 
 		} else {
 			this.object.updateMatrixWorld()
@@ -214,23 +199,23 @@ TConnection = f.unit({
 
 
 
-	getPosition: function(target) {
+	getOuterPosition: function(target) {
 		if(!target) target = new THREE.Vector3
 
-		target.setFromMatrixPosition(this.objectOuter.matrixWorld)
+		target.copy(this.pointOuter).applyMatrix4(this.node.object.matrixWorld)
 		return target
 	},
 
 	getInnerPosition: function(target) {
 		if(!target) target = new THREE.Vector3
 
-		target.setFromMatrixPosition(this.objectInner.matrixWorld)
+		target.copy(this.pointInner).applyMatrix4(this.node.object.matrixWorld)
 		return target
 	},
 
 
 	canConnect: function(con) {
-		return this.joint.canConnect(con.joint)
+		return !this.blocked && this.joint.canConnect(con.joint)
 	},
 
 	canConnectList: function(list) {
@@ -248,10 +233,7 @@ TConnection = f.unit({
 	connect: function(node) {
 		if(this.connected) return
 
-		var master = this
-		,   slave = node
-
-		this.setConnection(master, slave, true)
+		this.setConnection(this, node, true, true)
 	},
 
 	disconnect: function() {
@@ -260,10 +242,10 @@ TConnection = f.unit({
 		var master = this.master ? this : this.connected
 		,   slave = this.master ? this.connected : this
 
-		this.setConnection(master, slave, false)
+		this.setConnection(master, slave, false, true)
 	},
 
-	setConnection: function(master, slave, on) {
+	setConnection: function(master, slave, on, emitEvent) {
 		if(on) {
 			var normal = new THREE.Vector3
 			normal.copy(slave.joint.normal).negate()
@@ -271,6 +253,7 @@ TConnection = f.unit({
 			master.node.object.add(master.object)
 
 			master.object.position.copy(master.joint.point)
+			master.object.quaternion.set(0, 0, 0, 1)
 			master.object.add(slave.object)
 
 			slave.object.position.set(0, 0, 0)
@@ -279,13 +262,12 @@ TConnection = f.unit({
 			slave.object.add(slave.node.object)
 
 			slave.node.object.position.copy(slave.joint.point).negate()
+			slave.node.object.quaternion.set(0, 0, 0, 1)
 
 		} else {
 			master.object.remove(slave.object)
 		}
 
-
-		master.connectionLine.visible = on
 
 		master.master    = on ? true       : null
 		master.connected = on ? slave      : null
@@ -298,25 +280,67 @@ TConnection = f.unit({
 		slave.node.upcon  = on ? slave       : null
 		slave.node.upnode = on ? master.node : null
 
-		master.events.emit(on ? 'connect' : 'disconnect', [master, slave])
-		slave .events.emit(on ? 'connect' : 'disconnect', [slave, master])
+		if(on) {
+			this.transitionStages = this.getTransitionStages()
+			this.transitionTime = this.transitionStages.reduce(f.sum)
+		}
+
+		master.node.events.unlink(slave.node.events)
+		if(on) {
+			slave.node.events.link(master.node.events)
+		} else {
+			slave.node.events.unlink(master.node.events)
+		}
+
+		if(emitEvent) {
+			master.events.emit(on ? 'connect' : 'disconnect', [master, slave])
+			slave .events.emit(on ? 'connect' : 'disconnect', [slave, master])
+		}
 	},
 
-	rotate: function(angle) {
+	goMaster: function() {
+		if(!this.connected || this.master) return
+
+		var angle = this.rotar
+		this.rotate(-angle)
+		this.setConnection(this, this.connected, true)
+		this.connected.rotate(angle)
+
+		this.connTween
+			.from(this.connected.connTween.source)
+			.to(this.connected.connTween.target)
+
+		if(this.connected.connTween.playing) {
+			this.connected.connTween.stop()
+
+			this.connTween.start()
+		}
+
+		this.onTweenUpdate()
+	},
+
+	rotate: function(angle, animate) {
 		if(!this.connected) return
 
 		if(this.master) {
-			this.connected.rotate(angle)
+			return this.connected.rotate(angle, animate)
+		}
+
+		this.rotar += angle
+		this.rotaTween.target.angle = this.rotar
+
+		if(animate) {
+			this.rotaTween.start()
 
 		} else {
-			this.rotation += angle
+			this.rotaTween.source.angle = this.rotar
 			this.object.rotateOnAxis(this.joint.normal, angle)
 			this.object.updateMatrixWorld()
 		}
 	},
 
-	getRotation: function() {
-		// TODO
+	onRotaTweenUpdate: function() {
+		this.object.rotateOnAxis(this.joint.normal, this.rotaTween.delta.angle)
 	},
 
 	destroy: function() {
@@ -345,7 +369,7 @@ TConnection = f.unit({
 	updateControl: function() {
 		if(!this.controlObject) return
 
-		this.joint.setFromMatrix(this.controlObject.matrix)
+		this.joint.setMatrix(this.controlObject.matrix)
 		this.updatePosition()
 
 
