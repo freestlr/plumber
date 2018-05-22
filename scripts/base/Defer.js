@@ -3,6 +3,10 @@ function Defer() {
 	this.pending = true
 }
 
+Defer.safe = true
+Defer.soft = true
+Defer.silent = false
+
 Defer.all = function(list) {
 	var defer  = new Defer
 	,   length = list && list.length || 0
@@ -84,8 +88,6 @@ Defer.timer = function(duration) {
 }
 
 Defer.prototype = {
-	unsafe: false,
-	soft: true,
 
 	set: function(onresolve, onreject, onprogress, scope) {
 		this.onresolve  = typeof onresolve  === 'function' ? onresolve  : null
@@ -177,7 +179,7 @@ Defer.prototype = {
 
 		var func = success ? this.onresolve : this.onreject
 		if(func) {
-			if(this.unsafe) {
+			if(!Defer.safe) {
 				this.value   = func.call(this.scope, value, success)
 				this.success = true
 
@@ -215,8 +217,8 @@ Defer.prototype = {
 				defer = defer.next
 			}
 
-		} else if(!this.success) {
-			if(this.soft) console.error(this.value)
+		} else if(!this.success && !Defer.silent) {
+			if(Defer.soft) console.error(this.value)
 			else throw this.value
 		}
 
