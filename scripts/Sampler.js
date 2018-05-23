@@ -172,9 +172,13 @@ Sampler.prototype = {
 			default:
 			case 'json':
 				gotFile.then(JSON.parse).then(function(json) {
-					var loader = new THREE.ObjectLoader
+					if(TSerial.isComplex(json)) {
+						gotData.resolve(json)
 
-					loader.parse(json, gotData.willResolve())
+					} else {
+						var loader = new THREE.ObjectLoader
+						loader.parse(json, gotData.willResolve())
+					}
 				})
 				reader.readAsText(file)
 			break
