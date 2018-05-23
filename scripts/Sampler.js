@@ -48,7 +48,9 @@ Sampler.prototype = {
 		}
 		var sample = this.getSample(src)
 		if(!sample.defer) {
-			sample.defer = this.loadSample(sample)
+			sample.defer = sample.object
+				? Defer.complete(true, sample)
+				: this.loadSample(sample)
 		}
 		return sample.defer
 	},
@@ -139,29 +141,46 @@ Sampler.prototype = {
 	},
 
 	readFile: function(file) {
-		var reader = new FileReader
+		if(!file) return Defer.complete(true, null)
 
-		var defer = new Defer(function() {
-			return JSON.parse(reader.result)
-		})
+		var sample = this.getSample(file.name)
+		,   reader = new FileReader
+		,   gotFile = new Defer
+		,   gotData = new Defer(sample.setData, sample)
 
-		dom.on('load', reader, f.binds(defer.resolve, defer))
-		reader.readAsText(file)
+		dom.on('load', reader, function() { gotFile.resolve(reader.result) })
 
-		return defer.then(function(json) {
-			var loader = new THREE.ObjectLoader
-			,   defer = new Defer
+		switch(sample.format) {
+			case 'obj':
+				gotFile.then(function(text) {
+					return Loader.Resource.types.obj.prepare(text)
+				}).push(gotData)
 
-			loader.parse(json, function(object) { defer.resolve(object) })
-			return defer
+				reader.readAsText(file)
+			break
 
-		}).then(function(object) {
-			return this.addSample({
-				src: file.name,
-				object: object
-			})
+			case 'fbx':
+				gotFile.then(function(buffer) {
+					var loader = new THREE.FBXLoader
 
-		}, this)
+					return loader.parse(buffer, file.name)
+				}).push(gotData)
+
+				reader.readAsArrayBuffer(file)
+			break
+
+			default:
+			case 'json':
+				gotFile.then(JSON.parse).then(function(json) {
+					var loader = new THREE.ObjectLoader
+
+					loader.parse(json, gotData.willResolve())
+				})
+				reader.readAsText(file)
+			break
+		}
+
+		return gotData.then(function() { return sample })
 	}
 }
 

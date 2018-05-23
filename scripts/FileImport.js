@@ -3,7 +3,7 @@ function FileImport() {
 	this.events = new EventEmitter
 
 	this.input = dom.input('file')
-	this.input.setAttribute('accept', '.json')
+	this.input.setAttribute('accept', '.json, .fbx, .obj')
 	this.input.setAttribute('multiple', 'multiple')
 
 
