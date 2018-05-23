@@ -48,17 +48,13 @@
 
 			var self = this;
 
-			var resourceDirectory = url.split( /[\\\/]/ );
-			resourceDirectory.pop();
-			resourceDirectory = resourceDirectory.join( '/' ) + '/';
-
 			var loader = new THREE.FileLoader( this.manager );
 			loader.setResponseType( 'arraybuffer' );
 			loader.load( url, function ( buffer ) {
 
 				try {
 
-					var scene = self.parse( buffer, resourceDirectory );
+					var scene = self.parse( buffer, url );
 
 					onLoad( scene );
 
@@ -86,7 +82,12 @@
 		 * @param {string} resourceDirectory - Directory to load external assets (e.g. textures ) from.
 		 * @returns {THREE.Group}
 		 */
-		parse: function ( FBXBuffer, resourceDirectory ) {
+		parse: function ( FBXBuffer, url ) {
+
+			var resourceDirectory = url.split( /[\\\/]/ );
+			resourceDirectory.pop();
+			resourceDirectory = resourceDirectory.join( '/' ) + '/';
+
 
 			var FBXTree;
 
