@@ -67,6 +67,11 @@ Plumber = f.unit({
 			// clearColor: 0xFF00FF
 		})
 
+		this.enableViewRaycast = new Gate(Gate.AND, true)
+		this.enableViewRaycast.events.on('change', function(enabled) {
+			this.view.enableRaycast = enabled
+		}, this)
+
 		this.view2 = new View3({
 			ename: 'view-3 view-3-2',
 			renderer: this.renderer,
@@ -251,18 +256,16 @@ Plumber = f.unit({
 			case 'constructor':
 				layout = ['h', 0, 0, 1]
 				clients = [this.view, this.view2]
-
-				this.view.enableRaycast = true
 			break
 
 			default:
 			case 'viewer':
 				layout = 0
 				clients = [this.view]
-
-				this.view.enableRaycast = false
 			break
 		}
+
+		this.enableViewRaycast.set(this.modeis.ctr, 'g_vr:mode')
 
 		this.tiles.setLayout(layout)
 		this.tiles.setClients(clients)
@@ -882,8 +885,7 @@ Plumber = f.unit({
 
 
 		this.splitViewMessageVisible.set(this.splitScreenEnabled, 'g_svm_screen')
-
-		this.view.enableRaycast = !this.splitScreenEnabled
+		this.enableViewRaycast.set(!this.splitScreenEnabled, 'g_vr:split')
 
 		this.view.hoverNode(null)
 		this.view.selectNode(null)
