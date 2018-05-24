@@ -358,14 +358,16 @@ SampleJoint.prototype = {
 		['u', 'u'],
 		['u', 'f'],
 		['u', 'm'],
-		['FP', 'MP'],
+		['fp', 'mp'],
 		['female', 'male'],
 		['uniform', 'uniform'],
 		['uniform', 'female'],
 		['uniform', 'male'],
 		['in', 'out'],
 		['inner', 'outer'],
-		['internal', 'external']
+		['internal', 'external'],
+		['l', 'r'],
+		['left', 'right']
 	],
 
 	paramPairsEqual: function(pair) {
@@ -375,7 +377,8 @@ SampleJoint.prototype = {
 	canConnect: function(joint) {
 		if(this.id !== joint.id) return false
 
-		return this.paramPairsAllow.some(this.paramPairsEqual, [this.param, joint.param])
+		var pair = [this.param.toLowerCase(), joint.param.toLowerCase()]
+		return this.paramPairsAllow.some(this.paramPairsEqual, pair)
 	},
 
 	canConnectList: function(list) {
