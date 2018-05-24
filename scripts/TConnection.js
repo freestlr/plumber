@@ -247,8 +247,8 @@ TConnection = f.unit({
 
 	setConnection: function(master, slave, on, emitEvent) {
 		if(on) {
-			var normal = new THREE.Vector3
-			normal.copy(slave.joint.normal).negate()
+			var slaveIn = new THREE.Vector3
+			,   slaveUp = new THREE.Vector3
 
 			master.node.object.add(master.object)
 
@@ -256,9 +256,11 @@ TConnection = f.unit({
 			master.object.quaternion.set(0, 0, 0, 1)
 			master.object.add(slave.object)
 
+			slaveIn.copy(slave.joint.normal).negate()
 			slave.object.position.set(0, 0, 0)
-			slave.object.quaternion.setFromUnitVectors(normal, master.joint.normal)
-			slave.object.rotateOnAxis(normal, -master.joint.up.angleTo(slave.joint.up))
+			slave.object.quaternion.setFromUnitVectors(slaveIn, master.joint.normal)
+			slaveUp.copy(slave.joint.up).applyQuaternion(slave.object.quaternion)
+			slave.object.rotateOnAxis(slaveIn, -master.joint.up.angleTo(slaveUp))
 			slave.object.add(slave.node.object)
 
 			slave.node.object.position.copy(slave.joint.point).negate()
