@@ -508,10 +508,11 @@ View3 = f.unit({
 
 			var distance = v2.dot(v1.normalize())
 			,   radius = this.currentDim.sphere.radius
+			,   length = this.currentDim.length
 			,   minimal = this.tree ? this.tree.local.length : 1
 
 			this.camera.near = Math.max(distance - radius, minimal * 0.05)
-			this.camera.far  = Math.max(distance + radius, radius)
+			this.camera.far  = Math.max(distance + radius, length)
 			this.camera.updateProjectionMatrix()
 
 			if(this.smSSAO) {
