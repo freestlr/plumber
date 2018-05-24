@@ -93,7 +93,11 @@ function changeSample(src) {
 }
 
 function onImportElement(sample) {
-	sidebar.addSample(sample.src, sample.name, sample.thumb, true, true)
+	if(sample) {
+		sidebar.addSample(sample.src, sample.name, sample.thumb, true, true)
+	} else {
+		console.error('failed to import file')
+	}
 	// sidebar.setSample(sample)
 }
 

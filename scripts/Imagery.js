@@ -494,6 +494,8 @@ Imagery.prototype = {
 
 
 	textureColor: function(image, w, h) {
+		if(!w || !h) return 0
+
 		this.buffer.width  = w
 		this.buffer.height = h
 
