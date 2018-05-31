@@ -11,6 +11,7 @@ Plumber = f.unit({
 
 	catchFiles: false,
 	catchSamples: true,
+	enableHotkeys: false,
 
 	dirSamples: '',
 	srcAtlas: 'plumber-atlas.svg',
@@ -1445,6 +1446,8 @@ Plumber = f.unit({
 
 
 	onkey: function(e) {
+		if(!this.enableHotkeys) return
+
 		if(e.altKey) {
 
 		} else if(this.pasting && !kbd.down) {

@@ -7,6 +7,7 @@ var main = new Plumber({
 	srcCubemap: 'images/cubemap.png',
 	dirSamples: 'samples/',
 	initFromHash: true,
+	enableHotkeys: true,
 	catchFiles: true
 })
 
