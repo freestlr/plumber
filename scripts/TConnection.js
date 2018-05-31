@@ -322,7 +322,7 @@ TConnection = f.unit({
 	},
 
 	rotate: function(angle, animate) {
-		if(!this.connected) return
+		if(!this.connected || isNaN(angle)) return
 
 		if(this.master) {
 			return this.connected.rotate(angle, animate)
