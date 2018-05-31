@@ -913,8 +913,8 @@ Plumber = f.unit({
 		if(!src) return Defer.complete(true)
 
 		if(alias && !this.isAlias(alias)) {
+			console.error('construct: only string aliases allowed:', alias)
 			alias = null
-			console.error('construct: only string aliases allowed: ', alias)
 		}
 
 		if(this.ready.pending) {
