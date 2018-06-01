@@ -15,6 +15,7 @@ View3 = f.unit({
 	enableAAAO: false,
 	enableBlurAO: true,
 	enableBloomAO: true,
+	halfSizeOcclusion: true,
 
 	debugDepth: false,
 
@@ -797,8 +798,13 @@ View3 = f.unit({
 	resizeRenderTargets: function(w, h) {
 		var fullW = w
 		,   fullH = h
-		,   halfW = fullW >> 1
-		,   halfH = fullH >> 1
+		,   halfW = fullW
+		,   halfH = fullH
+
+		if(this.halfSizeOcclusion) {
+			halfW = fullW >> 1
+			halfH = fullH >> 1
+		}
 
 		if(this.fullW !== fullW
 		|| this.fullH !== fullH) {

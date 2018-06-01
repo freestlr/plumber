@@ -320,10 +320,11 @@ Plumber = f.unit({
 		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
 		this.gui.add(this.view, 'enableRender').name('Render').onChange(redraw)
 		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
-		this.gui.add(this.view, 'enableStencil').name('Enable Stencil').onChange(redraw)
+		this.gui.add(this.view, 'enableStencil').name('Stencil').onChange(redraw)
 		this.gui.add(this.view, 'enableStencilAA').name('AA Stencil').onChange(redraw)
 		this.gui.add(this.view, 'enableStencilBloom').name('Bloom Stencil').onChange(redraw)
 		this.gui.add(this.view, 'enableSSAO').name('SSAO').onChange(redraw)
+		this.gui.add(this.view, 'halfSizeOcclusion').name('Half SSAO').onChange(resize)
 		this.gui.add(this.view, 'enableOnlyAO').name('Only AO').onChange(redraw)
 		this.gui.add(this.view, 'enableAAAO').name('AA AO').onChange(redraw)
 		this.gui.add(this.view, 'enableBlurAO').name('Blur AO').onChange(redraw)
@@ -371,6 +372,12 @@ Plumber = f.unit({
 		}
 
 		function redraw() {
+			self.view.needsRedraw = true
+			self.view2.needsRedraw = true
+		}
+
+		function resize() {
+			self.onresize()
 			self.view.needsRedraw = true
 			self.view2.needsRedraw = true
 		}
@@ -1115,6 +1122,7 @@ Plumber = f.unit({
 
 					var node = new TNode(sample)
 					this.makeConnection(conA, node.connections[k], true)
+					node.upcon.rotate(f.rand(4) * Math.PI / 2)
 
 					return
 				}
