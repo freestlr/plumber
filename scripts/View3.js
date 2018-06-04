@@ -951,11 +951,30 @@ View3 = f.unit({
 			this.scene.overrideMaterial = null
 		}
 
-		if((this.enableSSAO || this.enableStencil) && this.smDepth) {
+		var stencilPasses = null
+		if(this.enableStencil && this.smOverlay) {
+
+			var stencilPasses = []
+			if(this.highlightedNodes.length) {
+				stencilPasses.push(this.stencilLit)
+			}
+			if(this.nodeHovered) {
+				stencilPasses.push(this.stencilHover)
+			}
+			if(this.nodeSelected) {
+				stencilPasses.push(this.stencilSelect)
+			}
+			if(stencilPasses.length === 0) {
+				stencilPasses = null
+			}
+		}
+
+		if((this.enableSSAO || stencilPasses) && this.smDepth) {
 			var target = this.debugDepth ? this.renderTarget : this.rtDepthStencil
 
 			gl.enable(gl.STENCIL_TEST)
 			gl.stencilMask(0xFF)
+			gl.stencilFunc(gl.ALWAYS, 0, 0xFF)
 			gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE)
 			this.renderer.stencilWrite = true
 			this.scene.overrideMaterial = this.smDepth
@@ -968,12 +987,12 @@ View3 = f.unit({
 			this.scene.overrideMaterial = null
 			this.renderer.stencilWrite = false
 			gl.disable(gl.STENCIL_TEST)
-
-			if(this.debugDepth) return
 		}
 
 
 		gl.disable(gl.DEPTH_TEST)
+
+		if(this.debugDepth) return
 
 
 		wb = this.rt1
@@ -1026,25 +1045,11 @@ View3 = f.unit({
 			gl.disable(gl.BLEND)
 		}
 
+
 		wb = this.rtB1
 		rb = this.rtB2
-		if(this.enableStencil && this.smOverlay) {
 
-			var stencilPasses = []
-			if(this.highlightedNodes.length) {
-				stencilPasses.push(this.stencilLit)
-			}
-			if(this.nodeHovered) {
-				stencilPasses.push(this.stencilHover)
-			}
-			if(this.nodeSelected) {
-				stencilPasses.push(this.stencilSelect)
-			}
-
-			if(!stencilPasses.length) return
-
-
-
+		if(stencilPasses) {
 			this.renderer.setClearColor(0, 0)
 			clear(rb)
 			clear(wb)
