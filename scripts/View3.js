@@ -3,7 +3,6 @@ View3 = f.unit({
 	ename: 'view-3',
 
 
-	enableGrid: false,
 	enableRender: true,
 	enableWireframe: false,
 	enableRaycast: true,
@@ -571,11 +570,6 @@ View3 = f.unit({
 			case 'c':
 				this.focusOnTree()
 			return
-
-			case 'g':
-				this.enableGrid = !this.enableGrid
-				this.needsRedraw = true
-			return
 		}
 	},
 
@@ -946,12 +940,6 @@ View3 = f.unit({
 			this.root.visible = true
 
 			this.renderer.stencilWrite = false
-			draw(this.renderTarget, this.scene, this.camera)
-		}
-
-		if(this.enableGrid) {
-			this.root.visible = false
-
 			draw(this.renderTarget, this.scene, this.camera)
 		}
 
