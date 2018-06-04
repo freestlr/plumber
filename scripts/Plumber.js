@@ -543,7 +543,7 @@ Plumber = f.unit({
 		this.view.stencilRaycastMask = ~0
 	},
 
-	shotElement: function(src, w, h) {
+	shotElement: function(src, w, h, fit) {
 		var view = this.viewN
 		if(!view) {
 			view = this.viewN = new View3({
@@ -566,7 +566,7 @@ Plumber = f.unit({
 
 			view.setSize(w, h)
 			view.setTree(new TNode(sample))
-			view.focusOnTree(0)
+			view.focusOnTree(0, null, fit)
 			view.onTick(0)
 
 			var gl = this.renderer.context
@@ -578,10 +578,18 @@ Plumber = f.unit({
 
 			gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
 			gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, arr)
+			ctx.putImageData(pix, 0, 0)
+
+			// for(var i = 0, a = 0; i < pix.data.length; i++) a += pix.data[i]
+			// console.log('sum: %d', a)
+
+			// mirror Y
+			ctx.translate(0, h)
+			ctx.scale(1, -1)
+			ctx.drawImage(ctx.canvas, 0, 0)
 
 			view.setTree(null)
 
-			ctx.putImageData(pix, 0, 0)
 			return ctx.canvas
 		}, this)
 	},
