@@ -317,18 +317,18 @@ Plumber = f.unit({
 
 		this.gui.closed = true
 
-		this.gui.addColor(this.view, 'clearColor').name('Clear').onChange(redraw)
-		this.gui.add(this.view, 'enableRender').name('Render').onChange(redraw)
-		this.gui.add(this.view, 'debugDepth').name('Show Depth').onChange(redraw)
-		this.gui.add(this.view, 'enableStencil').name('Stencil').onChange(redraw)
-		this.gui.add(this.view, 'enableStencilAA').name('AA Stencil').onChange(redraw)
-		this.gui.add(this.view, 'enableStencilBloom').name('Bloom Stencil').onChange(redraw)
-		this.gui.add(this.view, 'enableSSAO').name('SSAO').onChange(redraw)
-		this.gui.add(this.view, 'halfSizeOcclusion').name('Half SSAO').onChange(resize)
-		this.gui.add(this.view, 'enableOnlyAO').name('Only AO').onChange(redraw)
-		this.gui.add(this.view, 'enableAAAO').name('AA AO').onChange(redraw)
-		this.gui.add(this.view, 'enableBlurAO').name('Blur AO').onChange(redraw)
-		this.gui.add(this.view, 'enableBloomAO').name('Bloom AO').onChange(redraw)
+		this.gui.addColor(View3.prototype, 'clearColor').name('Clear').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableRender').name('Render').onChange(redraw)
+		this.gui.add(View3.prototype, 'debugDepth').name('Show Depth').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableStencil').name('Stencil').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableStencilAA').name('AA Stencil').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableStencilBloom').name('Bloom Stencil').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableSSAO').name('SSAO').onChange(redraw)
+		this.gui.add(View3.prototype, 'halfSizeOcclusion').name('Half SSAO').onChange(resize)
+		this.gui.add(View3.prototype, 'enableOnlyAO').name('Only AO').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableAAAO').name('AA AO').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableBlurAO').name('Blur AO').onChange(redraw)
+		this.gui.add(View3.prototype, 'enableBloomAO').name('Bloom AO').onChange(redraw)
 
 		var au = this.view.smSSAO.uniforms
 		,   ao = this.gui.addFolder('Occlusion')
