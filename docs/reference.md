@@ -93,6 +93,17 @@ plumber.connectElement('EFG6K.json', 0, 11, 2)
 ```
 
 
+### `rotateElement(id, [angle], [animate])`
+Повернуть узел на заданный угол по оси соединения с родительским узлом.
+* аргумент `id` [Number|String] - идентификатор узла.
+* аргумент `angle` [Number][*optional*] - Угол поворота в радианах. По-умолчанию 30°.
+* аргумент `animate` [Boolean][*optional*] - анимировать поворот. По-умолчанию false.
+#### Пример:
+```javascript
+plumber.rotateElement('test01', Math.PI / 2, true)
+```
+
+
 ### `clearTree()`
 Очистить отображаемое дерево узлов
 

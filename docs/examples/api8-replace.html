@@ -113,9 +113,9 @@ onButton('.element-left  .button-b100', e => pb.replaceElement(model.b100, 'left
 onButton('.element-right .button-b100', e => pb.replaceElement(model.b100, 'rightNode'))
 onButton('.element-top   .button-b100', e => pb.replaceElement(model.b100, 'topNode'))
 
-onButton('.element-left  .button-rotate', e => pb.rotateNode('leftNode',  Math.PI / 4)) 
-onButton('.element-right .button-rotate', e => pb.rotateNode('rightNode', Math.PI / 4)) 
-onButton('.element-top   .button-rotate', e => pb.rotateNode('topNode',   Math.PI / 4)) 
+onButton('.element-left  .button-rotate', e => pb.rotateElement('leftNode',  Math.PI / 4)) 
+onButton('.element-right .button-rotate', e => pb.rotateElement('rightNode', Math.PI / 4)) 
+onButton('.element-top   .button-rotate', e => pb.rotateElement('topNode',   Math.PI / 4)) 
 
 
 pb.events.on('onReplaceElement', function(e) {

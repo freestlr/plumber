@@ -1431,7 +1431,7 @@ Plumber = f.unit({
 		this.view.litNode(parent, enabled)
 	},
 
-	rotateNode: function(node, angle, animate) {
+	rotateElement: function(node, angle, animate) {
 		if(typeof angle !== 'number') {
 			angle = Math.PI / 6
 		}
@@ -1530,7 +1530,7 @@ Plumber = f.unit({
 
 			case 'r':
 				if(kbd.state.SHIFT) {
-					this.rotateNode(this.view.nodeSelected)
+					this.rotateElement(this.view.nodeSelected)
 				} else {
 					this.onViewClear()
 				}
@@ -1695,7 +1695,7 @@ Plumber = f.unit({
 				hidden: false,
 				node: node,
 				events: {
-					'node_rotate'  : this.rotateNode,
+					'node_rotate'  : this.rotateElement,
 					'node_delete'  : this.deleteNodeWithPrompt,
 					'node_explode' : this.explodeNode,
 					'node_parent'  : this.showNodeParent
