@@ -16,6 +16,14 @@
 * `initFromHash:` [Boolean][*optional*] - загрузить модель из хеш-фрагмента.
   По умолчанию false.
 
+* `enableHotkeys:` [Boolean][*optional*] - включает обработку нажатий клавиш.
+  - DEL - удалить выбранный узел
+  - ENTER - подтвердить в диалоге
+  - ESC - отменить в диалоге
+  - CTRL+C - копировать дерево или поддерево
+  - CTRL+V - вставить дерево или поддерево
+  По умолчанию false.
+
 #### Пример:
 ```javascript
 var plumber = new Plumber
@@ -42,12 +50,12 @@ var plumber = new Plumber({
 
 
 ## Методы:
-### `addElement(id, src, [link])`
+### `addElement(alias, src, [link])`
 Загрузить и отобразить модель.
   В режиме `"constructor"` окно разделится на две части для выбора соединений.
   В режиме `"viewer"` модель просто отобразится в окне.
-* аргумент `id` [String][**deprecated**] - уникальный идентификатор модели. Будет
-  удален за ненадобностью.
+* аргумент `alias` [String][*optional*] - уникальное имя узла.
+  Позволяет адресовать узел по заданному имени вместо автоматически выданного id.
 * аргумент `src` [String] - URL-адрес для загрузки.
 * аргумент `link` [String][*optional*] - URL-ссылка на описание изделия.
   если указана - при выборе модели будет отображаться кнопка “info”
@@ -62,20 +70,22 @@ plumber.addElement('test01', 'assets/samples/test.json')
 ### `replaceElement(src, param)`
 Заменить узел другой моделью.
 * аргумент `src` [String] - уникальный идентификатор модели.
-* аргумент `param` [Number] - заменяемый узел. Возможны значения:
+* аргумент `param` [Mixed] - заменяемый узел. Возможны значения:
   * `-1` - замена всех разрешенных узлов моделью;
   * `0` - выделить графически разрешенные для замены узлы;
-  * `id` - идентификатор узла, подлежащего замене. Может быть получен при событии `"onNodeSelect"`, `"onAddElement"`
+  * `id` [Number] - идентификатор узла, подлежащего замене. Может быть получен при событии `"onNodeSelect"`, `"onAddElement"`
+  * `alias` [String] - имя узла, подлежащего замене. Устанавливается при добавлении узла
 #### Связанное событие: [`"onReplaceElement"`](#onreplaceelement)
 
 
-### `connectElement(src, indexA, id, indexB, [animate])`
+### `connectElement(src, indexA, id, indexB, [animate], [alias])`
 Встроить модель в конкретную точку дерева.
 * аргумент `src` [String] - идентификатор модели.
 * аргумент `indexA` [Number] - индекс крепления добавляемой модели.
-* аргумент `id` [Number] - существующий узел, к которому произвести крепление.
+* аргумент `id` [Number|String] - существующий узел, к которому произвести крепление.
 * аргумент `indexB` [Number] - индекс крепления существующего узла.
 * аргумент `animate` [Boolean][*optional*] - анимировать соединение.
+* аргумент `alias` [String][*optional*] - имя нового узла.
 #### Связанное событие: [`"onConnectElement"`](#onconnectelement)
 #### Пример:
 ```javascript
@@ -83,7 +93,7 @@ plumber.connectElement('EFG6K.json', 0, 11, 2)
 ```
 
 
-### `clear()`
+### `clearTree()`
 Очистить отображаемое дерево узлов
 
 
@@ -97,7 +107,7 @@ plumber.connectElement('EFG6K.json', 0, 11, 2)
 
 ### `getElementById(id)` > [Object]
 Получить элемент по идентификатору
-* аргумент `id` [Number] - id узла
+* аргумент `id` [Number|String] - id или alias узла
 
 
 ### `getElementIdList()` > [Array[Number]]
