@@ -1230,7 +1230,7 @@ Plumber = f.unit({
 				root: node,
 				nodes: nodes
 			}
-		}, this).push(defer)
+		}, this)
 
 		this.constructNode(src, alias).then(function(node) {
 			if(split) {
@@ -1241,7 +1241,7 @@ Plumber = f.unit({
 			}
 		}, this)
 
-		return defer
+		return this.addElementDefer.push(defer)
 	},
 
 
