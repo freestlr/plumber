@@ -268,16 +268,18 @@ Imagery.prototype = {
 		].filter(Boolean)
 
 		for(var i = 0; i < maps.length; i++) {
-			var map = maps[i]
-			var tex = { image: map.image }
+			var texture = maps[i]
+			if(!texture.image) continue
 
-			this.tileTexture(tex)
+			var data = { image: texture.image }
 
-			map.wrapS = THREE.RepeatWrapping
-			map.wrapT = THREE.RepeatWrapping
-			map.image = tex.image
-			map.repeat.x *= tex.repeatX
-			map.repeat.y *= tex.repeatY
+			this.tileTexture(data)
+
+			texture.wrapS = THREE.RepeatWrapping
+			texture.wrapT = THREE.RepeatWrapping
+			texture.image = data.image
+			texture.repeat.x *= data.repeatX
+			texture.repeat.y *= data.repeatY
 		}
 
 		m.envMap = this.skybox
@@ -519,7 +521,7 @@ Imagery.prototype = {
 	},
 
 	tileTexture: function(data) {
-		if(!data) return
+		if(!data || !data.image) return
 
 		var source = data.image
 
