@@ -1220,25 +1220,28 @@ Plumber = f.unit({
 		var split = this.tree && this.mode !== 'viewer'
 		this.splitScreen(split)
 
-		return this.constructNode(src, alias).then(function(node) {
-			if(split) {
-				this.setTree2(node)
-				return this.addElementDefer = new Defer
+		this.addElementDefer = new Defer(function(node) {
+			var nodes = []
+			node.traverse(function(n) {
+				nodes.push(n.id)
+			})
 
-			} else {
-				this.setTree1(node)
-
-				var nodes = []
-				node.traverse(function(n) {
-					nodes.push(n.id)
-				})
-
-				return {
-					root: node,
-					nodes: nodes
-				}
+			return {
+				root: node,
+				nodes: nodes
 			}
 		}, this).push(defer)
+
+		this.constructNode(src, alias).then(function(node) {
+			if(split) {
+				this.setTree2(node)
+			} else {
+				this.setTree1(node)
+				this.addElementDefer.resolve(node)
+			}
+		}, this)
+
+		return defer
 	},
 
 
@@ -1731,10 +1734,9 @@ Plumber = f.unit({
 			this.makeConnection(master, slave, true)
 			this.splitScreen(false)
 
-			if(this.addElementDefer) this.addElementDefer.resolve({
-				root: slave.node,
-				nodes: nodes
-			})
+			if(this.addElementDefer) {
+				this.addElementDefer.resolve(slave.node)
+			}
 		}
 	},
 
