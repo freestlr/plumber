@@ -157,7 +157,7 @@ dom.text = function(elem, content) {
 }
 
 dom.display = function(elem, visible, value) {
-	elem.style.display = visible ? value != null ? value : '' : 'none'
+	elem.style.display = visible ? value != null ? value : 'block' : 'none'
 }
 
 dom.visible = function(elem, visible) {
