@@ -872,7 +872,6 @@ View3 = f.unit({
 
 	draw: function() {
 		var gl = this.renderer.context
-		,   vp = this.viewport
 
 		var renderer = this.renderer
 		,   srPlane  = this.srPlane
@@ -886,24 +885,13 @@ View3 = f.unit({
 			rb = wb
 			wb = tb
 		}
-		function updateViewport() {
-			if(vp) {
-				renderer.setViewport(vp.x, vp.y, vp.w, vp.h)
-				renderer.setScissor(vp.x, vp.y, vp.w, vp.h)
-				renderer.setScissorTest(true)
-			} else {
-				renderer.setScissorTest(false)
-			}
-		}
 		function draw(buffer, scene, camera) {
 			if(!scene ) scene  = srScene
 			if(!camera) camera = srCamera
 
-			updateViewport()
 			renderer.render(scene, camera, buffer)
 		}
 		function clear(buffer, color, depth, stencil) {
-			updateViewport()
 			if(buffer) {
 				renderer.clearTarget(buffer, color, depth, stencil)
 			} else {
@@ -928,6 +916,15 @@ View3 = f.unit({
 			srPlane.material = material
 		}
 
+
+		var vp = this.viewport
+		if(vp) {
+			renderer.setViewport(vp.x, vp.y, vp.w, vp.h)
+			renderer.setScissor(vp.x, vp.y, vp.w, vp.h)
+			renderer.setScissorTest(true)
+		} else {
+			renderer.setScissorTest(false)
+		}
 
 
 		this.renderer.setClearColor(this.clearColor, 1)
