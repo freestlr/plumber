@@ -449,10 +449,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 	}
 
 	function onMouseMove( event ) {
-
-		if ( scope.enabled === false ) return;
-
-		event.preventDefault();
+		if(!scope.enabled) return
 
 		var width = scope.viewportW || scope.element.clientWidth
 		var height = scope.viewportH || scope.element.clientHeight
@@ -462,57 +459,58 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
-		if ( state === STATE.ROTATE ) {
+		switch(state) {
+			case STATE.ROTATE:
+				if(scope.noRotate || scope.orthoMode) return
 
-			if(scope.orthoMode) return
-			if ( scope.noRotate === true ) return;
+				rotateEnd.set( event.clientX, event.clientY );
+				rotateDelta.subVectors( rotateEnd, rotateStart );
 
-			rotateEnd.set( event.clientX, event.clientY );
-			rotateDelta.subVectors( rotateEnd, rotateStart );
+				// rotating across whole screen goes 360 degrees around
+				scope.rotateLeft( 2 * Math.PI * rotateDelta.x / width * scope.rotateSpeed );
 
-			// rotating across whole screen goes 360 degrees around
-			scope.rotateLeft( 2 * Math.PI * rotateDelta.x / width * scope.rotateSpeed );
+				// rotating up and down along whole screen attempts to go 360, but limited to 180
+				scope.rotateUp( 2 * Math.PI * rotateDelta.y / height * scope.rotateSpeed );
 
-			// rotating up and down along whole screen attempts to go 360, but limited to 180
-			scope.rotateUp( 2 * Math.PI * rotateDelta.y / height * scope.rotateSpeed );
+				rotateStart.copy( rotateEnd );
+			break
 
-			rotateStart.copy( rotateEnd );
+			case STATE.DOLLY:
+				if(scope.noZoom || scope.orthoMode) return
 
-		} else if ( state === STATE.DOLLY ) {
+				dollyEnd.set( event.clientX, event.clientY );
+				dollyDelta.subVectors( dollyEnd, dollyStart );
 
-			if(scope.orthoMode) return
-			if ( scope.noZoom === true ) return;
+				scope.panUp(2 * dollyDelta.y * targetDistance / height)
 
-			dollyEnd.set( event.clientX, event.clientY );
-			dollyDelta.subVectors( dollyEnd, dollyStart );
+				dollyStart.copy( dollyEnd );
+			break
 
-			scope.panUp(2 * dollyDelta.y * targetDistance / height)
+			case STATE.PAN:
+				if(scope.noPan) return
 
-			dollyStart.copy( dollyEnd );
+				panEnd.set( event.clientX, event.clientY );
+				panDelta.subVectors( panEnd, panStart );
 
-		} else if ( state === STATE.PAN ) {
+				var dx = 2 * panDelta.x * targetDistance / width
+				,   dy = 2 * panDelta.y * targetDistance / height
 
-			if ( scope.noPan === true ) return;
+				scope.panLeft(dx)
+				if(scope.orthoMode) {
+					scope.panAbove(dy)
+				} else {
+					scope.panForward(dy)
+				}
 
-			panEnd.set( event.clientX, event.clientY );
-			panDelta.subVectors( panEnd, panStart );
+				panStart.copy( panEnd );
+			break
 
-			var dx = 2 * panDelta.x * targetDistance / width
-			,   dy = 2 * panDelta.y * targetDistance / height
-
-			scope.panLeft(dx)
-			if(scope.orthoMode) {
-				scope.panAbove(dy)
-			} else {
-				scope.panForward(dy)
-			}
-
-			panStart.copy( panEnd );
-
+			default: return
 		}
 
-		scope.update();
+		scope.update()
 
+		event.preventDefault()
 	}
 
 	function onMouseUp( /* event */ ) {
@@ -601,15 +599,16 @@ THREE.OrbitControls = function ( object, domElement ) {
 	function touchstart( event ) {
 
 		if ( scope.enabled === false ) return;
+		event.preventDefault();
+
+		scope.down = true;
 
 		var action = scope.orthoMode
-			? ['rot', 'dol', 'pan'][event.touches.length -1]
-			: ['pan',  null,  null][event.touches.length -1]
+			? ['pan',  null,  null][event.touches.length -1]
+			: ['rot', 'dol', 'pan'][event.touches.length -1]
 
 		switch (action) {
-
-			case 'rot':	// one-fingered touch: rotate
-
+			case 'rot':
 				if ( scope.noRotate === true ) return;
 
 				state = STATE.TOUCH_ROTATE;
@@ -617,8 +616,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 				rotateStart.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
 				break;
 
-			case 'dol':	// two-fingered touch: dolly
-
+			case 'dol':
 				if ( scope.noZoom === true ) return;
 
 				state = STATE.TOUCH_DOLLY;
@@ -629,8 +627,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 				dollyStart.set( 0, distance );
 				break;
 
-			case 'pan': // three-fingered touch: pan
-
+			case 'pan':
 				if ( scope.noPan === true ) return;
 
 				state = STATE.TOUCH_PAN;
@@ -649,21 +646,19 @@ THREE.OrbitControls = function ( object, domElement ) {
 	}
 
 	function touchmove( event ) {
-
-		if ( scope.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
+		if(!scope.enabled) return
 
 		var width = scope.viewportW || scope.element.clientWidth
 		var height = scope.viewportH || scope.element.clientHeight
+		var position = scope.object.position;
+		var offset = position.clone().sub( scope.target );
+		var targetDistance = offset.length();
 
-		switch ( event.touches.length ) {
+		targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
 
-			case 1: // one-fingered touch: rotate
-
-				if ( scope.noRotate === true ) return;
-				if ( state !== STATE.TOUCH_ROTATE ) return;
+		switch(state) {
+			case STATE.TOUCH_ROTATE:
+				if(scope.noRotate || scope.orthoMode) return
 
 				rotateEnd.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
 				rotateDelta.subVectors( rotateEnd, rotateStart );
@@ -674,14 +669,10 @@ THREE.OrbitControls = function ( object, domElement ) {
 				scope.rotateUp( 2 * Math.PI * rotateDelta.y / height * scope.rotateSpeed );
 
 				rotateStart.copy( rotateEnd );
+			break
 
-				scope.update();
-				break;
-
-			case 2: // two-fingered touch: dolly
-
-				if ( scope.noZoom === true ) return;
-				if ( state !== STATE.TOUCH_DOLLY ) return;
+			case STATE.TOUCH_DOLLY:
+				if(scope.noZoom || scope.orthoMode) return
 
 				var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
 				var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
@@ -692,36 +683,38 @@ THREE.OrbitControls = function ( object, domElement ) {
 				scale *= dollyStart.y / dollyEnd.y
 
 				dollyStart.copy( dollyEnd );
+			break
 
-				scope.update();
-				break;
-
-			case 3: // three-fingered touch: pan
-
-				if ( scope.noPan === true ) return;
-				if ( state !== STATE.TOUCH_PAN ) return;
+			case STATE.TOUCH_PAN:
+				if(scope.noPan) return
 
 				panEnd.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
 				panDelta.subVectors( panEnd, panStart );
+
+				var dx = 2 * panDelta.x * targetDistance / width
+				,   dy = 2 * panDelta.y * targetDistance / height
 				
-				scope.pan( panDelta.x, panDelta.y );
+				scope.panLeft(dx)
+				scope.panAbove(dy)
 
 				panStart.copy( panEnd );
+			break
 
-				scope.update();
-				break;
-
-			default:
-
-				state = STATE.NONE;
-
+			default: return
 		}
+
+		scope.update()
+
+		event.preventDefault()
+		event.stopPropagation()
 
 	}
 
 	function touchend( /* event */ ) {
 
 		if ( scope.enabled === false ) return;
+
+		scope.down = false
 
 		scope.dispatchEvent( endEvent );
 		state = STATE.NONE;
