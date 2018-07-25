@@ -149,15 +149,15 @@ dom.attr = function(elem, name, value) {
 }
 
 dom.html = function(elem, content) {
-	elem.innerHTML = content
+	elem.innerHTML = content instanceof Array ? content.join('\n') : content
 }
 
 dom.text = function(elem, content) {
-	elem.textContent = content
+	elem.textContent = content instanceof Array ? content.join('\n') : content
 }
 
 dom.display = function(elem, visible, value) {
-	elem.style.display = visible ? value != null ? value : 'block' : 'none'
+	elem.style.display = visible ? value != null ? value : '' : 'none'
 }
 
 dom.visible = function(elem, visible) {
