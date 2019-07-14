@@ -186,7 +186,7 @@ TSerial = {
 		var primes = f.nextprime()
 		for(var i = 0; i < json.nodes.length; i++) {
 			var n = json.nodes[i]
-			var r = n.r / p2
+			var r = n.r / p2 || 0
 
 			cc = Math.max(cc, n.ai, n.bi)
 			rv.push(r)
