@@ -57,7 +57,7 @@ f.lcm = function(values) {
 
 	var lcm = 1
 	for(var i = 0; i < factors.length; i++) {
-		lcm *= factors[i] * primes[i]
+		lcm *= Math.pow(primes[i], factors[i])
 	}
 
 	return lcm
